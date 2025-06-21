@@ -4,10 +4,15 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Settings, Copy, Share2 } from "lucide-react";
 import { useMeeting } from "@/hooks/use-meeting";
 import { useTranscription } from "@/hooks/use-transcription";
+import { useFollowUpSuggestions } from "@/hooks/use-follow-up-suggestions";
+import { useInterviewTimer } from "@/hooks/use-interview-timer";
 import VideoGrid from "@/components/video-grid";
 import TranscriptionPanel from "@/components/transcription-panel";
 import MeetingControls from "@/components/meeting-controls";
 import FollowUpSuggestions from "@/components/follow-up-suggestions";
+import InterviewTimerPanel from "@/components/interview-timer-panel";
+import InterviewNudge from "@/components/interview-nudge";
+import { parseInterviewPlan } from "@/utils/interview-plan-parser";
 import { useToast } from "@/hooks/use-toast";
 import { LiveKitRoom } from "@livekit/components-react";
 
@@ -239,19 +244,48 @@ export default function Meeting({ params }: MeetingProps) {
           </LiveKitRoom>
         )}
 
+        {/* Interview Nudge - Only show to interviewer */}
+        {isInterviewer && timerState.shouldShowNudge && (
+          <div className="mb-4">
+            <InterviewNudge
+              timerState={timerState}
+              onDismiss={dismissNudge}
+            />
+          </div>
+        )}
+
         {/* Live Transcription Panel - Only show to interviewer */}
         {isInterviewer && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <TranscriptionPanel
-              transcriptions={transcriptions}
-              isTranscribing={isTranscribing}
-              onStartTranscription={startTranscription}
-              onStopTranscription={stopTranscription}
-              onClearTranscriptions={clearTranscriptions}
-              provider="deepgram"
-            />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Interview Timer Panel */}
+            {interviewPlan.length > 0 && (
+              <div className="lg:col-span-1">
+                <InterviewTimerPanel
+                  timerState={timerState}
+                  isRunning={isTimerRunning}
+                  onStart={startTimer}
+                  onStop={stopTimer}
+                  onReset={resetTimer}
+                />
+              </div>
+            )}
             
-            <FollowUpSuggestions transcriptions={transcriptions} />
+            {/* Transcription Panel */}
+            <div className={interviewPlan.length > 0 ? "lg:col-span-1" : "lg:col-span-2"}>
+              <TranscriptionPanel
+                transcriptions={transcriptions}
+                isTranscribing={isTranscribing}
+                onStartTranscription={startTranscription}
+                onStopTranscription={stopTranscription}
+                onClearTranscriptions={clearTranscriptions}
+                provider="deepgram"
+              />
+            </div>
+            
+            {/* Follow-up Suggestions */}
+            <div className="lg:col-span-1">
+              <FollowUpSuggestions transcriptions={transcriptions} />
+            </div>
           </div>
         )}
       </div>

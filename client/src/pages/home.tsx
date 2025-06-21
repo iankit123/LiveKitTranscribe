@@ -26,6 +26,11 @@ export default function Home() {
         sessionStorage.setItem('jobDescription', jobDescription.trim());
       }
       
+      // Store interview plan in sessionStorage if provided
+      if (interviewPlan.trim()) {
+        sessionStorage.setItem('interviewPlan', interviewPlan.trim());
+      }
+      
       // Generate a random room name for demo purposes
       const roomName = `room-${Math.random().toString(36).substring(2, 8)}`;
       
@@ -61,7 +66,13 @@ export default function Home() {
         sessionStorage.setItem('jobDescription', jobDescription.trim());
       }
       
-      setLocation(`/meeting/${joinRoomName.trim()}`);
+      // Store interview plan in sessionStorage if provided
+      if (interviewPlan.trim()) {
+        sessionStorage.setItem('interviewPlan', interviewPlan.trim());
+      }
+      
+      // Navigate to the meeting room as candidate
+      setLocation(`/meeting/${joinRoomName.trim()}?role=candidate`);
     } catch (error) {
       console.error('Error joining meeting:', error);
       toast({
