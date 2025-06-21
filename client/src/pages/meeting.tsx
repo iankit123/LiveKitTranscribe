@@ -84,9 +84,9 @@ export default function Meeting({ params }: MeetingProps) {
   const {
     timerState,
     isRunning: isTimerRunning,
-    start: startTimer,
-    stop: stopTimer,
-    reset: resetTimer,
+    startTimer,
+    stopTimer,
+    resetTimer,
     dismissNudge
   } = useInterviewTimer(interviewPlan);
 
@@ -261,10 +261,14 @@ export default function Meeting({ params }: MeetingProps) {
                         console.log('🎥 Video track publications:', localParticipant?.videoTrackPublications);
                         
                         if (video && localParticipant) {
-                          // Try to get video track from publications
-                          const videoTrack = localParticipant.videoTrackPublications.size > 0 
-                            ? Array.from(localParticipant.videoTrackPublications.values())[0]?.videoTrack
-                            : null;
+                          // Try to get video track from publications or cameraTrack
+                          let videoTrack = null;
+                          
+                          if (localParticipant.videoTrackPublications.size > 0) {
+                            videoTrack = Array.from(localParticipant.videoTrackPublications.values())[0]?.videoTrack;
+                          } else if (localParticipant.cameraTrack) {
+                            videoTrack = localParticipant.cameraTrack;
+                          }
                           
                           console.log('🎥 Found video track:', videoTrack);
                           
@@ -276,7 +280,15 @@ export default function Meeting({ params }: MeetingProps) {
                               console.error('❌ Error attaching local video:', error);
                             }
                           } else {
-                            console.log('⚠️ No video track found for local participant');
+                            console.log('⚠️ No video track found, trying to enable camera...');
+                            // Try to enable camera if not already done
+                            if (room) {
+                              room.localParticipant.setCameraEnabled(true).then(() => {
+                                console.log('📷 Camera enabled successfully');
+                              }).catch(err => {
+                                console.error('❌ Failed to enable camera:', err);
+                              });
+                            }
                           }
                         } else {
                           console.log('⚠️ Local video element or participant not available');
