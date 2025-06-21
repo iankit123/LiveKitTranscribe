@@ -52,8 +52,10 @@ class DeepgramService extends TranscriptionService {
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log('Received WebSocket message from server:', data);
         
         if (data.type === 'transcription' && this.onTranscriptionCallback) {
+          console.log('Processing transcription:', data.data);
           this.onTranscriptionCallback({
             transcript: data.data.transcript,
             isFinal: data.data.is_final,
@@ -61,7 +63,10 @@ class DeepgramService extends TranscriptionService {
             timestamp: data.data.timestamp
           });
         } else if (data.type === 'error' && this.onErrorCallback) {
+          console.error('Transcription error from server:', data.error);
           this.onErrorCallback(data.error);
+        } else {
+          console.log('Received message type:', data.type);
         }
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);

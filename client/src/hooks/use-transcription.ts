@@ -26,10 +26,20 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       
       audioStreamRef.current = stream;
 
-      // Set up MediaRecorder to capture audio
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
+      // Set up MediaRecorder to capture audio with different format
+      let mimeType = 'audio/webm;codecs=opus';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'audio/webm';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = 'audio/mp4';
+          if (!MediaRecorder.isTypeSupported(mimeType)) {
+            mimeType = '';
+          }
+        }
+      }
+      
+      console.log('Using MediaRecorder mimeType:', mimeType);
+      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
       
       mediaRecorderRef.current = mediaRecorder;
 

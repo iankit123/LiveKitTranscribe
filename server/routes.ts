@@ -80,10 +80,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
   // WebSocket server for Deepgram proxy and real-time features
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws',
+    perMessageDeflate: false
+  });
 
   wss.on('connection', (ws: WebSocket, req) => {
-    console.log('WebSocket client connected');
+    console.log('WebSocket client connected from:', req.socket.remoteAddress);
 
     // Handle Deepgram WebSocket proxy
     let deepgramWs: WebSocket | null = null;
@@ -105,6 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           const deepgramUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&smart_format=true&interim_results=true&endpointing=300`;
+          console.log('Connecting to Deepgram with URL:', deepgramUrl);
           
           deepgramWs = new WebSocket(deepgramUrl, {
             headers: {
@@ -122,10 +127,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           deepgramWs.on('message', (deepgramMessage) => {
             try {
               const result = JSON.parse(deepgramMessage.toString());
-              console.log('Deepgram response:', result);
+              console.log('Deepgram full response:', JSON.stringify(result, null, 2));
               
               if (result.channel?.alternatives?.[0]?.transcript) {
                 const transcript = result.channel.alternatives[0].transcript;
+                console.log('Raw transcript from Deepgram:', transcript);
                 if (transcript.trim().length > 0) {
                   console.log('Sending transcription to client:', transcript);
                   ws.send(JSON.stringify({
@@ -137,7 +143,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       timestamp: new Date().toISOString()
                     }
                   }));
+                } else {
+                  console.log('Empty transcript received from Deepgram');
                 }
+              } else {
+                console.log('No transcript in Deepgram response, type:', result.type);
               }
             } catch (error) {
               console.error('Error parsing Deepgram response:', error);
@@ -162,7 +172,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Forward audio data to Deepgram
           if (data.audio) {
             const audioBuffer = Buffer.from(data.audio, 'base64');
+            console.log('Forwarding audio buffer to Deepgram, size:', audioBuffer.length);
             deepgramWs.send(audioBuffer);
+          } else {
+            console.log('Received audio_data message but no audio data');
           }
         } else if (data.type === 'stop_transcription' && deepgramWs) {
           deepgramWs.close();
