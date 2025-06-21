@@ -74,7 +74,7 @@ export default function Meeting({ params }: MeetingProps) {
     navigator.clipboard.writeText(meetingUrl).then(() => {
       toast({
         title: "Link copied!",
-        description: "Meeting link has been copied to clipboard",
+        description: "Meeting link has been copied to clipboard. Note: The other person needs to access this from the same network or you may need to deploy the app publicly.",
       });
     }).catch(() => {
       toast({
@@ -140,6 +140,11 @@ export default function Meeting({ params }: MeetingProps) {
               {participants.length + (localParticipant ? 1 : 0)} participant{participants.length + (localParticipant ? 1 : 0) !== 1 ? 's' : ''}
             </span>
           </div>
+          {participants.length === 0 && (
+            <div className="text-xs text-yellow-400 bg-yellow-900 px-2 py-1 rounded">
+              Waiting for others to join...
+            </div>
+          )}
         </div>
         
         <div className="flex items-center space-x-2">
