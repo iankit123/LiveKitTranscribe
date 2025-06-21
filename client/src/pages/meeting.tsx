@@ -112,17 +112,15 @@ export default function Meeting({ params }: MeetingProps) {
   };
 
   const handleShare = async () => {
-    const meetingUrl = window.location.href;
-    
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Join my video meeting',
-          text: `Join me in this video meeting room: ${roomName}`,
-          url: meetingUrl,
+          title: shareTitle,
+          text: shareDescription,
+          url: shareUrl,
         });
       } catch (err) {
-        // User cancelled sharing, fallback to copy
+        console.log('Share was cancelled or failed');
         handleCopyLink();
       }
     } else {
@@ -203,7 +201,7 @@ export default function Meeting({ params }: MeetingProps) {
             size="sm"
           >
             <Share2 className="mr-2" size={16} />
-            Share
+            Share {isCurrentUserInterviewer ? 'Candidate' : 'Interviewer'} Link
           </Button>
           
           <Button 
@@ -212,7 +210,7 @@ export default function Meeting({ params }: MeetingProps) {
             size="sm"
           >
             <Copy className="mr-2" size={16} />
-            Copy Link
+            Copy {isCurrentUserInterviewer ? 'Candidate' : 'Interviewer'} Link
           </Button>
           
           <Button 
