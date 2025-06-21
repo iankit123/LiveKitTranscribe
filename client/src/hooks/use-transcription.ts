@@ -68,7 +68,7 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         const participantName = room?.localParticipant?.name || 'You';
         const entry: TranscriptionEntry = {
           id: `${Date.now()}-${Math.random()}`,
-          speaker: participantName,
+          speaker: isInterviewer ? 'Interviewer' : 'Candidate',
           text: result.transcript,
           timestamp: result.timestamp,
           isFinal: result.isFinal,

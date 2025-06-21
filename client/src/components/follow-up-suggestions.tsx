@@ -71,16 +71,28 @@ export default function FollowUpSuggestions({ transcriptions }: FollowUpSuggesti
             <Lightbulb className="w-5 h-5 text-yellow-500" />
             <span>Follow-Up Suggestions</span>
           </CardTitle>
-          {suggestions && (
+          <div className="flex items-center space-x-2">
             <Button
-              onClick={clearSuggestions}
+              onClick={handleRefreshClick}
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0"
+              className="text-gray-500 hover:text-gray-700"
+              title="Add custom instruction"
             >
-              <X className="w-4 h-4" />
+              <RefreshCw className="w-4 h-4" />
             </Button>
-          )}
+            {(suggestions || followUpHistory.length > 0) && (
+              <Button
+                onClick={clearHistory}
+                variant="ghost"
+                size="sm"
+                className="text-gray-500 hover:text-gray-700"
+                title="Clear all"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
 

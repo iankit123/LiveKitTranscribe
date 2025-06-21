@@ -323,7 +323,7 @@ Return in this exact JSON format:
             required: ["suggestions"]
           }
         },
-        contents: prompt,
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
       });
 
       console.log('📨 Received response from Gemini');
