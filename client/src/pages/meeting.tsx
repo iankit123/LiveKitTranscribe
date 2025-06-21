@@ -28,15 +28,23 @@ export default function Meeting({ params }: MeetingProps) {
   
   // Check URL parameters for role specification
   const urlParams = new URLSearchParams(window.location.search);
-  const roleParam = urlParams.get('role');
-  
+  const urlRole = urlParams.get('role');
+  const isInterviewer = urlRole === 'interviewer';
+  const isCurrentUserInterviewer = isInterviewer;
+
+  // Get meeting state from localStorage or default
+  const jobDescription = localStorage.getItem(`jobDescription_${roomName}`) || '';
+  const interviewPlanText = localStorage.getItem(`interviewPlan_${roomName}`) || '';
+  const interviewPlan = parseInterviewPlan(interviewPlanText);
+
+  // Meeting hooks
   const {
     room,
-    isConnecting,
-    isConnected,
-    error,
-    participants,
     localParticipant,
+    participants,
+    isConnected,
+    isConnecting,
+    error,
     connectToRoom,
     disconnectFromRoom,
     toggleMute,
@@ -45,13 +53,7 @@ export default function Meeting({ params }: MeetingProps) {
     isVideoDisabled
   } = useMeeting();
 
-  // Determine if user is interviewer based on URL parameter or participant count
-  const isInterviewer = roleParam === 'interviewer' || (roleParam !== 'candidate' && participants.length === 0);
-
-  // Get interview plan from session storage
-  const interviewPlanText = sessionStorage.getItem('interviewPlan') || '';
-  const interviewPlan = parseInterviewPlan(interviewPlanText);
-
+  // Transcription hooks
   const {
     transcriptions,
     isTranscribing,
@@ -60,118 +62,104 @@ export default function Meeting({ params }: MeetingProps) {
     clearTranscriptions
   } = useTranscription('deepgram', room, isInterviewer);
 
-  const { suggestions, isLoading, refresh } = useFollowUpSuggestions(transcriptions);
-  const { timerState, isRunning: isTimerRunning, startTimer, stopTimer, resetTimer, dismissNudge } = useInterviewTimer(interviewPlan);
+  // Follow-up suggestions hooks
+  const {
+    suggestions,
+    isLoading,
+    refresh
+  } = useFollowUpSuggestions();
 
+  // Timer hooks
+  const {
+    timerState,
+    isRunning: isTimerRunning,
+    start: startTimer,
+    stop: stopTimer,
+    reset: resetTimer,
+    dismissNudge
+  } = useInterviewTimer(interviewPlan);
+
+  // Connect to room on mount
   useEffect(() => {
-    if (roomName && !isConnecting && !isConnected && !error) {
-      // Generate role-based participant name
-      const uniqueId = Math.random().toString(36).substring(2, 8);
-      const participantName = isInterviewer ? `Interviewer-${uniqueId}` : `Candidate-${uniqueId}`;
-      console.log('Connecting to room with participant name:', participantName, 'Role:', isInterviewer ? 'Interviewer' : 'Candidate');
-      connectToRoom(roomName, participantName);
-    }
+    const participantName = isInterviewer ? 
+      `Interviewer-${Math.random().toString(36).substring(2, 8)}` : 
+      `Candidate-${Math.random().toString(36).substring(2, 8)}`;
+    
+    console.log('Connecting to room with participant name:', participantName, 'Role:', isInterviewer ? 'Interviewer' : 'Candidate');
+    connectToRoom(roomName, participantName);
 
     return () => {
-      if (isConnected) {
-        disconnectFromRoom();
-      }
+      disconnectFromRoom();
     };
-  }, [roomName]);
-
-  useEffect(() => {
-    if (error) {
-      toast({
-        title: "Connection Error",
-        description: error,
-        variant: "destructive",
-      });
-    }
-  }, [error, toast]);
+  }, [roomName, isInterviewer]);
 
   const handleLeaveRoom = () => {
     disconnectFromRoom();
     setLocation('/');
   };
 
-  // Generate role-specific URLs
-  const baseUrl = `${window.location.protocol}//${window.location.host}/meeting/${roomName}`;
-  const interviewerUrl = `${baseUrl}?role=interviewer`;
-  const candidateUrl = `${baseUrl}?role=candidate`;
-  
-  // Determine current role and appropriate share URL
-  const isCurrentUserInterviewer = isInterviewer;
-  const shareUrl = isCurrentUserInterviewer ? candidateUrl : interviewerUrl;
-  const shareTitle = isCurrentUserInterviewer ? 'Candidate Join Link' : 'Interviewer Join Link';
-  const shareDescription = isCurrentUserInterviewer 
-    ? 'Share this link with the candidate to join the interview' 
-    : 'Share this link with the interviewer to join the interview';
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareUrl).then(() => {
+  const handleShare = () => {
+    const shareUrl = isCurrentUserInterviewer ? 
+      `${window.location.origin}/meeting/${roomName}?role=candidate` :
+      `${window.location.origin}/meeting/${roomName}?role=interviewer`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: 'Join Interview',
+        url: shareUrl
+      });
+    } else {
+      navigator.clipboard.writeText(shareUrl);
       toast({
         title: "Link copied!",
-        description: shareDescription,
+        description: `${isCurrentUserInterviewer ? 'Candidate' : 'Interviewer'} link copied to clipboard`,
       });
-    }).catch(() => {
-      toast({
-        title: "Copy failed",
-        description: "Please copy the link manually",
-        variant: "destructive",
-      });
-    });
-  };
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: shareTitle,
-          text: shareDescription,
-          url: shareUrl,
-        });
-      } catch (err) {
-        console.log('Share was cancelled or failed');
-        handleCopyLink();
-      }
-    } else {
-      handleCopyLink();
     }
   };
 
+  const handleCopyLink = () => {
+    const shareUrl = isCurrentUserInterviewer ? 
+      `${window.location.origin}/meeting/${roomName}?role=candidate` :
+      `${window.location.origin}/meeting/${roomName}?role=interviewer`;
+    
+    navigator.clipboard.writeText(shareUrl);
+    toast({
+      title: "Link copied!",
+      description: `${isCurrentUserInterviewer ? 'Candidate' : 'Interviewer'} link copied to clipboard`,
+    });
+  };
+
+  const formatTime = (minutes: number, seconds: number) => {
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const [customInstruction, setCustomInstruction] = useState('');
+
   if (error && !isConnecting) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          <h1 className="text-2xl font-bold mb-4 text-red-400">Connection Error</h1>
-          <p className="text-gray-400 mb-6">{error}</p>
-          <div className="space-x-4">
-            <Button 
-              onClick={() => {
-                setError(null);
-                const uniqueId = Math.random().toString(36).substring(2, 8);
-                const participantName = isInterviewer ? `Interviewer-${uniqueId}` : `Candidate-${uniqueId}`;
-                connectToRoom(roomName, participantName);
-              }} 
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Try Again
-            </Button>
-            <Button onClick={() => setLocation('/')} className="bg-gray-600 hover:bg-gray-700">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-xl font-bold text-red-900 mb-2">Connection Error</h2>
+            <p className="text-red-700 mb-6">{error}</p>
+            <Button onClick={() => setLocation('/')} className="w-full">
               Back to Home
             </Button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (isConnecting || !isConnected || !room) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-livekit mx-auto mb-4"></div>
-          <p className="text-gray-400">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">
             {isConnecting ? 'Connecting to room...' : 'Setting up room...'}
           </p>
         </div>
@@ -180,77 +168,304 @@ export default function Meeting({ params }: MeetingProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header Bar */}
-      <div className="bg-gray-800 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium">{roomName}</span>
-            <span className="text-xs text-gray-400">
-              {participants.length + (localParticipant ? 1 : 0)} participant{participants.length + (localParticipant ? 1 : 0) !== 1 ? 's' : ''}
-            </span>
-          </div>
-          {participants.length === 0 && (
-            <div className="text-xs text-yellow-400 bg-yellow-900 px-2 py-1 rounded">
-              Waiting for others to join...
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Floating Status Bar */}
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+        <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full px-6 py-2 shadow-lg">
+          <div className="flex items-center space-x-6 text-sm">
+            <div className="flex items-center space-x-2">
+              <div className={`w-2 h-2 rounded-full ${isTranscribing ? 'bg-red-500 animate-pulse' : 'bg-gray-400'}`}></div>
+              <span className="font-medium">{isTranscribing ? 'Transcribing' : 'Not Recording'}</span>
             </div>
-          )}
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          {/* Transcription Status */}
-          <div className="flex items-center space-x-2 bg-gray-700 px-3 py-1 rounded-full">
-            <div className={`w-2 h-2 rounded-full ${isTranscribing ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`}></div>
-            <span className="text-xs">{isTranscribing ? 'Transcribing' : 'Transcription Off'}</span>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="font-medium">Connected</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Clock className="w-3 h-3" />
+              <span className="font-mono font-medium">
+                {formatTime(timerState.elapsedMinutes, timerState.elapsedSeconds)}
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Users className="w-3 h-3" />
+              <span>{participants.length + (localParticipant ? 1 : 0)} participants</span>
+            </div>
           </div>
-
-          {/* Share Meeting */}
-          <Button 
-            onClick={handleShare}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-            size="sm"
-          >
-            <Share2 className="mr-2" size={16} />
-            Share {isCurrentUserInterviewer ? 'Candidate' : 'Interviewer'} Link
-          </Button>
-          
-          <Button 
-            onClick={handleCopyLink}
-            className="bg-gray-600 hover:bg-gray-700 text-white"
-            size="sm"
-          >
-            <Copy className="mr-2" size={16} />
-            Copy {isCurrentUserInterviewer ? 'Candidate' : 'Interviewer'} Link
-          </Button>
-          
-          <Button 
-            onClick={handleLeaveRoom}
-            className="bg-red-600 hover:bg-red-700 text-white"
-            size="sm"
-          >
-            <LogOut className="mr-2" size={16} />
-            Leave
-          </Button>
         </div>
       </div>
 
-      <div className="flex-1 p-4 space-y-4">
-        {/* Video Grid with LiveKit Context */}
-        {room && (
-          <LiveKitRoom
-            room={room}
-            className="h-auto"
-          >
-            <VideoGrid 
-              room={room}
-              localParticipant={localParticipant}
-              participants={participants}
-            />
-          </LiveKitRoom>
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Interview: {roomName}</h1>
+            <p className="text-gray-600">{isInterviewer ? 'Interviewer Dashboard' : 'Candidate View'}</p>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <Button 
+              onClick={handleShare}
+              variant="outline"
+              size="sm"
+            >
+              <Share2 className="mr-2" size={16} />
+              Share {isCurrentUserInterviewer ? 'Candidate' : 'Interviewer'} Link
+            </Button>
+            
+            <Button 
+              onClick={handleCopyLink}
+              variant="outline"
+              size="sm"
+            >
+              <Copy className="mr-2" size={16} />
+              Copy Link
+            </Button>
+            
+            <Button 
+              onClick={handleLeaveRoom}
+              variant="destructive"
+              size="sm"
+            >
+              <LogOut className="mr-2" size={16} />
+              Leave
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Dashboard */}
+      <div className="p-6">
+        {/* Video Section */}
+        {isConnected && room && (
+          <div className="mb-6">
+            <LiveKitRoom room={room}>
+              <VideoGrid 
+                room={room}
+                localParticipant={localParticipant}
+                participants={participants}
+              />
+            </LiveKitRoom>
+          </div>
         )}
 
+        {/* Only show dashboard to interviewer */}
+        {isInterviewer && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* LEFT PANEL - Interview Flow */}
+            <Card className="rounded-xl bg-white/90 backdrop-blur shadow-lg border-0">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center text-xl">
+                  <Clock className="w-5 h-5 mr-2 text-indigo-600" />
+                  Interview Flow
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Timer Section */}
+                <div className="text-center bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-6">
+                  <div className="text-4xl font-mono font-bold text-indigo-600 mb-2">
+                    {formatTime(timerState.elapsedMinutes, timerState.elapsedSeconds)}
+                  </div>
+                  <div className="text-sm text-gray-600 mb-4">Elapsed Time</div>
+                  
+                  <div className="flex justify-center space-x-2">
+                    <Button
+                      onClick={isTimerRunning ? stopTimer : startTimer}
+                      size="sm"
+                      className="bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      {isTimerRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    </Button>
+                    <Button
+                      onClick={resetTimer}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
 
+                {/* Current Segment */}
+                {timerState.currentBlock && (
+                  <div className="space-y-3">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-green-800">Current Section</span>
+                        <Badge className="bg-green-100 text-green-800">
+                          {timerState.currentBlock.label}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-green-700">
+                        Target: {timerState.currentBlock.minutes} minutes
+                      </p>
+                    </div>
+
+                    {timerState.nextBlock && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-blue-800">Next Section</span>
+                          <Badge variant="outline" className="text-blue-800 border-blue-300">
+                            {timerState.nextBlock.label}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-blue-700">
+                          Duration: {timerState.nextBlock.minutes} minutes
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Soft Nudge */}
+                {timerState.shouldShowNudge && timerState.nextBlock && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                      <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-orange-800 mb-2">Time Reminder</p>
+                        <p className="text-sm text-orange-700 mb-3">
+                          You planned to start "{timerState.nextBlock.label}" now. Continue with current section or move on?
+                        </p>
+                        <Button
+                          onClick={dismissNudge}
+                          size="sm"
+                          variant="outline"
+                          className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                        >
+                          Got it
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* RIGHT PANEL - Input & Suggestions */}
+            <div className="space-y-6">
+              {/* Live Transcription */}
+              <Card className="rounded-xl bg-white/90 backdrop-blur shadow-lg border-0">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center text-xl">
+                      <MessageSquare className="w-5 h-5 mr-2 text-cyan-600" />
+                      Live Transcription
+                    </CardTitle>
+                    <Button
+                      onClick={isTranscribing ? stopTranscription : startTranscription}
+                      size="sm"
+                      className={isTranscribing ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
+                    >
+                      {isTranscribing ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="max-h-64 overflow-y-auto space-y-3">
+                    {transcriptions.length === 0 ? (
+                      <div className="text-center py-8">
+                        <MessageSquare className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">Start transcription to see live conversation</p>
+                      </div>
+                    ) : (
+                      transcriptions.slice(-10).map((transcription) => (
+                        <div key={transcription.id} className="border-l-2 border-gray-200 pl-3 py-2">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <Badge variant={transcription.speaker === 'Interviewer' ? 'default' : 'secondary'}>
+                              {transcription.speaker}
+                            </Badge>
+                            <span className="text-xs text-gray-500">
+                              {new Date(transcription.timestamp).toLocaleTimeString()}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {Math.round(transcription.confidence * 100)}%
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700">{transcription.text}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Follow-Up Suggestions */}
+              <Card className="rounded-xl bg-white/90 backdrop-blur shadow-lg border-0">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center text-xl">
+                    <Lightbulb className="w-5 h-5 mr-2 text-amber-600" />
+                    Follow-Up Suggestions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Custom Instruction Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Custom Instructions
+                    </label>
+                    <Textarea
+                      placeholder="e.g., Ask more technical questions about their last project..."
+                      value={customInstruction}
+                      onChange={(e) => setCustomInstruction(e.target.value)}
+                      className="min-h-[60px] text-sm"
+                    />
+                  </div>
+
+                  <Button 
+                    onClick={() => refresh(customInstruction)}
+                    disabled={isLoading}
+                    className="w-full bg-amber-600 hover:bg-amber-700"
+                  >
+                    <Lightbulb className="w-4 h-4 mr-2" />
+                    {isLoading ? 'Generating...' : 'Get Follow-Up Questions'}
+                  </Button>
+
+                  {/* Suggestions List */}
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {suggestions.length === 0 ? (
+                      <div className="text-center py-6">
+                        <Lightbulb className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">Generate follow-up questions based on the conversation</p>
+                      </div>
+                    ) : (
+                      suggestions.slice(0, 5).map((suggestion, index) => (
+                        <div key={index} className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                          <p className="text-sm text-gray-800 font-medium mb-2">
+                            {suggestion.question}
+                          </p>
+                          {suggestion.reasoning && (
+                            <p className="text-xs text-amber-700">
+                              {suggestion.reasoning}
+                            </p>
+                          )}
+                          <Button
+                            onClick={() => navigator.clipboard.writeText(suggestion.question)}
+                            size="sm"
+                            variant="ghost"
+                            className="mt-2 h-6 px-2 text-xs"
+                          >
+                            <Copy className="w-3 h-3 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Candidate View */}
+        {!isInterviewer && (
+          <div className="text-center py-12">
+            <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Candidate View</h2>
+            <p className="text-gray-600">Focus on the interview - your responses are being recorded</p>
+          </div>
+        )}
       </div>
 
       {/* Meeting Controls Bar */}
