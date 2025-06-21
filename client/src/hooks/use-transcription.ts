@@ -59,8 +59,6 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
           audioContext.close();
         }
       } as any;
-      
-      mediaRecorderRef.current = mediaRecorder;
 
       let isRecording = true;
 
