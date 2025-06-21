@@ -111,6 +111,12 @@ Changelog:
   * Improved reconnection logic and error handling
   * Added deployment configuration for public access
   * Enhanced connection stability with better LiveKit room configuration
+- June 21, 2025. Added intelligent follow-up question suggestions
+  * Integrated Gemini AI for analyzing transcript context
+  * Built follow-up suggestions component with copy functionality
+  * Implemented rolling transcript analysis (last 8 candidate messages)
+  * Added server-side Gemini API proxy for secure key handling
+  * Created smart interviewer prompts for technical question generation
 ```
 
 ## User Preferences

@@ -221,5 +221,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Gemini API endpoint for follow-up suggestions
+  app.post('/api/gemini/follow-up-suggestions', async (req: Request, res: Response) => {
+    try {
+      const { transcriptText } = req.body;
+
+      if (!transcriptText) {
+        return res.status(400).json({ error: 'Transcript text is required' });
+      }
+
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: 'Gemini API key not configured' });
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+
+      const prompt = `You are an expert interviewer. Based on the following transcript of a candidate's responses, suggest 1-2 intelligent follow-up questions that would help assess their technical skills, problem-solving approach, or experience in more depth.
+
+Guidelines:
+- Focus on technical details, challenges faced, or decision-making processes
+- Avoid yes/no questions
+- Make questions specific to what the candidate mentioned
+- Questions should feel natural and conversational
+
+Transcript:
+${transcriptText}
+
+Please respond with a JSON object in this format:
+{
+  "suggestions": [
+    {
+      "question": "What specific challenges did you face when...",
+      "reasoning": "This explores their problem-solving approach"
+    }
+  ]
+}`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "object",
+            properties: {
+              suggestions: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    question: { type: "string" },
+                    reasoning: { type: "string" }
+                  },
+                  required: ["question"]
+                }
+              }
+            },
+            required: ["suggestions"]
+          }
+        },
+        contents: prompt,
+      });
+
+      const rawJson = response.text;
+      if (rawJson) {
+        const data = JSON.parse(rawJson);
+        res.json(data);
+      } else {
+        res.status(500).json({ error: 'Empty response from Gemini' });
+      }
+    } catch (error) {
+      console.error('Error generating follow-up suggestions:', error);
+      res.status(500).json({ error: 'Failed to generate follow-up suggestions' });
+    }
+  });
+
   return httpServer;
 }

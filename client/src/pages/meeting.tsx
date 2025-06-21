@@ -7,6 +7,7 @@ import { useTranscription } from "@/hooks/use-transcription";
 import VideoGrid from "@/components/video-grid";
 import TranscriptionPanel from "@/components/transcription-panel";
 import MeetingControls from "@/components/meeting-controls";
+import FollowUpSuggestions from "@/components/follow-up-suggestions";
 import { useToast } from "@/hooks/use-toast";
 import { LiveKitRoom } from "@livekit/components-react";
 
@@ -220,14 +221,18 @@ export default function Meeting({ params }: MeetingProps) {
         )}
 
         {/* Live Transcription Panel */}
-        <TranscriptionPanel
-          transcriptions={transcriptions}
-          isTranscribing={isTranscribing}
-          onStartTranscription={startTranscription}
-          onStopTranscription={stopTranscription}
-          onClearTranscriptions={clearTranscriptions}
-          provider="deepgram"
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <TranscriptionPanel
+            transcriptions={transcriptions}
+            isTranscribing={isTranscribing}
+            onStartTranscription={startTranscription}
+            onStopTranscription={stopTranscription}
+            onClearTranscriptions={clearTranscriptions}
+            provider="deepgram"
+          />
+          
+          <FollowUpSuggestions transcriptions={transcriptions} />
+        </div>
       </div>
 
       {/* Meeting Controls Bar */}
