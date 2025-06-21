@@ -69,6 +69,12 @@ export default function Meeting({ params }: MeetingProps) {
     generateSuggestions
   } = useFollowUpSuggestions();
 
+  const handleGenerateSuggestions = () => {
+    console.log('🎯 Generate suggestions clicked');
+    console.log('📝 Current transcriptions:', transcriptions);
+    generateSuggestions(customInstruction, transcriptions);
+  };
+
   // Timer hooks
   const {
     timerState,
@@ -245,8 +251,17 @@ export default function Meeting({ params }: MeetingProps) {
                   <div className="relative bg-gray-900 rounded-xl overflow-hidden aspect-video">
                     <video
                       ref={(video) => {
+                        console.log('🎥 Setting up local video element:', video);
+                        console.log('🎥 Local participant video track:', localParticipant?.videoTrackPublication?.videoTrack);
                         if (video && localParticipant?.videoTrackPublication?.videoTrack) {
-                          localParticipant.videoTrackPublication.videoTrack.attach(video);
+                          try {
+                            localParticipant.videoTrackPublication.videoTrack.attach(video);
+                            console.log('✅ Local video attached successfully');
+                          } catch (error) {
+                            console.error('❌ Error attaching local video:', error);
+                          }
+                        } else {
+                          console.log('⚠️ Local video not available');
                         }
                       }}
                       className="w-full h-full object-cover"
@@ -312,20 +327,32 @@ export default function Meeting({ params }: MeetingProps) {
                 {/* Timer Section */}
                 <div className="text-center bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-6">
                   <div className="text-4xl font-mono font-bold text-indigo-600 mb-2">
-                    {formatTime(timerState.elapsedMinutes, timerState.elapsedSeconds)}
+                    {formatTime(timerState?.elapsedMinutes || 0, timerState?.elapsedSeconds || 0)}
                   </div>
                   <div className="text-sm text-gray-600 mb-4">Elapsed Time</div>
                   
                   <div className="flex justify-center space-x-2">
                     <Button
-                      onClick={isTimerRunning ? stopTimer : startTimer}
+                      onClick={() => {
+                        console.log('🎯 Timer button clicked, isRunning:', isTimerRunning);
+                        if (isTimerRunning) {
+                          console.log('⏸️ Stopping timer');
+                          stopTimer();
+                        } else {
+                          console.log('▶️ Starting timer');
+                          startTimer();
+                        }
+                      }}
                       size="sm"
                       className="bg-indigo-600 hover:bg-indigo-700"
                     >
                       {isTimerRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                     </Button>
                     <Button
-                      onClick={resetTimer}
+                      onClick={() => {
+                        console.log('🔄 Reset timer clicked');
+                        resetTimer();
+                      }}
                       size="sm"
                       variant="outline"
                     >
@@ -461,7 +488,7 @@ export default function Meeting({ params }: MeetingProps) {
                   </div>
 
                   <Button 
-                    onClick={() => generateSuggestions(customInstruction)}
+                    onClick={handleGenerateSuggestions}
                     disabled={isLoading}
                     className="w-full bg-amber-600 hover:bg-amber-700"
                   >

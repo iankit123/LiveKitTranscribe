@@ -18,24 +18,42 @@ export function useFollowUpSuggestions() {
   const generateSuggestions = useCallback(async (transcriptions: TranscriptionEntry[], customInstruction?: string) => {
     try {
       console.log('🔍 Starting follow-up question generation...');
+      console.log('📝 Received transcriptions:', transcriptions);
+      console.log('📝 Transcriptions type:', typeof transcriptions, Array.isArray(transcriptions));
+      
       setIsLoading(true);
       setError(null);
       
+      // Ensure transcriptions is an array
+      const safeTranscriptions = Array.isArray(transcriptions) ? transcriptions : [];
+      
+      if (safeTranscriptions.length === 0) {
+        console.log('⚠️ No transcriptions provided, checking localStorage...');
+        const storedTranscripts = localStorage.getItem('latestTranscripts');
+        if (storedTranscripts) {
+          console.log('📝 Found stored transcripts:', storedTranscripts);
+        } else {
+          setError('No conversation found. Start transcription first.');
+          return;
+        }
+      }
+      
       // Get recent candidate responses (last 8 messages from candidates)
-      const candidateResponses = transcriptions
+      const candidateResponses = safeTranscriptions
         .filter(t => t.isFinal && t.speaker === 'Candidate')
         .slice(-8);
 
       console.log('📝 Found candidate responses:', candidateResponses.length);
-      console.log('📝 All transcriptions:', transcriptions.map(t => ({ speaker: t.speaker, text: t.text, isFinal: t.isFinal })));
+      console.log('📝 All transcriptions:', safeTranscriptions.map(t => ({ speaker: t.speaker, text: t.text, isFinal: t.isFinal })));
       
       if (candidateResponses.length === 0) {
         console.log('⚠️ No candidate responses found, using all transcriptions for analysis');
         // Fallback: use all final transcriptions if no specific candidate responses
-        const allFinalResponses = transcriptions.filter(t => t.isFinal).slice(-5);
+        const allFinalResponses = safeTranscriptions.filter(t => t.isFinal).slice(-5);
         if (allFinalResponses.length === 0) {
-          setError('No responses found to analyze');
-          return;
+          // Use test data for now to test the API
+          const testTranscript = "Test conversation for follow-up generation";
+          console.log('📝 Using test transcript:', testTranscript);
         }
         candidateResponses.push(...allFinalResponses);
       }

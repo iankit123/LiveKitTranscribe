@@ -1,0 +1,17 @@
+[vite] connecting...
+DOMException {}
+
+Connecting to room with participant name: Interviewer-v5rez9 Role: Interviewer
+🔍 Starting follow-up question generation...
+❌ Error generating suggestions: 
+TypeError {}
+message: "transcriptions.filter is not a function"
+stack: "TypeError: transcriptions.filter is not a function↵ at https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/src/hooks/use-follow-up-suggestions.ts:14:49↵ at onClick (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/src/pages/meeting.tsx:901:34)↵ at HTMLUnknownElement.callCallback2 (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=8b02e239:3674:22)↵ at Object.invokeGuardedCallbackDev (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=8b02e239:3699:24)↵ at invokeGuardedCallback (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=8b02e239:3733:39)↵ at invokeGuardedCallbackAndCatchFirstError (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=8b02e239:3736:33)↵ at executeDispatch (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=8b02e239:7014:11)↵ at processDispatchQueueItemsInOrder (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=8b02e239:7034:15)↵ at processDispatchQueue (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=8b02e239:7043:13)↵ at dispatchEventsForPlugins (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=8b02e239:7051:11)"
+get stack: ƒ ()
+set stack: ƒ ()
+length: 1
+name: ""
+[[Prototype]]: ƒ ()
+[[Prototype]]: Object
+
+🏁 Follow-up generation completed
