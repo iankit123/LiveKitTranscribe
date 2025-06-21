@@ -189,7 +189,7 @@ export default function Meeting({ params }: MeetingProps) {
             </div>
             <div className="flex items-center space-x-2">
               <Users className="w-3 h-3" />
-              <span>{participants.length + (localParticipant ? 1 : 0)} participants</span>
+              <span>{(participants?.length || 0) + (localParticipant ? 1 : 0)} participants</span>
             </div>
           </div>
         </div>
@@ -363,13 +363,13 @@ export default function Meeting({ params }: MeetingProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="max-h-64 overflow-y-auto space-y-3">
-                    {transcriptions.length === 0 ? (
+                    {(transcriptions?.length || 0) === 0 ? (
                       <div className="text-center py-8">
                         <MessageSquare className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                         <p className="text-gray-500 text-sm">Start transcription to see live conversation</p>
                       </div>
                     ) : (
-                      transcriptions.slice(-10).map((transcription) => (
+                      (transcriptions || []).slice(-10).map((transcription) => (
                         <div key={transcription.id} className="border-l-2 border-gray-200 pl-3 py-2">
                           <div className="flex items-center space-x-2 mb-1">
                             <Badge variant={transcription.speaker === 'Interviewer' ? 'default' : 'secondary'}>
@@ -423,13 +423,13 @@ export default function Meeting({ params }: MeetingProps) {
 
                   {/* Suggestions List */}
                   <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {suggestions.length === 0 ? (
+                    {(suggestions?.length || 0) === 0 ? (
                       <div className="text-center py-6">
                         <Lightbulb className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                         <p className="text-gray-500 text-sm">Generate follow-up questions based on the conversation</p>
                       </div>
                     ) : (
-                      suggestions.slice(0, 5).map((suggestion, index) => (
+                      (suggestions || []).slice(0, 5).map((suggestion, index) => (
                         <div key={index} className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                           <p className="text-sm text-gray-800 font-medium mb-2">
                             {suggestion.question}
