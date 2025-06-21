@@ -45,8 +45,19 @@ export default function Meeting({ params }: MeetingProps) {
   console.log('📋 Room-specific key value:', localStorage.getItem(`interviewPlan_${roomName}`));
   console.log('📋 Final plan text:', interviewPlanText);
   
+  // If no plan found, create a default one for testing
+  if (!interviewPlanText) {
+    console.log('📋 No plan found, setting default plan in localStorage');
+    const defaultPlanText = 'Intro - 1\nQuestion1 - 1\nEnd - 1';
+    localStorage.setItem('interviewPlan', defaultPlanText);
+    console.log('📋 Set default plan:', defaultPlanText);
+  }
+  
   const interviewPlan = useMemo(() => {
-    if (!interviewPlanText) {
+    // Re-check localStorage in case we just set a default
+    const currentPlanText = localStorage.getItem('interviewPlan') || interviewPlanText;
+    
+    if (!currentPlanText) {
       console.log('⚠️ No interview plan text found, creating test plan');
       // Create a test plan matching your format
       const testPlan = [
@@ -58,8 +69,8 @@ export default function Meeting({ params }: MeetingProps) {
       return testPlan;
     }
     
-    console.log('📋 Parsing interview plan text:', interviewPlanText);
-    const parsed = parseInterviewPlan(interviewPlanText);
+    console.log('📋 Parsing interview plan text:', currentPlanText);
+    const parsed = parseInterviewPlan(currentPlanText);
     console.log('📋 Parsed interview plan:', parsed);
     return parsed;
   }, [interviewPlanText]);
