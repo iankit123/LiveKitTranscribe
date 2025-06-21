@@ -32,46 +32,63 @@ export default function Meeting({ params }: MeetingProps) {
   const isInterviewer = urlRole === 'interviewer';
   const isCurrentUserInterviewer = isInterviewer;
 
-  // Get meeting state from localStorage - check multiple possible keys
+  // Get meeting state from localStorage - check multiple possible keys and sessionStorage
   const jobDescription = localStorage.getItem(`jobDescription_${roomName}`) || 
-                        localStorage.getItem('jobDescription') || '';
+                        localStorage.getItem('jobDescription') || 
+                        sessionStorage.getItem('jobDescription') || '';
   
   const interviewPlanText = localStorage.getItem(`interviewPlan_${roomName}`) || 
-                           localStorage.getItem('interviewPlan') || '';
+                           localStorage.getItem('interviewPlan') || 
+                           sessionStorage.getItem('interviewPlan') || '';
   
-  console.log('📋 Looking for interview plan in localStorage...');
+  console.log('📋 Looking for interview plan in localStorage and sessionStorage...');
   console.log('📋 Room-specific key:', `interviewPlan_${roomName}`);
-  console.log('📋 General key value:', localStorage.getItem('interviewPlan'));
+  console.log('📋 localStorage general key:', localStorage.getItem('interviewPlan'));
+  console.log('📋 sessionStorage general key:', sessionStorage.getItem('interviewPlan'));
   console.log('📋 Room-specific key value:', localStorage.getItem(`interviewPlan_${roomName}`));
-  console.log('📋 Final plan text:', interviewPlanText);
+  console.log('📋 Final plan text found:', interviewPlanText);
   
-  // If no plan found, create a default one for testing
-  if (!interviewPlanText) {
-    console.log('📋 No plan found, setting default plan in localStorage');
-    const defaultPlanText = 'Intro - 1\nQuestion1 - 1\nEnd - 1';
-    localStorage.setItem('interviewPlan', defaultPlanText);
-    console.log('📋 Set default plan:', defaultPlanText);
-  }
+  // Debug: Check all localStorage keys
+  console.log('📋 All localStorage keys:', Object.keys(localStorage));
+  console.log('📋 All sessionStorage keys:', Object.keys(sessionStorage));
   
   const interviewPlan = useMemo(() => {
-    // Re-check localStorage in case we just set a default
-    const currentPlanText = localStorage.getItem('interviewPlan') || interviewPlanText;
+    // Re-check all possible storage locations
+    const currentPlanText = localStorage.getItem('interviewPlan') || 
+                           sessionStorage.getItem('interviewPlan') || 
+                           interviewPlanText;
+    
+    console.log('📋 Final plan text for parsing:', currentPlanText);
     
     if (!currentPlanText) {
-      console.log('⚠️ No interview plan text found, creating test plan');
-      // Create a test plan matching your format
-      const testPlan = [
-        { label: 'Intro', minutes: 1 },
-        { label: 'Question1', minutes: 1 },
-        { label: 'End', minutes: 1 }
+      console.log('⚠️ No interview plan text found, creating fallback plan');
+      // Create a fallback plan based on your home page example
+      const fallbackPlan = [
+        { label: 'Intro', minutes: 5 },
+        { label: 'Past Projects', minutes: 15 },
+        { label: 'Case Study', minutes: 15 },
+        { label: 'Coding', minutes: 20 },
+        { label: 'Wrap-up', minutes: 5 }
       ];
-      console.log('📋 Using test plan:', testPlan);
-      return testPlan;
+      console.log('📋 Using fallback plan:', fallbackPlan);
+      return fallbackPlan;
     }
     
     console.log('📋 Parsing interview plan text:', currentPlanText);
     const parsed = parseInterviewPlan(currentPlanText);
-    console.log('📋 Parsed interview plan:', parsed);
+    console.log('📋 Parsed interview plan result:', parsed);
+    
+    if (parsed.length === 0) {
+      console.log('⚠️ Parsing resulted in empty plan, using fallback');
+      return [
+        { label: 'Intro', minutes: 5 },
+        { label: 'Past Projects', minutes: 15 },
+        { label: 'Case Study', minutes: 15 },
+        { label: 'Coding', minutes: 20 },
+        { label: 'Wrap-up', minutes: 5 }
+      ];
+    }
+    
     return parsed;
   }, [interviewPlanText]);
 
