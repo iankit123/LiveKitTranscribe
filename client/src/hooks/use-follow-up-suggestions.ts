@@ -51,21 +51,31 @@ export function useFollowUpSuggestions() {
       // Get job description from session storage
       const jobDescription = sessionStorage.getItem('jobDescription');
 
-      const response = await geminiService.getFollowUpSuggestions(transcriptText, jobDescription, customInstruction);
-      
-      console.log('✅ Received response from Gemini:', response);
-      
-      // Add to history before setting current suggestions
-      if (response.suggestions.length > 0) {
-        const historyEntry: FollowUpHistoryEntry = {
-          suggestions: response.suggestions,
-          timestamp: new Date().toLocaleTimeString(),
-          pinnedQuestions: []
-        };
-        setFollowUpHistory(prev => [historyEntry, ...prev]);
+      try {
+        const response = await geminiService.getFollowUpSuggestions(transcriptText, jobDescription, customInstruction);
+        
+        console.log('✅ Received response from Gemini:', JSON.stringify(response, null, 2));
+        
+        // Ensure response has the expected structure
+        if (response && response.suggestions && Array.isArray(response.suggestions)) {
+          // Add to history before setting current suggestions
+          if (response.suggestions.length > 0) {
+            const historyEntry: FollowUpHistoryEntry = {
+              suggestions: response.suggestions,
+              timestamp: new Date().toLocaleTimeString(),
+              pinnedQuestions: []
+            };
+            setFollowUpHistory(prev => [historyEntry, ...prev]);
+          }
+          
+          setSuggestions(response);
+        } else {
+          throw new Error('Invalid response format from API');
+        }
+      } catch (apiError) {
+        console.error('❌ API call failed:', apiError);
+        throw apiError;
       }
-      
-      setSuggestions(response);
     } catch (err) {
       console.error('❌ Error generating suggestions:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate suggestions');

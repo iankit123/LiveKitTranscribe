@@ -28,13 +28,23 @@ export default function FollowUpSuggestions({ transcriptions }: FollowUpSuggesti
   const [showCustomInstruction, setShowCustomInstruction] = useState(false);
   const [customInstruction, setCustomInstruction] = useState('');
 
-  const handleGenerateSuggestions = (instruction?: string) => {
+  const handleGenerateSuggestions = async (instruction?: string) => {
     console.log('🎯 Generate suggestions button clicked');
     console.log('📊 Current transcriptions:', transcriptions.length);
-    generateSuggestions(transcriptions, instruction);
-    if (instruction) {
-      setCustomInstruction('');
-      setShowCustomInstruction(false);
+    
+    try {
+      await generateSuggestions(transcriptions, instruction);
+      if (instruction) {
+        setCustomInstruction('');
+        setShowCustomInstruction(false);
+      }
+    } catch (error) {
+      console.error('❌ Error generating suggestions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate follow-up suggestions. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
