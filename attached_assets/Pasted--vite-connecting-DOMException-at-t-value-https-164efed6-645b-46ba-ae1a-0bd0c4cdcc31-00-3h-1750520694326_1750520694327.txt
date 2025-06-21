@@ -1,0 +1,19 @@
+[vite] connecting...
+DOMException {}
+
+at t.value (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Connecting to room with participant name: Candidate-5z938x Role: Candidate
+does not have permission to update own metadata
+at LocalParticipant.handleSignalRequestResponse (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MV5L5S6F.js?v=8b02e239:17814:32)
+at RTCEngine.emit (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MV5L5S6F.js?v=8b02e239:5853:7)
+at RTCEngine.client.onRequestResponse (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MV5L5S6F.js?v=8b02e239:15281:56)
+at SignalClient.handleSignalResponse (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MV5L5S6F.js?v=8b02e239:11412:14)
+at SignalClient.<anonymous> (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MV5L5S6F.js?v=8b02e239:11094:16)
+at Generator.next (<anonymous>)
+at https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MV5L5S6F.js?v=8b02e239:5725:67
+at new Promise (<anonymous>)
+at __awaiter (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MV5L5S6F.js?v=8b02e239:5707:10)
+at ws.onmessage (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MV5L5S6F.js?v=8b02e239:11042:37)

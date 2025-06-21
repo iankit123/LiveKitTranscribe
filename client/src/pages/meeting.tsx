@@ -22,6 +22,10 @@ export default function Meeting({ params }: MeetingProps) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
+  // Check URL parameters for role specification
+  const urlParams = new URLSearchParams(window.location.search);
+  const roleParam = urlParams.get('role');
+  
   const {
     room,
     isConnecting,
@@ -37,9 +41,8 @@ export default function Meeting({ params }: MeetingProps) {
     isVideoDisabled
   } = useMeeting();
 
-  // Determine if this user is the interviewer (creator of the room)
-  // The interviewer is the one whose identity starts with "interviewer-"
-  const isInterviewer = localParticipant?.identity?.startsWith('interviewer-') || false;
+  // Determine if user is interviewer based on URL parameter or participant count
+  const isInterviewer = roleParam === 'interviewer' || (roleParam !== 'candidate' && participants.length === 0);
   
   const {
     transcriptions,
@@ -80,17 +83,29 @@ export default function Meeting({ params }: MeetingProps) {
     setLocation('/');
   };
 
+  // Generate role-specific URLs
+  const baseUrl = `${window.location.protocol}//${window.location.host}/meeting/${roomName}`;
+  const interviewerUrl = `${baseUrl}?role=interviewer`;
+  const candidateUrl = `${baseUrl}?role=candidate`;
+  
+  // Determine current role and appropriate share URL
+  const isCurrentUserInterviewer = isInterviewer;
+  const shareUrl = isCurrentUserInterviewer ? candidateUrl : interviewerUrl;
+  const shareTitle = isCurrentUserInterviewer ? 'Candidate Join Link' : 'Interviewer Join Link';
+  const shareDescription = isCurrentUserInterviewer 
+    ? 'Share this link with the candidate to join the interview' 
+    : 'Share this link with the interviewer to join the interview';
+
   const handleCopyLink = () => {
-    const meetingUrl = window.location.href;
-    navigator.clipboard.writeText(meetingUrl).then(() => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
       toast({
         title: "Link copied!",
-        description: "Meeting link has been copied to clipboard. Note: The other person needs to access this from the same network or you may need to deploy the app publicly.",
+        description: shareDescription,
       });
     }).catch(() => {
       toast({
         title: "Copy failed",
-        description: "Please copy the URL manually from the address bar",
+        description: "Please copy the link manually",
         variant: "destructive",
       });
     });

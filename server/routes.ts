@@ -49,6 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         canPublish: true,
         canSubscribe: true,
         canPublishData: true,
+        canUpdateOwnMetadata: true,
         // Add more specific permissions
         roomCreate: false,
         roomList: false,
