@@ -13,6 +13,7 @@ export const meetings = pgTable("meetings", {
   roomName: text("room_name").notNull().unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true).notNull(),
+  participantCount: integer("participant_count").default(0).notNull(),
 });
 
 export const transcriptionSessions = pgTable("transcription_sessions", {
@@ -30,7 +31,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertMeetingSchema = createInsertSchema(meetings).pick({
   roomName: true,
-  participantCount: true,
 });
 
 export const insertTranscriptionSessionSchema = createInsertSchema(transcriptionSessions).pick({

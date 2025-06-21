@@ -85,6 +85,8 @@ export function useMeeting() {
           errorMessage = 'Authentication failed - please try again';
         } else if (err.message.includes('not found')) {
           errorMessage = 'Room not found - please check the room name';
+        } else if (err.message.includes('Failed to get access token')) {
+          errorMessage = 'Failed to get access token';
         } else {
           errorMessage = err.message;
         }

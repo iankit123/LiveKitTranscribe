@@ -66,6 +66,7 @@ export class MemStorage implements IStorage {
       id,
       createdAt: new Date(),
       isActive: true,
+      participantCount: 0,
     };
     this.meetings.set(id, meeting);
     return meeting;
@@ -75,6 +76,16 @@ export class MemStorage implements IStorage {
     const meeting = this.meetings.get(id);
     if (meeting) {
       const updatedMeeting = { ...meeting, isActive };
+      this.meetings.set(id, updatedMeeting);
+      return updatedMeeting;
+    }
+    return undefined;
+  }
+
+  async incrementMeetingParticipants(id: number): Promise<Meeting | undefined> {
+    const meeting = this.meetings.get(id);
+    if (meeting) {
+      const updatedMeeting = { ...meeting, participantCount: (meeting.participantCount || 0) + 1 };
       this.meetings.set(id, updatedMeeting);
       return updatedMeeting;
     }
