@@ -8,6 +8,7 @@ import VideoGrid from "@/components/video-grid";
 import TranscriptionPanel from "@/components/transcription-panel";
 import MeetingControls from "@/components/meeting-controls";
 import { useToast } from "@/hooks/use-toast";
+import { LiveKitRoom } from "@livekit/components-react";
 
 interface MeetingProps {
   params: {
@@ -125,12 +126,19 @@ export default function Meeting({ params }: MeetingProps) {
       </div>
 
       <div className="flex-1 p-4 space-y-4">
-        {/* Video Grid */}
-        <VideoGrid 
-          room={room}
-          localParticipant={localParticipant}
-          participants={participants}
-        />
+        {/* Video Grid with LiveKit Context */}
+        {room && (
+          <LiveKitRoom
+            room={room}
+            className="h-auto"
+          >
+            <VideoGrid 
+              room={room}
+              localParticipant={localParticipant}
+              participants={participants}
+            />
+          </LiveKitRoom>
+        )}
 
         {/* Live Transcription Panel */}
         <TranscriptionPanel

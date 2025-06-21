@@ -11,9 +11,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { roomName, participantName } = livekitTokenRequestSchema.parse(req.body);
       
-      const livekitUrl = process.env.LIVEKIT_URL || process.env.LIVEKIT_WS_URL || "ws://localhost:7880";
-      const apiKey = process.env.LIVEKIT_API_KEY || process.env.LIVEKIT_KEY || "devkey";
-      const apiSecret = process.env.LIVEKIT_API_SECRET || process.env.LIVEKIT_SECRET || "secret";
+      const livekitUrl = process.env.LIVEKIT_URL;
+      const apiKey = process.env.LIVEKIT_API_KEY;
+      const apiSecret = process.env.LIVEKIT_API_SECRET;
+
+      if (!livekitUrl || !apiKey || !apiSecret) {
+        return res.status(500).json({ error: "LiveKit configuration missing" });
+      }
 
       // Create or get existing meeting
       let meeting = await storage.getMeetingByRoomName(roomName);
@@ -90,7 +94,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (data.type === 'start_transcription') {
           // Initialize Deepgram connection
-          const deepgramApiKey = process.env.DEEPGRAM_API_KEY || process.env.DEEPGRAM_KEY || "";
+          const deepgramApiKey = process.env.DEEPGRAM_API_KEY;
           
           if (!deepgramApiKey) {
             ws.send(JSON.stringify({

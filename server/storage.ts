@@ -83,8 +83,9 @@ export class MemStorage implements IStorage {
   async createTranscriptionSession(insertSession: InsertTranscriptionSession): Promise<TranscriptionSession> {
     const id = this.currentSessionId++;
     const session: TranscriptionSession = {
-      ...insertSession,
       id,
+      meetingId: insertSession.meetingId || null,
+      provider: insertSession.provider,
       startedAt: new Date(),
       endedAt: null,
     };
