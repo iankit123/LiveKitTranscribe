@@ -28,8 +28,8 @@ export default function Home() {
       // Generate a random room name for demo purposes
       const roomName = `room-${Math.random().toString(36).substring(2, 8)}`;
       
-      // Navigate to meeting room
-      setLocation(`/meeting/${roomName}`);
+      // Navigate to meeting room as interviewer
+      setLocation(`/meeting/${roomName}?role=interviewer`);
     } catch (error) {
       console.error('Error starting meeting:', error);
       toast({
