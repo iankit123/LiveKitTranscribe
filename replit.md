@@ -139,6 +139,12 @@ Changelog:
   * Added animated floating elements and feature badges
   * Enhanced typography with gradient text and better visual hierarchy
   * Improved UX with step-by-step workflow explanation
+- June 21, 2025. Redesigned meeting room UI as modern interviewer dashboard
+  * Built responsive 2-column grid layout with interview flow and input panels
+  * Added floating status bar showing transcription, connection, timer, and participant count
+  * Created integrated timer with current/next segment tracking and soft nudges
+  * Enhanced live transcription with speaker badges and confidence scores
+  * Improved follow-up suggestions with custom instruction input and copy functionality
 ```
 
 ## User Preferences
