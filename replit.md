@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a real-time video conferencing application built with React, Express, and LiveKit that includes live speech-to-text transcription capabilities. The application allows users to create video meetings with real-time transcription using providers like Deepgram and ElevenLabs.
+This is a fully functional real-time video conferencing application built with React, Express, and LiveKit that includes live speech-to-text transcription capabilities. Users can create video meetings, see participants in a responsive grid, control their audio/video, and view live transcriptions of their speech using Deepgram's API. The application successfully captures PCM audio data and streams it to Deepgram for real-time speech-to-text conversion.
 
 ## System Architecture
 
@@ -99,6 +99,12 @@ This is a real-time video conferencing application built with React, Express, an
 ```
 Changelog:
 - June 21, 2025. Initial setup
+- June 21, 2025. Completed full video meeting app with real-time transcription
+  * LiveKit video conferencing integration working
+  * Real-time speech-to-text with Deepgram using PCM audio
+  * Meeting controls (mute/unmute, video on/off)
+  * Participant video grid display
+  * Live transcription panel with provider switching capability
 ```
 
 ## User Preferences
