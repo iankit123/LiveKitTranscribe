@@ -51,9 +51,10 @@ export default function Meeting({ params }: MeetingProps) {
 
   useEffect(() => {
     if (roomName && !isConnecting && !isConnected && !error) {
-      // Generate a unique participant name to avoid conflicts
-      const participantName = `User-${Math.random().toString(36).substring(2, 8)}`;
-      console.log('Connecting to room with participant name:', participantName);
+      // Generate role-based participant name
+      const uniqueId = Math.random().toString(36).substring(2, 8);
+      const participantName = isInterviewer ? `Interviewer-${uniqueId}` : `Candidate-${uniqueId}`;
+      console.log('Connecting to room with participant name:', participantName, 'Role:', isInterviewer ? 'Interviewer' : 'Candidate');
       connectToRoom(roomName, participantName);
     }
 
@@ -124,7 +125,8 @@ export default function Meeting({ params }: MeetingProps) {
             <Button 
               onClick={() => {
                 setError(null);
-                const participantName = `User-${Math.random().toString(36).substring(2, 8)}`;
+                const uniqueId = Math.random().toString(36).substring(2, 8);
+                const participantName = isInterviewer ? `Interviewer-${uniqueId}` : `Candidate-${uniqueId}`;
                 connectToRoom(roomName, participantName);
               }} 
               className="bg-blue-600 hover:bg-blue-700"

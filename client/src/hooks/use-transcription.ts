@@ -65,10 +65,15 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       // Set up transcription service callbacks
       transcriptionServiceRef.current.onTranscription((result: TranscriptionResult) => {
         console.log('Received transcription:', result);
-        const participantName = room?.localParticipant?.name || 'You';
+        // Determine speaker based on participant identity or role
+        const participantIdentity = room?.localParticipant?.identity || '';
+        const speakerRole = participantIdentity.startsWith('Interviewer-') ? 'Interviewer' : 
+                           participantIdentity.startsWith('Candidate-') ? 'Candidate' :
+                           (isInterviewer ? 'Interviewer' : 'Candidate');
+        
         const entry: TranscriptionEntry = {
           id: `${Date.now()}-${Math.random()}`,
-          speaker: isInterviewer ? 'Interviewer' : 'Candidate',
+          speaker: speakerRole,
           text: result.transcript,
           timestamp: result.timestamp,
           isFinal: result.isFinal,
