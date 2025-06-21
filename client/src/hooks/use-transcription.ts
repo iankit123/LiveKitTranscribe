@@ -65,9 +65,10 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       // Set up transcription service callbacks
       transcriptionServiceRef.current.onTranscription((result: TranscriptionResult) => {
         console.log('Received transcription:', result);
+        const participantName = room?.localParticipant?.name || 'You';
         const entry: TranscriptionEntry = {
           id: `${Date.now()}-${Math.random()}`,
-          speaker: 'You',
+          speaker: participantName,
           text: result.transcript,
           timestamp: result.timestamp,
           isFinal: result.isFinal,
@@ -75,9 +76,26 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         };
 
         setTranscriptions(prev => {
-          // Remove any existing non-final entries and add the new one
           const finalEntries = prev.filter(t => t.isFinal);
-          return result.isFinal ? [...finalEntries, entry] : [...finalEntries, entry];
+          const newTranscriptions = result.isFinal ? [...finalEntries, entry] : [...finalEntries, entry];
+          
+          // Broadcast final transcription to other participants via data channel
+          if (result.isFinal && room?.localParticipant) {
+            try {
+              const transcriptionData = JSON.stringify({
+                type: 'transcription',
+                entry: entry
+              });
+              room.localParticipant.publishData(
+                new TextEncoder().encode(transcriptionData),
+                { reliable: true }
+              );
+            } catch (error) {
+              console.error('Error broadcasting transcription:', error);
+            }
+          }
+          
+          return newTranscriptions;
         });
       });
 
@@ -135,6 +153,34 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       }
     };
   }, [isTranscribing, stopTranscription]);
+
+  // Listen for transcriptions from other participants
+  useEffect(() => {
+    if (!room) return;
+
+    const handleDataReceived = (payload: Uint8Array, participant: any) => {
+      try {
+        const data = JSON.parse(new TextDecoder().decode(payload));
+        if (data.type === 'transcription') {
+          const entry: TranscriptionEntry = {
+            ...data.entry,
+            speaker: participant.name || participant.identity,
+            id: `${participant.identity}-${data.entry.id}`,
+          };
+          
+          setTranscriptions(prev => [...prev, entry]);
+        }
+      } catch (error) {
+        console.error('Error parsing transcription data:', error);
+      }
+    };
+
+    room.on('dataReceived', handleDataReceived);
+
+    return () => {
+      room.off('dataReceived', handleDataReceived);
+    };
+  }, [room]);
 
   return {
     transcriptions,

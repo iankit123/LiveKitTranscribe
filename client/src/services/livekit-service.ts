@@ -33,12 +33,18 @@ export class LiveKitService {
     try {
       const { token, url } = await this.getAccessToken(roomName, participantName);
       
-      this.room = new Room();
+      this.room = new Room({
+        adaptiveStream: true,
+        dynacast: true,
+      });
 
       await this.room.connect(url, token);
       
       // Enable camera and microphone by default
       await this.room.localParticipant.enableCameraAndMicrophone();
+      
+      // Set participant name for display
+      this.room.localParticipant.setMetadata(JSON.stringify({ name: participantName }));
 
       return this.room;
     } catch (error) {
