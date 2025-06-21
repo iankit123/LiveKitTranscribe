@@ -72,7 +72,12 @@ export default function Meeting({ params }: MeetingProps) {
   const handleGenerateSuggestions = () => {
     console.log('🎯 Generate suggestions clicked');
     console.log('📝 Current transcriptions:', transcriptions);
-    generateSuggestions(customInstruction, transcriptions);
+    console.log('📝 Transcriptions length:', transcriptions?.length);
+    console.log('📝 Transcriptions type:', typeof transcriptions, Array.isArray(transcriptions));
+    
+    // Ensure transcriptions is an array
+    const safeTranscriptions = Array.isArray(transcriptions) ? transcriptions : [];
+    generateSuggestions(safeTranscriptions, customInstruction);
   };
 
   // Timer hooks
@@ -252,16 +257,29 @@ export default function Meeting({ params }: MeetingProps) {
                     <video
                       ref={(video) => {
                         console.log('🎥 Setting up local video element:', video);
-                        console.log('🎥 Local participant video track:', localParticipant?.videoTrackPublication?.videoTrack);
-                        if (video && localParticipant?.videoTrackPublication?.videoTrack) {
-                          try {
-                            localParticipant.videoTrackPublication.videoTrack.attach(video);
-                            console.log('✅ Local video attached successfully');
-                          } catch (error) {
-                            console.error('❌ Error attaching local video:', error);
+                        console.log('🎥 Local participant:', localParticipant);
+                        console.log('🎥 Video track publications:', localParticipant?.videoTrackPublications);
+                        
+                        if (video && localParticipant) {
+                          // Try to get video track from publications
+                          const videoTrack = localParticipant.videoTrackPublications.size > 0 
+                            ? Array.from(localParticipant.videoTrackPublications.values())[0]?.videoTrack
+                            : null;
+                          
+                          console.log('🎥 Found video track:', videoTrack);
+                          
+                          if (videoTrack) {
+                            try {
+                              videoTrack.attach(video);
+                              console.log('✅ Local video attached successfully');
+                            } catch (error) {
+                              console.error('❌ Error attaching local video:', error);
+                            }
+                          } else {
+                            console.log('⚠️ No video track found for local participant');
                           }
                         } else {
-                          console.log('⚠️ Local video not available');
+                          console.log('⚠️ Local video element or participant not available');
                         }
                       }}
                       className="w-full h-full object-cover"
