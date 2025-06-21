@@ -224,17 +224,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Gemini API endpoint for follow-up suggestions
   app.post('/api/gemini/follow-up-suggestions', async (req: Request, res: Response) => {
     try {
+      console.log('🚀 Received follow-up suggestions request');
       const { transcriptText } = req.body;
 
       if (!transcriptText) {
+        console.log('❌ No transcript text provided');
         return res.status(400).json({ error: 'Transcript text is required' });
       }
 
+      console.log('📝 Transcript text received:', transcriptText);
+
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
+        console.log('❌ Gemini API key not configured');
         return res.status(500).json({ error: 'Gemini API key not configured' });
       }
 
+      console.log('🔑 Gemini API key found, initializing AI service');
       const ai = new GoogleGenAI({ apiKey });
 
       const prompt = `You are an expert interviewer. Based on the following transcript of a candidate's responses, suggest 1-2 intelligent follow-up questions that would help assess their technical skills, problem-solving approach, or experience in more depth.
@@ -258,6 +264,8 @@ Please respond with a JSON object in this format:
   ]
 }`;
 
+      console.log('🧠 Sending request to Gemini AI...');
+      
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
         config: {
@@ -283,15 +291,20 @@ Please respond with a JSON object in this format:
         contents: prompt,
       });
 
+      console.log('📨 Received response from Gemini');
+      
       const rawJson = response.text;
       if (rawJson) {
+        console.log('✅ Raw JSON from Gemini:', rawJson);
         const data = JSON.parse(rawJson);
+        console.log('✅ Parsed data:', data);
         res.json(data);
       } else {
+        console.log('❌ Empty response from Gemini');
         res.status(500).json({ error: 'Empty response from Gemini' });
       }
     } catch (error) {
-      console.error('Error generating follow-up suggestions:', error);
+      console.error('❌ Error generating follow-up suggestions:', error);
       res.status(500).json({ error: 'Failed to generate follow-up suggestions' });
     }
   });

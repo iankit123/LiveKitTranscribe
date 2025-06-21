@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { TranscriptionServiceFactory, TranscriptionResult } from '@/services/transcription-service';
 import type { TranscriptionEntry } from '@/components/transcription-panel';
 
-export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram', room?: any) {
+export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram', room?: any, isInterviewer: boolean = false) {
   const [transcriptions, setTranscriptions] = useState<TranscriptionEntry[]>([]);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,8 +79,8 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
           const finalEntries = prev.filter(t => t.isFinal);
           const newTranscriptions = result.isFinal ? [...finalEntries, entry] : [...finalEntries, entry];
           
-          // Broadcast final transcription to other participants via data channel
-          if (result.isFinal && room?.localParticipant) {
+          // Broadcast final transcription to interviewer via data channel
+          if (result.isFinal && room?.localParticipant && !isInterviewer) {
             try {
               const transcriptionData = JSON.stringify({
                 type: 'transcription',
@@ -90,6 +90,7 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
                 new TextEncoder().encode(transcriptionData),
                 { reliable: true }
               );
+              console.log('Broadcasting transcription to interviewer:', entry.text);
             } catch (error) {
               console.error('Error broadcasting transcription:', error);
             }
@@ -154,9 +155,9 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
     };
   }, [isTranscribing, stopTranscription]);
 
-  // Listen for transcriptions from other participants
+  // Listen for transcriptions from other participants (only if interviewer)
   useEffect(() => {
-    if (!room) return;
+    if (!room || !isInterviewer) return;
 
     const handleDataReceived = (payload: Uint8Array, participant: any) => {
       try {
@@ -180,7 +181,7 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
     return () => {
       room.off('dataReceived', handleDataReceived);
     };
-  }, [room]);
+  }, [room, isInterviewer]);
 
   return {
     transcriptions,

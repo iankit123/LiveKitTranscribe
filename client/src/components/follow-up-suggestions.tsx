@@ -15,6 +15,8 @@ export default function FollowUpSuggestions({ transcriptions }: FollowUpSuggesti
   const { toast } = useToast();
 
   const handleGenerateSuggestions = () => {
+    console.log('🎯 Generate suggestions button clicked');
+    console.log('📊 Current transcriptions:', transcriptions.length);
     generateSuggestions(transcriptions);
   };
 

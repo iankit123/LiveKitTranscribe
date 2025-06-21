@@ -9,6 +9,7 @@ export function useFollowUpSuggestions() {
 
   const generateSuggestions = useCallback(async (transcriptions: TranscriptionEntry[]) => {
     try {
+      console.log('🔍 Starting follow-up question generation...');
       setIsLoading(true);
       setError(null);
       
@@ -17,6 +18,8 @@ export function useFollowUpSuggestions() {
         .filter(t => t.isFinal && t.speaker !== 'You')
         .slice(-8);
 
+      console.log('📝 Found candidate responses:', candidateResponses.length);
+      
       if (candidateResponses.length === 0) {
         setError('No candidate responses found to analyze');
         return;
@@ -27,13 +30,19 @@ export function useFollowUpSuggestions() {
         .map(t => `[Candidate]: ${t.text}`)
         .join('\n');
 
+      console.log('📋 Formatted transcript for LLM:', transcriptText);
+      console.log('🚀 Sending request to Gemini API...');
+
       const response = await geminiService.getFollowUpSuggestions(transcriptText);
+      
+      console.log('✅ Received response from Gemini:', response);
       setSuggestions(response);
     } catch (err) {
-      console.error('Error generating suggestions:', err);
+      console.error('❌ Error generating suggestions:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate suggestions');
     } finally {
       setIsLoading(false);
+      console.log('🏁 Follow-up generation completed');
     }
   }, []);
 

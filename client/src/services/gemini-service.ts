@@ -19,6 +19,8 @@ class GeminiService {
 
   async getFollowUpSuggestions(transcriptText: string): Promise<FollowUpResponse> {
     try {
+      console.log('🌐 Making API request to /api/gemini/follow-up-suggestions');
+      
       const response = await fetch('/api/gemini/follow-up-suggestions', {
         method: 'POST',
         headers: {
@@ -29,14 +31,19 @@ class GeminiService {
         }),
       });
 
+      console.log('📡 API response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ API error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
       const data: FollowUpResponse = await response.json();
+      console.log('✅ Successfully parsed API response:', data);
       return data;
     } catch (error) {
-      console.error('Error getting follow-up suggestions:', error);
+      console.error('❌ Error in getFollowUpSuggestions:', error);
       throw new Error(`Failed to get follow-up suggestions: ${error}`);
     }
   }

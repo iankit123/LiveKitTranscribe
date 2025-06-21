@@ -37,13 +37,16 @@ export default function Meeting({ params }: MeetingProps) {
     isVideoDisabled
   } = useMeeting();
 
+  // Determine if this user is the interviewer (first person to join/create the room)
+  const isInterviewer = localParticipant?.identity?.includes(roomName) || participants.length === 0;
+  
   const {
     transcriptions,
     isTranscribing,
     startTranscription,
     stopTranscription,
     clearTranscriptions
-  } = useTranscription('deepgram', room);
+  } = useTranscription('deepgram', room, isInterviewer);
 
   useEffect(() => {
     if (roomName && !isConnecting && !isConnected && !error) {
@@ -220,19 +223,21 @@ export default function Meeting({ params }: MeetingProps) {
           </LiveKitRoom>
         )}
 
-        {/* Live Transcription Panel */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <TranscriptionPanel
-            transcriptions={transcriptions}
-            isTranscribing={isTranscribing}
-            onStartTranscription={startTranscription}
-            onStopTranscription={stopTranscription}
-            onClearTranscriptions={clearTranscriptions}
-            provider="deepgram"
-          />
-          
-          <FollowUpSuggestions transcriptions={transcriptions} />
-        </div>
+        {/* Live Transcription Panel - Only show to interviewer */}
+        {isInterviewer && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <TranscriptionPanel
+              transcriptions={transcriptions}
+              isTranscribing={isTranscribing}
+              onStartTranscription={startTranscription}
+              onStopTranscription={stopTranscription}
+              onClearTranscriptions={clearTranscriptions}
+              provider="deepgram"
+            />
+            
+            <FollowUpSuggestions transcriptions={transcriptions} />
+          </div>
+        )}
       </div>
 
       {/* Meeting Controls Bar */}
