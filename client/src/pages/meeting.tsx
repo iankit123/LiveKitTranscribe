@@ -46,7 +46,10 @@ export default function Meeting({ params }: MeetingProps) {
 
   useEffect(() => {
     if (roomName) {
-      connectToRoom(roomName, 'User');
+      // Generate a unique participant name to avoid conflicts
+      const participantName = `User-${Math.random().toString(36).substring(2, 8)}`;
+      console.log('Connecting to room with participant name:', participantName);
+      connectToRoom(roomName, participantName);
     }
 
     return () => {

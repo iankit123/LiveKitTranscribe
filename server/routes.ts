@@ -25,10 +25,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         meeting = await storage.createMeeting({ roomName });
       }
 
-      // Generate LiveKit access token
+      // Generate LiveKit access token with unique identity
+      const uniqueIdentity = `${participantName}-${Date.now()}`;
+      console.log('Generating token for participant:', uniqueIdentity, 'in room:', roomName);
+      
       const token = new AccessToken(apiKey, apiSecret, {
-        identity: participantName,
-        ttl: "2h",
+        identity: uniqueIdentity,
+        name: participantName, // Display name
+        ttl: "4h", // Extended session time
       });
 
       token.addGrant({
@@ -37,6 +41,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         canPublish: true,
         canSubscribe: true,
         canPublishData: true,
+        // Add more specific permissions
+        roomCreate: false,
+        roomList: false,
+        roomRecord: false,
+        roomAdmin: false,
+        ingressAdmin: false,
       });
 
       const jwt = await token.toJwt();

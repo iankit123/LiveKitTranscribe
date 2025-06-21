@@ -43,6 +43,20 @@ export class LiveKitService {
           },
           facingMode: 'user',
         },
+        // Add connection configuration for better stability
+        reconnectPolicy: {
+          nextRetryDelayInMs: (context) => {
+            console.log('Reconnect attempt:', context.retryCount);
+            return Math.min(1000 * Math.pow(2, context.retryCount), 30000);
+          },
+          maxRetryCount: 10,
+        },
+        publishDefaults: {
+          videoSimulcastLayers: [
+            { resolution: { width: 320, height: 240 }, encoding: { maxBitrate: 150000 } },
+            { resolution: { width: 640, height: 480 }, encoding: { maxBitrate: 500000 } },
+          ]
+        }
       });
 
       await this.room.connect(url, token);

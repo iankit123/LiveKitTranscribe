@@ -105,6 +105,12 @@ Changelog:
   * Meeting controls (mute/unmute, video on/off)
   * Participant video grid display
   * Live transcription panel with provider switching capability
+- June 21, 2025. Added meeting sharing and multi-participant fixes
+  * Added Share and Copy Link buttons for meeting room URLs
+  * Fixed multi-participant connection issues with unique participant identities
+  * Improved reconnection logic and error handling
+  * Added deployment configuration for public access
+  * Enhanced connection stability with better LiveKit room configuration
 ```
 
 ## User Preferences
