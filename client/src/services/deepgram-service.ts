@@ -1,0 +1,87 @@
+import { TranscriptionService, TranscriptionResult } from './transcription-service';
+
+export class DeepgramService extends TranscriptionService {
+  private ws: WebSocket | null = null;
+  private onTranscriptionCallback?: (result: TranscriptionResult) => void;
+  private onErrorCallback?: (error: string) => void;
+
+  async start(): Promise<void> {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    
+    this.ws = new WebSocket(wsUrl);
+
+    this.ws.onopen = () => {
+      console.log('Connected to Deepgram via WebSocket proxy');
+      if (this.ws) {
+        this.ws.send(JSON.stringify({
+          type: 'start_transcription'
+        }));
+      }
+    };
+
+    this.ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'transcription' && this.onTranscriptionCallback) {
+          this.onTranscriptionCallback({
+            transcript: data.data.transcript,
+            isFinal: data.data.is_final,
+            confidence: data.data.confidence,
+            timestamp: data.data.timestamp
+          });
+        } else if (data.type === 'error' && this.onErrorCallback) {
+          this.onErrorCallback(data.error);
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+        if (this.onErrorCallback) {
+          this.onErrorCallback('Failed to parse transcription response');
+        }
+      }
+    };
+
+    this.ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      if (this.onErrorCallback) {
+        this.onErrorCallback('WebSocket connection error');
+      }
+    };
+
+    this.ws.onclose = () => {
+      console.log('WebSocket connection closed');
+    };
+  }
+
+  async stop(): Promise<void> {
+    if (this.ws) {
+      this.ws.send(JSON.stringify({
+        type: 'stop_transcription'
+      }));
+      this.ws.close();
+      this.ws = null;
+    }
+  }
+
+  sendAudio(audioData: ArrayBuffer): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      // Convert ArrayBuffer to base64
+      const uint8Array = new Uint8Array(audioData);
+      const base64Audio = btoa(String.fromCharCode(...uint8Array));
+      
+      this.ws.send(JSON.stringify({
+        type: 'audio_data',
+        audio: base64Audio
+      }));
+    }
+  }
+
+  onTranscription(callback: (result: TranscriptionResult) => void): void {
+    this.onTranscriptionCallback = callback;
+  }
+
+  onError(callback: (error: string) => void): void {
+    this.onErrorCallback = callback;
+  }
+}
