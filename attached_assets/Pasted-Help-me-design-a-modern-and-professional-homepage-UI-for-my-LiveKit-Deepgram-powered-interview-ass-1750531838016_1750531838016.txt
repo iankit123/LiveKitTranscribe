@@ -1,0 +1,67 @@
+Help me design a modern and professional homepage UI for my LiveKit + Deepgram powered interview assistant.
+
+🎯 Objective: Create a pre-interview setup screen for the **interviewer** to configure the session before starting the meeting.
+
+---
+
+📐 Design goals:
+- Modern layout (glassmorphism/card design, shadows, subtle gradients)
+- Centered content or responsive split layout (left info, right form)
+- Good use of font hierarchy, spacing, and icons
+- Mobile responsive
+- Minimal but polished, with focus on UX
+
+---
+
+🧱 Sections to include:
+
+### 🔹 Header
+- Logo + title: “Interviewer Assistant”
+- Subtext: “Smart, time-managed interviews with real-time transcription and AI-powered suggestions”
+
+### 🔹 Form Section (Card-style)
+
+Design this as a sleek input card or floating panel with the following inputs:
+
+1. **Room Setup**
+   - Field: “Room Name” (text input)
+   - Button: “🎥 Start Interview” (bold primary)
+
+2. **Job Description**
+   - Label: “📝 Job Description for the Role”
+   - Textarea (placeholder: “e.g., This is an operations role at Uber focused on scaling supply in Tier 2 cities…”)
+
+3. **Interview Plan (Timeline)**
+   - Label: “📅 Interview Structure”
+   - Textarea input (multi-line)
+   - Placeholder: 
+     ```
+     Intro - 5
+     Past Projects - 15
+     Case Study - 15
+     Coding - 20
+     Wrap-up - 5
+     ```
+
+4. **Transcription Provider Toggle**
+   - Label: “🎙 Transcription Engine”
+   - Toggle with options: Deepgram (default), ElevenLabs (coming soon)
+
+---
+
+🎨 Design Suggestions:
+- Use TailwindCSS or modern CSS classes (e.g., `shadow-xl`, `backdrop-blur`, `rounded-2xl`, `bg-white/80`, etc.)
+- Fonts: Inter, DM Sans, or similar modern fonts
+- Use icons for each section (from Lucide or Heroicons)
+- Responsive: stack vertically on mobile, side-by-side on desktop
+
+---
+
+🧠 Other Details:
+- Store form values in global state or pass via URL query params when user clicks “Start Interview”
+- Use a dark or soft gradient background to give contrast to white cards
+
+---
+
+✅ Please generate the full React component (with TailwindCSS or modern styles) that implements this homepage. Also create a sample screenshot in code if possible.
+

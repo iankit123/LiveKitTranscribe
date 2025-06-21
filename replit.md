@@ -133,6 +133,12 @@ Changelog:
   * Implemented smart nudge system to remind interviewer of planned transitions
   * Added timer panel showing current/next blocks and elapsed time
   * Enhanced interviewer dashboard with time management tools
+- June 21, 2025. Redesigned home page with modern glassmorphism UI
+  * Created professional interviewer-focused landing page with gradient backgrounds
+  * Implemented responsive 2-column layout: info cards + setup form
+  * Added animated floating elements and feature badges
+  * Enhanced typography with gradient text and better visual hierarchy
+  * Improved UX with step-by-step workflow explanation
 ```
 
 ## User Preferences
