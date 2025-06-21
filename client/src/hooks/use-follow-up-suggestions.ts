@@ -95,6 +95,17 @@ export function useFollowUpSuggestions() {
         
         // Ensure response has the expected structure
         if (response && response.suggestions && Array.isArray(response.suggestions)) {
+          console.log('✅ Setting suggestions in state:', response);
+          
+          // Force clear first, then set new suggestions
+          setSuggestions(null);
+          
+          // Use setTimeout to ensure state update
+          setTimeout(() => {
+            setSuggestions(response);
+            console.log('✅ Suggestions set after timeout:', response);
+          }, 100);
+          
           // Add to history before setting current suggestions
           if (response.suggestions.length > 0) {
             const historyEntry: FollowUpHistoryEntry = {
@@ -104,8 +115,6 @@ export function useFollowUpSuggestions() {
             };
             setFollowUpHistory(prev => [historyEntry, ...prev]);
           }
-          
-          setSuggestions(response);
         } else {
           throw new Error('Invalid response format from API');
         }

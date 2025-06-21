@@ -618,7 +618,13 @@ export default function Meeting({ params }: MeetingProps) {
                   </div>
 
                   <Button 
-                    onClick={handleGenerateSuggestions}
+                    onClick={() => {
+                      console.log('🎯 Button clicked, clearing suggestions first');
+                      // Force clear suggestions and regenerate
+                      const safeTranscriptions = Array.isArray(transcriptions) ? transcriptions : [];
+                      console.log('🔄 Force regenerating with:', safeTranscriptions.length, 'transcriptions');
+                      generateSuggestions(safeTranscriptions, customInstruction);
+                    }}
                     disabled={isLoading}
                     className="w-full bg-amber-600 hover:bg-amber-700"
                   >
@@ -628,13 +634,14 @@ export default function Meeting({ params }: MeetingProps) {
 
                   {/* Suggestions List */}
                   <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {(suggestions?.length || 0) === 0 ? (
+                    {console.log('🎯 Rendering suggestions:', suggestions)}
+                    {!suggestions || !suggestions.suggestions || suggestions.suggestions.length === 0 ? (
                       <div className="text-center py-6">
                         <Lightbulb className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                         <p className="text-gray-500 text-sm">Generate follow-up questions based on the conversation</p>
                       </div>
                     ) : (
-                      (suggestions || []).slice(0, 5).map((suggestion, index) => (
+                      (suggestions.suggestions || []).slice(0, 5).map((suggestion, index) => (
                         <div key={index} className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                           <p className="text-sm text-gray-800 font-medium mb-2">
                             {suggestion.question}
