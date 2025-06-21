@@ -1,9 +1,17 @@
 import { useState, useCallback } from 'react';
-import { geminiService, FollowUpResponse } from '@/services/gemini-service';
+import { geminiService, type FollowUpResponse, type FollowUpSuggestion } from '@/services/gemini-service';
 import type { TranscriptionEntry } from '@/components/transcription-panel';
+
+export interface FollowUpHistoryEntry {
+  suggestions: FollowUpSuggestion[];
+  timestamp: string;
+  pinnedQuestions: string[];
+}
 
 export function useFollowUpSuggestions() {
   const [suggestions, setSuggestions] = useState<FollowUpResponse | null>(null);
+  const [followUpHistory, setFollowUpHistory] = useState<FollowUpHistoryEntry[]>([]);
+  const [pinnedQuestions, setPinnedQuestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,11 +80,28 @@ export function useFollowUpSuggestions() {
     setError(null);
   }, []);
 
+  const clearHistory = useCallback(() => {
+    setFollowUpHistory([]);
+    setPinnedQuestions([]);
+  }, []);
+
+  const togglePinQuestion = useCallback((question: string) => {
+    setPinnedQuestions(prev => 
+      prev.includes(question) 
+        ? prev.filter(q => q !== question)
+        : [...prev, question]
+    );
+  }, []);
+
   return {
     suggestions,
+    followUpHistory,
+    pinnedQuestions,
     isLoading,
     error,
     generateSuggestions,
-    clearSuggestions
+    clearSuggestions,
+    clearHistory,
+    togglePinQuestion,
   };
 }

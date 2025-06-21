@@ -3,8 +3,9 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Video, Play, Settings2, Users } from "lucide-react";
+import { Video, Play, Settings2, Users, Briefcase } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
@@ -12,6 +13,7 @@ export default function Home() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [transcriptionProvider, setTranscriptionProvider] = useState<'deepgram' | 'elevenlabs'>('deepgram');
   const [joinRoomName, setJoinRoomName] = useState('');
+  const [jobDescription, setJobDescription] = useState('');
   const { toast } = useToast();
 
   const handleStartMeeting = async () => {

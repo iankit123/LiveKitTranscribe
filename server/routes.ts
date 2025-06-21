@@ -261,23 +261,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: 'Failed to initialize AI service' });
       }
 
-      const prompt = `You are an expert interviewer. Based on the following transcript of a candidate's responses, suggest 1-2 intelligent follow-up questions that would help assess their technical skills, problem-solving approach, or experience in more depth.
-
-Guidelines:
-- Focus on technical details, challenges faced, or decision-making processes
-- Avoid yes/no questions
-- Make questions specific to what the candidate mentioned
-- Questions should feel natural and conversational
+      let prompt = `You are an expert interviewer.`;
+      
+      // Add job description context if provided
+      if (jobDescription) {
+        prompt += ` This interview is for the role of: ${jobDescription}. Use this context to suggest follow-up questions tailored to the job.`;
+      }
+      
+      prompt += ` Based on the following transcript of a candidate's responses, suggest 1-2 intelligent follow-up questions that would help assess their technical skills, problem-solving approach, or experience in more depth.
 
 Transcript:
-${transcriptText}
+${transcriptText}`;
 
-Please respond with a JSON object in this format:
+      // Add custom instruction if provided
+      if (customInstruction) {
+        prompt += `
+
+Additional instruction: ${customInstruction}`;
+      }
+
+      prompt += `
+
+Generate 1-2 insightful follow-up questions that:
+1. Build on what the candidate has said
+2. Probe deeper into their technical knowledge
+3. Assess problem-solving skills
+4. Explore real-world experience
+5. Are specific and actionable
+
+Return in this exact JSON format:
 {
   "suggestions": [
     {
-      "question": "What specific challenges did you face when...",
-      "reasoning": "This explores their problem-solving approach"
+      "question": "Your follow-up question here",
+      "reasoning": "Brief explanation of why this question is valuable"
     }
   ]
 }`;
