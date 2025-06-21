@@ -48,7 +48,11 @@ export default function Meeting({ params }: MeetingProps) {
 
   // Determine if user is interviewer based on URL parameter or participant count
   const isInterviewer = roleParam === 'interviewer' || (roleParam !== 'candidate' && participants.length === 0);
-  
+
+  // Get interview plan from session storage
+  const interviewPlanText = sessionStorage.getItem('interviewPlan') || '';
+  const interviewPlan = parseInterviewPlan(interviewPlanText);
+
   const {
     transcriptions,
     isTranscribing,
@@ -56,6 +60,9 @@ export default function Meeting({ params }: MeetingProps) {
     stopTranscription,
     clearTranscriptions
   } = useTranscription('deepgram', room, isInterviewer);
+
+  const { suggestions, isLoading, refresh } = useFollowUpSuggestions(transcriptions);
+  const { timerState, isRunning: isTimerRunning, startTimer, stopTimer, resetTimer, dismissNudge } = useInterviewTimer(interviewPlan);
 
   useEffect(() => {
     if (roomName && !isConnecting && !isConnected && !error) {
