@@ -81,6 +81,7 @@ export default function Meeting({ params }: MeetingProps) {
   };
 
   // Timer hooks
+  const timerHookResult = useInterviewTimer(interviewPlan);
   const {
     timerState,
     isRunning: isTimerRunning,
@@ -88,7 +89,18 @@ export default function Meeting({ params }: MeetingProps) {
     stopTimer,
     resetTimer,
     dismissNudge
-  } = useInterviewTimer(interviewPlan);
+  } = timerHookResult;
+
+  // Debug timer state
+  useEffect(() => {
+    console.log('⏰ Timer state updated:', {
+      timerState,
+      isRunning: isTimerRunning,
+      currentBlock: timerState?.currentBlock,
+      nextBlock: timerState?.nextBlock,
+      interviewPlan: interviewPlan
+    });
+  }, [timerState, isTimerRunning, interviewPlan]);
 
   // Connect to room on mount
   useEffect(() => {
@@ -362,16 +374,35 @@ export default function Meeting({ params }: MeetingProps) {
                   <div className="text-sm text-gray-600 mb-4">Elapsed Time</div>
                   
                   {/* Interview Plan Progress */}
-                  {timerState?.currentBlock && (
+                  {console.log('🎯 Rendering timer section. Current block:', timerState?.currentBlock, 'Next block:', timerState?.nextBlock)}
+                  {interviewPlan.length > 0 ? (
                     <div className="mb-4 text-sm">
-                      <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full mb-2">
-                        Current: {timerState.currentBlock.label} ({timerState.currentBlock.minutes}min)
-                      </div>
-                      {timerState.nextBlock && (
-                        <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-                          Next: {timerState.nextBlock.label} ({timerState.nextBlock.minutes}min)
+                      {timerState?.currentBlock ? (
+                        <>
+                          <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full mb-2">
+                            Current: {timerState.currentBlock.label} ({timerState.currentBlock.minutes}min)
+                          </div>
+                          {console.log('📍 Rendered current block:', timerState.currentBlock.label)}
+                          {timerState.nextBlock && (
+                            <>
+                              <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
+                                Next: {timerState.nextBlock.label} ({timerState.nextBlock.minutes}min)
+                              </div>
+                              {console.log('📍 Rendered next block:', timerState.nextBlock.label)}
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-gray-500 text-xs">
+                          {console.log('🔍 No current block, showing plan overview')}
+                          Plan: {interviewPlan.map(block => `${block.label} (${block.minutes}m)`).join(' → ')}
                         </div>
                       )}
+                    </div>
+                  ) : (
+                    <div className="mb-4 text-sm text-gray-500">
+                      {console.log('❌ No interview plan available')}
+                      No interview plan set
                     </div>
                   )}
                   
