@@ -1,30 +1,42 @@
 import type { InterviewBlock } from '@/hooks/use-interview-timer';
 
 export function parseInterviewPlan(planText: string): InterviewBlock[] {
-  if (!planText.trim()) {
+  console.log('🔧 parseInterviewPlan called with:', JSON.stringify(planText));
+  
+  if (!planText || !planText.trim()) {
+    console.log('🔧 Empty plan text, returning empty array');
     return [];
   }
 
   const lines = planText.split('\n').filter(line => line.trim());
+  console.log('🔧 Lines to parse:', lines);
+  
   const blocks: InterviewBlock[] = [];
 
   for (const line of lines) {
     const trimmedLine = line.trim();
     if (!trimmedLine) continue;
 
-    // Match patterns like "Intro - 10", "Project discussion - 15", etc.
+    console.log('🔧 Processing line:', trimmedLine);
+    
+    // Match patterns like "Intro - 10", "Project discussion - 15", "start - 1", etc.
     const match = trimmedLine.match(/^(.+?)\s*-\s*(\d+)$/);
+    console.log('🔧 Match result:', match);
     
     if (match) {
       const label = match[1].trim();
       const minutes = parseInt(match[2], 10);
       
+      console.log('🔧 Extracted:', { label, minutes });
+      
       if (label && minutes > 0) {
         blocks.push({ label, minutes });
+        console.log('🔧 Added block:', { label, minutes });
       }
     }
   }
 
+  console.log('🔧 Final parsed blocks:', blocks);
   return blocks;
 }
 
