@@ -45,7 +45,7 @@ export default function Meeting({ params }: MeetingProps) {
   } = useTranscription();
 
   useEffect(() => {
-    if (roomName) {
+    if (roomName && !isConnecting && !isConnected && !error) {
       // Generate a unique participant name to avoid conflicts
       const participantName = `User-${Math.random().toString(36).substring(2, 8)}`;
       console.log('Connecting to room with participant name:', participantName);
@@ -53,9 +53,11 @@ export default function Meeting({ params }: MeetingProps) {
     }
 
     return () => {
-      disconnectFromRoom();
+      if (isConnected) {
+        disconnectFromRoom();
+      }
     };
-  }, [roomName, connectToRoom, disconnectFromRoom]);
+  }, [roomName]);
 
   useEffect(() => {
     if (error) {

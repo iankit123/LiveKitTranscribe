@@ -32,7 +32,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = new AccessToken(apiKey, apiSecret, {
         identity: uniqueIdentity,
         name: participantName, // Display name
-        ttl: 14400, // 4 hours in seconds
+        ttl: '4h', // 4 hours
       });
 
       token.addGrant({

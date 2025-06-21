@@ -33,47 +33,7 @@ export class LiveKitService {
     try {
       const { token, url } = await this.getAccessToken(roomName, participantName);
       
-      this.room = new Room({
-        adaptiveStream: true,
-        dynacast: true,
-        videoCaptureDefaults: {
-          resolution: {
-            width: 1280,
-            height: 720,
-          },
-          facingMode: 'user',
-        },
-        // Add connection configuration for better stability
-        reconnectPolicy: {
-          nextRetryDelayInMs: (context) => {
-            console.log('Reconnect attempt:', context.retryCount);
-            const baseDelay = 1000;
-            const maxDelay = 30000;
-            const retryCount = Math.max(0, context.retryCount || 0);
-            const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay);
-            
-            // Ensure the delay is finite and positive
-            if (!isFinite(delay) || delay <= 0) {
-              return 5000; // 5 second fallback
-            }
-            
-            return delay;
-          },
-          maxRetryCount: 10,
-        },
-        publishDefaults: {
-          videoSimulcastLayers: [
-            { 
-              resolution: { width: 320, height: 240 }, 
-              encoding: { maxBitrate: 150000 }
-            },
-            { 
-              resolution: { width: 640, height: 480 }, 
-              encoding: { maxBitrate: 500000 }
-            },
-          ]
-        }
-      });
+      this.room = new Room();
 
       await this.room.connect(url, token);
       

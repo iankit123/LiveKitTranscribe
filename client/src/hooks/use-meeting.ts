@@ -51,18 +51,14 @@ export function useMeeting() {
         setParticipants([]);
       });
 
+      // Simple event handlers without complex reconnection logic
       connectedRoom.on(RoomEvent.Reconnecting, () => {
-        console.log('Room reconnecting...');
-        setError('Connection lost, attempting to reconnect...');
+        console.log('Reconnecting...');
       });
 
       connectedRoom.on(RoomEvent.Reconnected, () => {
-        console.log('Room reconnected successfully');
+        console.log('Reconnected');
         setError(null);
-      });
-
-      connectedRoom.on(RoomEvent.ConnectionQualityChanged, (quality, participant) => {
-        console.log('Connection quality changed:', quality, participant?.identity);
       });
 
     } catch (err) {
