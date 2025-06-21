@@ -1,0 +1,76 @@
+🎥 Local participant: 
+LocalParticipant {_events: {…}, _eventsCount: 12, _maxListeners: 100, audioLevel: 0, isSpeaking: false, …}
+🎥 Video track publications: 
+Map {}
+🎥 Found video track: 
+LocalVideoTrack {_events: {…}, _eventsCount: 8, _maxListeners: 100, attachedElements: Array(1), isMuted: false, …}
+✅ Local video attached successfully
+⏰ Timer state updated: 
+Object {timerState: {…}, isRunning: true, currentBlock: {…}, nextBlock: {…}, interviewPlan: Array(3)}
+📋 Looking for interview plan in localStorage and sessionStorage...
+📋 Room-specific key: interviewPlan_room-uuc4aa
+📋 localStorage general key: null
+📋 sessionStorage general key: start - 1
+Question1 - 1
+End - 1
+📋 Room-specific key value: null
+📋 Final plan text found: start - 1
+Question1 - 1
+End - 1
+📋 All localStorage keys: 
+(6) ["eruda-entry-button", "eruda-dev-tools", "eruda-console", "eruda-resources", "ERUDA_LAST_TOOL", "eruda-elements"]
+📋 All sessionStorage keys: 
+(2) ["jobDescription", "interviewPlan"]
+🎯 Rendering timer section. Current block: 
+Object {label: "Question1", minutes: 1}
+ Next block: 
+Object {label: "End", minutes: 1}
+📍 Rendered current block: Question1
+📍 Rendered next block: End
+🎥 Setting up local video element: null
+🎥 Local participant: 
+LocalParticipant {_events: {…}, _eventsCount: 12, _maxListeners: 100, audioLevel: 0, isSpeaking: false, …}
+🎥 Video track publications: 
+Map {}
+⚠️ Local video element or participant not available
+🎥 Setting up local video element: 
+<video data-replit-metadata="client/src/pages/meeting.tsx:324:20" data-component-name="video" class="w-full h-full object-cover" autoplay playsinline></video>
+🎥 Local participant: 
+LocalParticipant {_events: {…}, _eventsCount: 12, _maxListeners: 100, audioLevel: 0, isSpeaking: false, …}
+🎥 Video track publications: 
+Map {}
+🎥 Found video track: 
+LocalVideoTrack {_events: {…}, _eventsCount: 8, _maxListeners: 100, attachedElements: Array(1), isMuted: false, …}
+✅ Local video attached successfully
+⏰ Timer state updated: 
+Object {timerState: {…}, isRunning: true, currentBlock: {…}, nextBlock: {…}, interviewPlan: Array(3)}
+📋 Looking for interview plan in localStorage and sessionStorage...
+📋 Room-specific key: interviewPlan_room-uuc4aa
+📋 localStorage general key: null
+📋 sessionStorage general key: start - 1
+Question1 - 1
+End - 1
+📋 Room-specific key value: null
+📋 Final plan text found: start - 1
+Question1 - 1
+End - 1
+📋 All localStorage keys: 
+(6) ["eruda-entry-button", "eruda-dev-tools", "eruda-console", "eruda-resources", "ERUDA_LAST_TOOL", "eruda-elements"]
+📋 All sessionStorage keys: 
+(2) ["jobDescription", "interviewPlan"]
+🎯 Rendering timer section. Current block: 
+Object {label: "Question1", minutes: 1}
+ Next block: 
+Object {label: "End", minutes: 1}
+📍 Rendered current block: Question1
+📍 Rendered next block: End
+🎥 Setting up local video element: null
+🎥 Local participant: 
+LocalParticipant {_events: {…}, _eventsCount: 12, _maxListeners: 100, audioLevel: 0, isSpeaking: false, …}
+🎥 Video track publications: 
+Map {}
+⚠️ Local video element or participant not available
+🎥 Setting up local video element: 
+<video data-replit-metadata="client/src/pages/meeting.tsx:324:20" data-component-name="video" class="w-full h-full object-cover" autoplay playsinline></video>
+🎥 Local participant: 
+LocalParticipant {_events: {…}, _eventsCount: 12, _maxListeners: 100, audioLevel: 0, isSpeaking: false, …}
