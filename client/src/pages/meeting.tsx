@@ -63,12 +63,11 @@ export default function Meeting({ params }: MeetingProps) {
   } = useTranscription('deepgram', room, isInterviewer);
 
   // Follow-up suggestions hooks
-  const followUpHook = useFollowUpSuggestions();
-  const suggestions = followUpHook?.suggestions || [];
-  const isLoading = followUpHook?.isLoading || false;
-  const refreshSuggestions = followUpHook?.refresh || (() => {
-    console.log('Refresh function not available');
-  });
+  const {
+    suggestions,
+    isLoading,
+    generateSuggestions
+  } = useFollowUpSuggestions();
 
   // Timer hooks
   const {
@@ -462,7 +461,7 @@ export default function Meeting({ params }: MeetingProps) {
                   </div>
 
                   <Button 
-                    onClick={() => refreshSuggestions(customInstruction)}
+                    onClick={() => generateSuggestions(customInstruction)}
                     disabled={isLoading}
                     className="w-full bg-amber-600 hover:bg-amber-700"
                   >
