@@ -32,10 +32,37 @@ export default function Meeting({ params }: MeetingProps) {
   const isInterviewer = urlRole === 'interviewer';
   const isCurrentUserInterviewer = isInterviewer;
 
-  // Get meeting state from localStorage or default
-  const jobDescription = localStorage.getItem(`jobDescription_${roomName}`) || '';
-  const interviewPlanText = localStorage.getItem(`interviewPlan_${roomName}`) || '';
-  const interviewPlan = parseInterviewPlan(interviewPlanText);
+  // Get meeting state from localStorage - check multiple possible keys
+  const jobDescription = localStorage.getItem(`jobDescription_${roomName}`) || 
+                        localStorage.getItem('jobDescription') || '';
+  
+  const interviewPlanText = localStorage.getItem(`interviewPlan_${roomName}`) || 
+                           localStorage.getItem('interviewPlan') || '';
+  
+  console.log('📋 Looking for interview plan in localStorage...');
+  console.log('📋 Room-specific key:', `interviewPlan_${roomName}`);
+  console.log('📋 General key value:', localStorage.getItem('interviewPlan'));
+  console.log('📋 Room-specific key value:', localStorage.getItem(`interviewPlan_${roomName}`));
+  console.log('📋 Final plan text:', interviewPlanText);
+  
+  const interviewPlan = useMemo(() => {
+    if (!interviewPlanText) {
+      console.log('⚠️ No interview plan text found, creating test plan');
+      // Create a test plan matching your format
+      const testPlan = [
+        { label: 'Intro', minutes: 1 },
+        { label: 'Question1', minutes: 1 },
+        { label: 'End', minutes: 1 }
+      ];
+      console.log('📋 Using test plan:', testPlan);
+      return testPlan;
+    }
+    
+    console.log('📋 Parsing interview plan text:', interviewPlanText);
+    const parsed = parseInterviewPlan(interviewPlanText);
+    console.log('📋 Parsed interview plan:', parsed);
+    return parsed;
+  }, [interviewPlanText]);
 
   // Meeting hooks
   const {
