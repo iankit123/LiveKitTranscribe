@@ -47,14 +47,30 @@ export class LiveKitService {
         reconnectPolicy: {
           nextRetryDelayInMs: (context) => {
             console.log('Reconnect attempt:', context.retryCount);
-            return Math.min(1000 * Math.pow(2, context.retryCount), 30000);
+            const baseDelay = 1000;
+            const maxDelay = 30000;
+            const retryCount = Math.max(0, context.retryCount || 0);
+            const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay);
+            
+            // Ensure the delay is finite and positive
+            if (!isFinite(delay) || delay <= 0) {
+              return 5000; // 5 second fallback
+            }
+            
+            return delay;
           },
           maxRetryCount: 10,
         },
         publishDefaults: {
           videoSimulcastLayers: [
-            { resolution: { width: 320, height: 240 }, encoding: { maxBitrate: 150000 } },
-            { resolution: { width: 640, height: 480 }, encoding: { maxBitrate: 500000 } },
+            { 
+              resolution: { width: 320, height: 240 }, 
+              encoding: { maxBitrate: 150000 }
+            },
+            { 
+              resolution: { width: 640, height: 480 }, 
+              encoding: { maxBitrate: 500000 }
+            },
           ]
         }
       });

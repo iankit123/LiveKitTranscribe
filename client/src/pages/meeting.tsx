@@ -107,25 +107,40 @@ export default function Meeting({ params }: MeetingProps) {
     }
   };
 
-  if (isConnecting) {
+  if (error && !isConnecting) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-livekit mx-auto mb-4"></div>
-          <p>Connecting to room...</p>
+        <div className="text-center max-w-md mx-auto px-4">
+          <h1 className="text-2xl font-bold mb-4 text-red-400">Connection Error</h1>
+          <p className="text-gray-400 mb-6">{error}</p>
+          <div className="space-x-4">
+            <Button 
+              onClick={() => {
+                setError(null);
+                const participantName = `User-${Math.random().toString(36).substring(2, 8)}`;
+                connectToRoom(roomName, participantName);
+              }} 
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Try Again
+            </Button>
+            <Button onClick={() => setLocation('/')} className="bg-gray-600 hover:bg-gray-700">
+              Back to Home
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (!isConnected || !room) {
+  if (isConnecting || !isConnected || !room) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-400 mb-4">Failed to connect to room</p>
-          <Button onClick={handleLeaveRoom} variant="outline">
-            Return Home
-          </Button>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-livekit mx-auto mb-4"></div>
+          <p className="text-gray-400">
+            {isConnecting ? 'Connecting to room...' : 'Setting up room...'}
+          </p>
         </div>
       </div>
     );

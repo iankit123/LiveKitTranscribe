@@ -53,11 +53,11 @@ export function useMeeting() {
 
       connectedRoom.on(RoomEvent.Reconnecting, () => {
         console.log('Room reconnecting...');
-        setError('Reconnecting to room...');
+        setError('Connection lost, attempting to reconnect...');
       });
 
       connectedRoom.on(RoomEvent.Reconnected, () => {
-        console.log('Room reconnected');
+        console.log('Room reconnected successfully');
         setError(null);
       });
 
