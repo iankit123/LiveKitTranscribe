@@ -9,6 +9,7 @@ export interface IStorage {
   getMeetingByRoomName(roomName: string): Promise<Meeting | undefined>;
   createMeeting(meeting: InsertMeeting): Promise<Meeting>;
   updateMeetingStatus(id: number, isActive: boolean): Promise<Meeting | undefined>;
+  incrementMeetingParticipants(id: number): Promise<Meeting | undefined>;
   
   createTranscriptionSession(session: InsertTranscriptionSession): Promise<TranscriptionSession>;
   endTranscriptionSession(id: number): Promise<TranscriptionSession | undefined>;

@@ -37,8 +37,9 @@ export default function Meeting({ params }: MeetingProps) {
     isVideoDisabled
   } = useMeeting();
 
-  // Determine if this user is the interviewer (first person to join/create the room)
-  const isInterviewer = localParticipant?.identity?.includes(roomName) || participants.length === 0;
+  // Determine if this user is the interviewer (creator of the room)
+  // The interviewer is the one whose identity starts with "interviewer-"
+  const isInterviewer = localParticipant?.identity?.startsWith('interviewer-') || false;
   
   const {
     transcriptions,

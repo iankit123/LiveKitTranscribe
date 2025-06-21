@@ -25,9 +25,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         meeting = await storage.createMeeting({ roomName });
       }
 
+      // Check if this is the first participant (interviewer)
+      const isFirstParticipant = (meeting.participantCount || 0) === 0;
+      
+      // Increment participant count
+      await storage.incrementMeetingParticipants(meeting.id);
+      
       // Generate LiveKit access token with unique identity
-      const uniqueIdentity = `${participantName}-${Date.now()}`;
-      console.log('Generating token for participant:', uniqueIdentity, 'in room:', roomName);
+      const uniqueIdentity = isFirstParticipant 
+        ? `interviewer-${roomName}-${Date.now()}`
+        : `candidate-${participantName}-${Date.now()}`;
+      console.log('Generating token for participant:', uniqueIdentity, 'in room:', roomName, 'isFirstParticipant:', isFirstParticipant);
       
       const token = new AccessToken(apiKey, apiSecret, {
         identity: uniqueIdentity,

@@ -30,6 +30,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertMeetingSchema = createInsertSchema(meetings).pick({
   roomName: true,
+  participantCount: true,
 });
 
 export const insertTranscriptionSessionSchema = createInsertSchema(transcriptionSessions).pick({
