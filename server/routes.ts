@@ -122,17 +122,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           deepgramWs.on('message', (deepgramMessage) => {
             try {
               const result = JSON.parse(deepgramMessage.toString());
+              console.log('Deepgram response:', result);
               
               if (result.channel?.alternatives?.[0]?.transcript) {
-                ws.send(JSON.stringify({
-                  type: 'transcription',
-                  data: {
-                    transcript: result.channel.alternatives[0].transcript,
-                    is_final: result.is_final || false,
-                    confidence: result.channel.alternatives[0].confidence || 0,
-                    timestamp: new Date().toISOString()
-                  }
-                }));
+                const transcript = result.channel.alternatives[0].transcript;
+                if (transcript.trim().length > 0) {
+                  console.log('Sending transcription to client:', transcript);
+                  ws.send(JSON.stringify({
+                    type: 'transcription',
+                    data: {
+                      transcript: transcript,
+                      is_final: result.is_final || false,
+                      confidence: result.channel.alternatives[0].confidence || 0,
+                      timestamp: new Date().toISOString()
+                    }
+                  }));
+                }
               }
             } catch (error) {
               console.error('Error parsing Deepgram response:', error);

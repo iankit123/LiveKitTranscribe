@@ -15,7 +15,7 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
     try {
       setError(null);
       
-      // Get user media for audio
+      // Get user media for audio (separate from LiveKit for transcription)
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
@@ -33,16 +33,32 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       
       mediaRecorderRef.current = mediaRecorder;
 
+      let isRecording = false;
+
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data.size > 0 && isRecording) {
           event.data.arrayBuffer().then(buffer => {
+            console.log('Sending audio data to transcription service, size:', buffer.byteLength);
             transcriptionServiceRef.current.sendAudio(buffer);
+          }).catch(err => {
+            console.error('Error processing audio data:', err);
           });
         }
       };
 
+      mediaRecorder.onstart = () => {
+        console.log('MediaRecorder started');
+        isRecording = true;
+      };
+
+      mediaRecorder.onstop = () => {
+        console.log('MediaRecorder stopped');
+        isRecording = false;
+      };
+
       // Set up transcription service callbacks
       transcriptionServiceRef.current.onTranscription((result: TranscriptionResult) => {
+        console.log('Received transcription:', result);
         const entry: TranscriptionEntry = {
           id: `${Date.now()}-${Math.random()}`,
           speaker: 'You',
@@ -60,6 +76,7 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       });
 
       transcriptionServiceRef.current.onError((errorMessage: string) => {
+        console.error('Transcription error:', errorMessage);
         setError(errorMessage);
         setIsTranscribing(false);
       });
@@ -67,9 +84,10 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       // Start transcription service
       await transcriptionServiceRef.current.start();
       
-      // Start recording
-      mediaRecorder.start(100); // Send data every 100ms
+      // Start recording with smaller intervals for more real-time processing
+      mediaRecorder.start(250); // Send data every 250ms
       setIsTranscribing(true);
+      console.log('Transcription started successfully');
 
     } catch (err) {
       console.error('Failed to start transcription:', err);
