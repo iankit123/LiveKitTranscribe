@@ -66,7 +66,7 @@ export default function Meeting({ params }: MeetingProps) {
   const {
     suggestions,
     isLoading,
-    refresh
+    refresh: refreshSuggestions
   } = useFollowUpSuggestions();
 
   // Timer hooks
@@ -170,8 +170,8 @@ export default function Meeting({ params }: MeetingProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Floating Status Bar */}
-      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full px-6 py-2 shadow-lg">
+      <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50">
+        <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-full px-6 py-3 shadow-xl">
           <div className="flex items-center space-x-6 text-sm">
             <div className="flex items-center space-x-2">
               <div className={`w-2 h-2 rounded-full ${isTranscribing ? 'bg-red-500 animate-pulse' : 'bg-gray-400'}`}></div>
@@ -235,16 +235,64 @@ export default function Meeting({ params }: MeetingProps) {
       </div>
 
       {/* Main Dashboard */}
-      <div className="p-6">
-        {/* Video Section */}
+      <div className="p-6 pt-20">
+        {/* Video Section - Optimized for 2 participants */}
         {isConnected && room && (
           <div className="mb-6">
             <LiveKitRoom room={room}>
-              <VideoGrid 
-                room={room}
-                localParticipant={localParticipant}
-                participants={participants}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+                {localParticipant && (
+                  <div className="relative bg-gray-900 rounded-xl overflow-hidden aspect-video">
+                    <video
+                      ref={(video) => {
+                        if (video && localParticipant?.videoTrackPublication?.videoTrack) {
+                          localParticipant.videoTrackPublication.videoTrack.attach(video);
+                        }
+                      }}
+                      className="w-full h-full object-cover"
+                      autoPlay
+                      muted
+                      playsInline
+                    />
+                    <div className="absolute bottom-3 left-3 bg-black/60 text-white px-2 py-1 rounded text-sm">
+                      You (Interviewer)
+                    </div>
+                    <div className="absolute top-3 right-3">
+                      {isMuted ? <MicOff className="w-5 h-5 text-red-500" /> : <Mic className="w-5 h-5 text-green-500" />}
+                    </div>
+                  </div>
+                )}
+                
+                {participants.length > 0 ? (
+                  participants.slice(0, 1).map((participant) => (
+                    <div key={participant.identity} className="relative bg-gray-900 rounded-xl overflow-hidden aspect-video">
+                      <video
+                        ref={(video) => {
+                          if (video && participant.videoTrackPublication?.videoTrack) {
+                            participant.videoTrackPublication.videoTrack.attach(video);
+                          }
+                        }}
+                        className="w-full h-full object-cover"
+                        autoPlay
+                        playsInline
+                      />
+                      <div className="absolute bottom-3 left-3 bg-black/60 text-white px-2 py-1 rounded text-sm">
+                        {participant.name || 'Candidate'}
+                      </div>
+                      <div className="absolute top-3 right-3">
+                        {participant.isMuted ? <MicOff className="w-5 h-5 text-red-500" /> : <Mic className="w-5 h-5 text-green-500" />}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-gray-100 rounded-xl aspect-video flex items-center justify-center border-2 border-dashed border-gray-300">
+                    <div className="text-center text-gray-500">
+                      <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Waiting for candidate...</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </LiveKitRoom>
           </div>
         )}
@@ -413,7 +461,7 @@ export default function Meeting({ params }: MeetingProps) {
                   </div>
 
                   <Button 
-                    onClick={() => refresh(customInstruction)}
+                    onClick={() => refreshSuggestions(customInstruction)}
                     disabled={isLoading}
                     className="w-full bg-amber-600 hover:bg-amber-700"
                   >
