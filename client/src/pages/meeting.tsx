@@ -250,50 +250,7 @@ export default function Meeting({ params }: MeetingProps) {
           </LiveKitRoom>
         )}
 
-        {/* Interview Nudge - Only show to interviewer */}
-        {isInterviewer && timerState.shouldShowNudge && (
-          <div className="mb-4">
-            <InterviewNudge
-              timerState={timerState}
-              onDismiss={dismissNudge}
-            />
-          </div>
-        )}
 
-        {/* Live Transcription Panel - Only show to interviewer */}
-        {isInterviewer && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Interview Timer Panel */}
-            {interviewPlan.length > 0 && (
-              <div className="lg:col-span-1">
-                <InterviewTimerPanel
-                  timerState={timerState}
-                  isRunning={isTimerRunning}
-                  onStart={startTimer}
-                  onStop={stopTimer}
-                  onReset={resetTimer}
-                />
-              </div>
-            )}
-            
-            {/* Transcription Panel */}
-            <div className={interviewPlan.length > 0 ? "lg:col-span-1" : "lg:col-span-2"}>
-              <TranscriptionPanel
-                transcriptions={transcriptions}
-                isTranscribing={isTranscribing}
-                onStartTranscription={startTranscription}
-                onStopTranscription={stopTranscription}
-                onClearTranscriptions={clearTranscriptions}
-                provider="deepgram"
-              />
-            </div>
-            
-            {/* Follow-up Suggestions */}
-            <div className="lg:col-span-1">
-              <FollowUpSuggestions transcriptions={transcriptions} />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Meeting Controls Bar */}
