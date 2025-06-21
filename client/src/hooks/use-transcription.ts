@@ -18,54 +18,51 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       // Get user media for audio (separate from LiveKit for transcription)
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          sampleRate: 48000,
+          echoCancellation: false,
+          noiseSuppression: false,
+          sampleRate: 16000,
           channelCount: 1,
         } 
       });
       
       audioStreamRef.current = stream;
 
-      // Set up MediaRecorder to capture audio with different format
-      let mimeType = 'audio/webm;codecs=opus';
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = 'audio/webm';
-        if (!MediaRecorder.isTypeSupported(mimeType)) {
-          mimeType = 'audio/mp4';
-          if (!MediaRecorder.isTypeSupported(mimeType)) {
-            mimeType = '';
-          }
-        }
-      }
+      // Use Web Audio API to get raw PCM data instead of compressed audio
+      const audioContext = new AudioContext({ sampleRate: 16000 });
+      const source = audioContext.createMediaStreamSource(stream);
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
       
-      console.log('Using MediaRecorder mimeType:', mimeType);
-      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+      processor.onaudioprocess = (event) => {
+        const inputBuffer = event.inputBuffer;
+        const inputData = inputBuffer.getChannelData(0);
+        
+        // Convert float32 to int16 PCM
+        const pcmData = new Int16Array(inputData.length);
+        for (let i = 0; i < inputData.length; i++) {
+          pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
+        }
+        
+        // Send PCM data to transcription service
+        transcriptionServiceRef.current.sendAudio(pcmData.buffer);
+      };
+      
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+      
+      console.log('Using Web Audio API for PCM audio capture');
+      
+      // Store references for cleanup
+      mediaRecorderRef.current = { 
+        stop: () => {
+          processor.disconnect();
+          source.disconnect();
+          audioContext.close();
+        }
+      } as any;
       
       mediaRecorderRef.current = mediaRecorder;
 
-      let isRecording = false;
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0 && isRecording) {
-          event.data.arrayBuffer().then(buffer => {
-            console.log('Sending audio data to transcription service, size:', buffer.byteLength);
-            transcriptionServiceRef.current.sendAudio(buffer);
-          }).catch(err => {
-            console.error('Error processing audio data:', err);
-          });
-        }
-      };
-
-      mediaRecorder.onstart = () => {
-        console.log('MediaRecorder started');
-        isRecording = true;
-      };
-
-      mediaRecorder.onstop = () => {
-        console.log('MediaRecorder stopped');
-        isRecording = false;
-      };
+      let isRecording = true;
 
       // Set up transcription service callbacks
       transcriptionServiceRef.current.onTranscription((result: TranscriptionResult) => {
@@ -95,10 +92,8 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       // Start transcription service
       await transcriptionServiceRef.current.start();
       
-      // Start recording with smaller intervals for more real-time processing
-      mediaRecorder.start(250); // Send data every 250ms
       setIsTranscribing(true);
-      console.log('Transcription started successfully');
+      console.log('Transcription started successfully with Web Audio API');
 
     } catch (err) {
       console.error('Failed to start transcription:', err);

@@ -111,7 +111,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return;
           }
 
-          const deepgramUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&smart_format=true&interim_results=true&endpointing=300&encoding=webm&sample_rate=48000&channels=1`;
+          // Use PCM audio format for better compatibility
+          const deepgramUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&interim_results=true&encoding=linear16&sample_rate=16000&channels=1`;
           console.log('Connecting to Deepgram with URL:', deepgramUrl);
           
           deepgramWs = new WebSocket(deepgramUrl, {
@@ -177,7 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Forward audio data to Deepgram
           if (data.audio) {
             const audioBuffer = Buffer.from(data.audio, 'base64');
-            console.log('Forwarding audio buffer to Deepgram, size:', audioBuffer.length);
+            console.log('Forwarding audio buffer to Deepgram, size:', audioBuffer.length, 'first 20 bytes:', Array.from(audioBuffer.slice(0, 20)));
             deepgramWs.send(audioBuffer);
           } else {
             console.log('Received audio_data message but no audio data');
