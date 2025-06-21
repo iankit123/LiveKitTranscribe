@@ -329,15 +329,38 @@ Return in this exact JSON format:
       console.log('📨 Received response from Gemini');
       
       const rawJson = response.text;
-      if (rawJson) {
-        console.log('✅ Raw JSON from Gemini:', rawJson);
-        const data = JSON.parse(rawJson);
-        console.log('✅ Parsed data:', data);
-        res.json(data);
-      } else {
-        console.log('❌ Empty response from Gemini');
-        res.status(500).json({ error: 'Empty response from Gemini' });
+      console.log('✅ Raw JSON from Gemini:', rawJson);
+
+      if (!rawJson) {
+        console.error('❌ Empty response from Gemini');
+        return res.status(500).json({ error: 'Empty response from Gemini' });
       }
+
+      let data;
+      try {
+        data = JSON.parse(rawJson);
+        console.log('✅ Parsed data:', data);
+      } catch (parseError) {
+        console.error('❌ Failed to parse Gemini response:', parseError);
+        return res.status(500).json({ error: 'Failed to parse AI response' });
+      }
+
+      // Validate the response structure
+      if (!data || !data.suggestions || !Array.isArray(data.suggestions)) {
+        console.error('❌ Invalid response structure from Gemini:', data);
+        return res.status(500).json({ error: 'Invalid response structure from AI' });
+      }
+
+      // Clean the response to ensure no circular references
+      const cleanResponse = {
+        suggestions: data.suggestions.map((suggestion: any) => ({
+          question: String(suggestion.question || ''),
+          reasoning: String(suggestion.reasoning || '')
+        }))
+      };
+
+      console.log('✅ Sending clean response:', cleanResponse);
+      res.json(cleanResponse);
     } catch (error) {
       console.error('❌ Error generating follow-up suggestions:', error);
       res.status(500).json({ error: 'Failed to generate follow-up suggestions' });

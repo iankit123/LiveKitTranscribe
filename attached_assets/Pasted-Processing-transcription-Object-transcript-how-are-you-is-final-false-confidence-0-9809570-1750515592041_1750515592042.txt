@@ -1,0 +1,56 @@
+Processing transcription: 
+Object {transcript: "how are you", is_final: false, confidence: 0.98095703, timestamp: "2025-06-21T14:19:19.424Z"}
+Received transcription: 
+Object {transcript: "how are you", isFinal: false, confidence: 0.98095703, timestamp: "2025-06-21T14:19:19.424Z"}
+Received WebSocket message from server: 
+Object {type: "transcription", data: {…}}
+Processing transcription: 
+Object {transcript: "how are you", is_final: true, confidence: 0.98095703, timestamp: "2025-06-21T14:19:19.654Z"}
+Received transcription: 
+Object {transcript: "how are you", isFinal: true, confidence: 0.98095703, timestamp: "2025-06-21T14:19:19.654Z"}
+🎯 Generate suggestions button clicked
+📊 Current transcriptions: 10
+🔍 Starting follow-up question generation...
+📝 Found candidate responses: 8
+📝 All transcriptions: 
+(10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+📋 Formatted transcript for LLM: [Candidate]: i
+[Candidate]: you
+[Candidate]: cool
+[Candidate]: link share link
+[Candidate]: please copy the url manually
+[Candidate]: android
+[Candidate]: hello
+[Candidate]: how are you
+🚀 Sending request to Gemini API...
+🌐 Making API request to /api/gemini/follow-up-suggestions
+❌ Error in getFollowUpSuggestions: 
+TypeError {}
+
+at t.value (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+❌ API call failed: 
+TypeError {}
+
+at t.value (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+❌ Error generating suggestions: 
+TypeError {}
+message: "Converting circular structure to JSON↵ --> starting at object with constructor 'HTMLButtonElement'↵ | property '__reactFiber$2kn1jb1brav' -> object with constructor 'FiberNode'↵ --- property 'stateNode' closes the circle"
+stack: "TypeError: Converting circular structure to JSON↵ --> starting at object with constructor 'HTMLButtonElement'↵ | property '__reactFiber$2kn1jb1brav' -> object with constructor 'FiberNode'↵ --- property 'stateNode' closes the circle↵ at JSON.stringify (<anonymous>)↵ at GeminiService.getFollowUpSuggestions (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/src/services/gemini-service.ts:14:47)↵ at https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/src/hooks/use-follow-up-suggestions.ts:31:46↵ at handleGenerateSuggestions (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/src/components/follow-up-suggestions.tsx:46:13)↵ at HTMLUnknownElement.callCallback2 (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=8b02e239:3674:22)↵ at Object.invokeGuardedCallbackDev (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=8b02e239:3699:24)↵ at invokeGuardedCallback (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=8b02e239:3733:39)↵ at invokeGuardedCallbackAndCatchFirstError (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=8b02e239:3736:33)↵ at executeDispatch (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=8b02e239:7014:11)↵ at processDispatchQueueItemsInOrder (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=8b02e239:7034:15)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+constructor: ƒ TypeError()
+message: "Converting circular structure to JSON↵ --> starting at object with constructor 'HTMLButtonElement'↵ | property '__reactFiber$2kn1jb1brav' -> object with constructor 'FiberNode'↵ --- property 'stateNode' closes the circle"
+name: "TypeError"
+[[Prototype]]: Object
+
+🏁 Follow-up generation completed
+Track unsubscribed: audio from candidate-User-vg23da-1750515538672
+Track unsubscribed: video from candidate-User-vg23da-1750515538672
+Participant disconnected: candidate-User-vg23da-1750515538672

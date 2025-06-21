@@ -52,7 +52,12 @@ export function useFollowUpSuggestions() {
       const jobDescription = sessionStorage.getItem('jobDescription');
 
       try {
-        const response = await geminiService.getFollowUpSuggestions(transcriptText, jobDescription, customInstruction);
+        // Clean the inputs to prevent circular references
+        const cleanTranscriptText = String(transcriptText || '');
+        const cleanJobDescription = jobDescription ? String(jobDescription) : null;
+        const cleanCustomInstruction = customInstruction ? String(customInstruction) : undefined;
+        
+        const response = await geminiService.getFollowUpSuggestions(cleanTranscriptText, cleanJobDescription, cleanCustomInstruction);
         
         console.log('✅ Received response from Gemini:', JSON.stringify(response, null, 2));
         

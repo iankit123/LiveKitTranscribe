@@ -21,13 +21,18 @@ class GeminiService {
     try {
       console.log('🌐 Making API request to /api/gemini/follow-up-suggestions');
       
+      // Ensure all values are clean strings to avoid circular references
       const requestBody = {
-        transcriptText,
-        jobDescription,
-        customInstruction
+        transcriptText: String(transcriptText || ''),
+        jobDescription: jobDescription ? String(jobDescription) : null,
+        customInstruction: customInstruction ? String(customInstruction) : undefined
       };
       
-      console.log('📤 Request payload:', JSON.stringify(requestBody, null, 2));
+      console.log('📤 Request payload:', {
+        transcriptText: requestBody.transcriptText,
+        jobDescription: requestBody.jobDescription,
+        customInstruction: requestBody.customInstruction
+      });
       
       const response = await fetch('/api/gemini/follow-up-suggestions', {
         method: 'POST',
