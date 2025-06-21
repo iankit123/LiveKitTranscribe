@@ -79,12 +79,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
-  // WebSocket server for Deepgram proxy and real-time features
+  // WebSocket server for Deepgram proxy and real-time features  
   const wss = new WebSocketServer({ 
     server: httpServer, 
     path: '/ws',
-    perMessageDeflate: false
+    perMessageDeflate: false,
+    clientTracking: true
   });
+
+  console.log('WebSocket server initialized on path /ws');
 
   wss.on('connection', (ws: WebSocket, req) => {
     console.log('WebSocket client connected from:', req.socket.remoteAddress);
