@@ -111,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return;
           }
 
-          const deepgramUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&smart_format=true&interim_results=true&endpointing=300`;
+          const deepgramUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&smart_format=true&interim_results=true&endpointing=300&encoding=webm&sample_rate=48000&channels=1`;
           console.log('Connecting to Deepgram with URL:', deepgramUrl);
           
           deepgramWs = new WebSocket(deepgramUrl, {
@@ -149,6 +149,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 } else {
                   console.log('Empty transcript received from Deepgram');
                 }
+              } else if (result.type === 'Results' && result.channel) {
+                console.log('Deepgram Results response but no transcript:', JSON.stringify(result.channel, null, 2));
               } else {
                 console.log('No transcript in Deepgram response, type:', result.type);
               }
