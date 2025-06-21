@@ -145,6 +145,12 @@ Changelog:
   * Created integrated timer with current/next segment tracking and soft nudges
   * Enhanced live transcription with speaker badges and confidence scores
   * Improved follow-up suggestions with custom instruction input and copy functionality
+- June 21, 2025. Fixed critical interview plan and follow-up suggestions issues
+  * Resolved interview plan display - now properly shows current/next segments
+  * Fixed follow-up suggestions generation to work consistently on repeat clicks
+  * Enhanced state management with proper clearing and refresh mechanisms
+  * Added comprehensive error handling for WebSocket and AudioContext operations
+  * Successfully implemented plan format: "start - 1\nQuestion1 - 2\nQuestion2 - 1\nEnd - 1"
 ```
 
 ## User Preferences
