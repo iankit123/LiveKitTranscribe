@@ -361,6 +361,20 @@ export default function Meeting({ params }: MeetingProps) {
                   </div>
                   <div className="text-sm text-gray-600 mb-4">Elapsed Time</div>
                   
+                  {/* Interview Plan Progress */}
+                  {timerState?.currentBlock && (
+                    <div className="mb-4 text-sm">
+                      <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full mb-2">
+                        Current: {timerState.currentBlock.label} ({timerState.currentBlock.minutes}min)
+                      </div>
+                      {timerState.nextBlock && (
+                        <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
+                          Next: {timerState.nextBlock.label} ({timerState.nextBlock.minutes}min)
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
                   <div className="flex justify-center space-x-2">
                     <Button
                       onClick={() => {

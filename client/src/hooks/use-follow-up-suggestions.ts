@@ -28,16 +28,25 @@ export function useFollowUpSuggestions() {
       const safeTranscriptions = Array.isArray(transcriptions) ? transcriptions : [];
       
       if (safeTranscriptions.length === 0) {
-        console.log('⚠️ No transcriptions provided, generating test suggestions...');
-        // For testing purposes, generate suggestions with test data
-        const testTranscript = "Test interview conversation where candidate discusses their experience with React and JavaScript development.";
+        console.log('⚠️ No transcriptions provided, checking for stored data...');
+        
+        // Get job description from localStorage/sessionStorage
+        const jobDescription = localStorage.getItem('jobDescription') || sessionStorage.getItem('jobDescription');
+        
+        if (!jobDescription && !customInstruction) {
+          setError('No conversation found. Start transcription or provide job description first.');
+          return;
+        }
+        
+        // Use job description as base for suggestions if no transcripts
+        const baseText = jobDescription || "General technical interview discussion";
         
         try {
-          const response = await geminiService.getFollowUpSuggestions(testTranscript, null, customInstruction);
-          console.log('✅ Test suggestions generated:', response);
+          const response = await geminiService.getFollowUpSuggestions(baseText, jobDescription, customInstruction);
+          console.log('✅ Job-based suggestions generated:', response);
           setSuggestions(response.suggestions);
         } catch (error) {
-          console.error('❌ Failed to generate test suggestions:', error);
+          console.error('❌ Failed to generate suggestions:', error);
           setError('Failed to generate suggestions. Please check API configuration.');
         }
         return;
