@@ -13,21 +13,28 @@ export function useFollowUpSuggestions() {
       setIsLoading(true);
       setError(null);
       
-      // Get recent candidate responses (last 8 messages from non-"You" speakers)
+      // Get recent candidate responses (last 8 messages from non-interviewer speakers)
       const candidateResponses = transcriptions
-        .filter(t => t.isFinal && t.speaker !== 'You')
+        .filter(t => t.isFinal && !t.speaker.startsWith('interviewer-'))
         .slice(-8);
 
       console.log('📝 Found candidate responses:', candidateResponses.length);
+      console.log('📝 All transcriptions:', transcriptions.map(t => ({ speaker: t.speaker, text: t.text, isFinal: t.isFinal })));
       
       if (candidateResponses.length === 0) {
-        setError('No candidate responses found to analyze');
-        return;
+        console.log('⚠️ No candidate responses found, using all transcriptions for analysis');
+        // Fallback: use all final transcriptions if no specific candidate responses
+        const allFinalResponses = transcriptions.filter(t => t.isFinal).slice(-5);
+        if (allFinalResponses.length === 0) {
+          setError('No responses found to analyze');
+          return;
+        }
+        candidateResponses.push(...allFinalResponses);
       }
 
       // Format transcript for analysis
       const transcriptText = candidateResponses
-        .map(t => `[Candidate]: ${t.text}`)
+        .map(t => `[${t.speaker.startsWith('interviewer-') ? 'Interviewer' : 'Candidate'}]: ${t.text}`)
         .join('\n');
 
       console.log('📋 Formatted transcript for LLM:', transcriptText);

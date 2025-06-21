@@ -249,6 +249,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log('🔑 Gemini API key found, initializing AI service');
+      
+      // Import GoogleGenAI dynamically
+      const { GoogleGenAI } = await import('@google/genai');
       const ai = new GoogleGenAI({ apiKey });
 
       const prompt = `You are an expert interviewer. Based on the following transcript of a candidate's responses, suggest 1-2 intelligent follow-up questions that would help assess their technical skills, problem-solving approach, or experience in more depth.

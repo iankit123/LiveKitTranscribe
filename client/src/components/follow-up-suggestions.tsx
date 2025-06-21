@@ -72,7 +72,7 @@ export default function FollowUpSuggestions({ transcriptions }: FollowUpSuggesti
             </div>
             <Button 
               onClick={handleGenerateSuggestions}
-              disabled={isLoading || candidateResponseCount === 0}
+              disabled={isLoading}
               className="bg-yellow-600 hover:bg-yellow-700 text-white"
             >
               {isLoading ? (
