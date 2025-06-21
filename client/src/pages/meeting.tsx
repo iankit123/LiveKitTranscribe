@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, Copy, Share2 } from "lucide-react";
 import { useMeeting } from "@/hooks/use-meeting";
 import { useTranscription } from "@/hooks/use-transcription";
 import VideoGrid from "@/components/video-grid";
@@ -69,6 +69,41 @@ export default function Meeting({ params }: MeetingProps) {
     setLocation('/');
   };
 
+  const handleCopyLink = () => {
+    const meetingUrl = window.location.href;
+    navigator.clipboard.writeText(meetingUrl).then(() => {
+      toast({
+        title: "Link copied!",
+        description: "Meeting link has been copied to clipboard",
+      });
+    }).catch(() => {
+      toast({
+        title: "Copy failed",
+        description: "Please copy the URL manually from the address bar",
+        variant: "destructive",
+      });
+    });
+  };
+
+  const handleShare = async () => {
+    const meetingUrl = window.location.href;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join my video meeting',
+          text: `Join me in this video meeting room: ${roomName}`,
+          url: meetingUrl,
+        });
+      } catch (err) {
+        // User cancelled sharing, fallback to copy
+        handleCopyLink();
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
+
   if (isConnecting) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
@@ -113,6 +148,25 @@ export default function Meeting({ params }: MeetingProps) {
             <div className={`w-2 h-2 rounded-full ${isTranscribing ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`}></div>
             <span className="text-xs">{isTranscribing ? 'Transcribing' : 'Transcription Off'}</span>
           </div>
+
+          {/* Share Meeting */}
+          <Button 
+            onClick={handleShare}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            size="sm"
+          >
+            <Share2 className="mr-2" size={16} />
+            Share
+          </Button>
+          
+          <Button 
+            onClick={handleCopyLink}
+            className="bg-gray-600 hover:bg-gray-700 text-white"
+            size="sm"
+          >
+            <Copy className="mr-2" size={16} />
+            Copy Link
+          </Button>
           
           <Button 
             onClick={handleLeaveRoom}

@@ -2,14 +2,16 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Video, Play, Settings2 } from "lucide-react";
+import { Video, Play, Settings2, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const [isConnecting, setIsConnecting] = useState(false);
   const [transcriptionProvider, setTranscriptionProvider] = useState<'deepgram' | 'elevenlabs'>('deepgram');
+  const [joinRoomName, setJoinRoomName] = useState('');
   const { toast } = useToast();
 
   const handleStartMeeting = async () => {
@@ -17,7 +19,7 @@ export default function Home() {
       setIsConnecting(true);
       
       // Generate a random room name for demo purposes
-      const roomName = `test-room-${Math.random().toString(36).substring(2, 8)}`;
+      const roomName = `room-${Math.random().toString(36).substring(2, 8)}`;
       
       // Navigate to meeting room
       setLocation(`/meeting/${roomName}`);
@@ -26,6 +28,31 @@ export default function Home() {
       toast({
         title: "Connection Error",
         description: "Unable to start the meeting. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleJoinMeeting = async () => {
+    if (!joinRoomName.trim()) {
+      toast({
+        title: "Room name required",
+        description: "Please enter a room name to join",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsConnecting(true);
+      setLocation(`/meeting/${joinRoomName.trim()}`);
+    } catch (error) {
+      console.error('Error joining meeting:', error);
+      toast({
+        title: "Connection Error",
+        description: "Unable to join the meeting. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -51,14 +78,37 @@ export default function Home() {
               <span className="text-sm">Connecting to room...</span>
             </div>
           ) : (
-            <Button 
-              onClick={handleStartMeeting}
-              className="w-full bg-livekit hover:bg-livekit-dark text-white font-semibold py-4 px-6 h-auto"
-              size="lg"
-            >
-              <Play className="mr-2" size={20} />
-              Start Meeting
-            </Button>
+            <div className="space-y-4">
+              <Button 
+                onClick={handleStartMeeting}
+                className="w-full bg-livekit hover:bg-livekit-dark text-white font-semibold py-4 px-6 h-auto"
+                size="lg"
+              >
+                <Play className="mr-2" size={20} />
+                Start New Meeting
+              </Button>
+
+              <div className="text-center text-gray-500 text-sm">or</div>
+
+              <div className="space-y-2">
+                <Input
+                  placeholder="Enter room name to join..."
+                  value={joinRoomName}
+                  onChange={(e) => setJoinRoomName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleJoinMeeting()}
+                  className="w-full"
+                />
+                <Button 
+                  onClick={handleJoinMeeting}
+                  className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6"
+                  size="lg"
+                  disabled={!joinRoomName.trim()}
+                >
+                  <Users className="mr-2" size={20} />
+                  Join Meeting
+                </Button>
+              </div>
+            </div>
           )}
 
           <div className="mt-6 pt-6 border-t border-gray-200">
