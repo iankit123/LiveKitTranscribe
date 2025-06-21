@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { TranscriptionServiceFactory, TranscriptionResult } from '@/services/transcription-service';
 import type { TranscriptionEntry } from '@/components/transcription-panel';
 
-export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram') {
+export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram', room?: any) {
   const [transcriptions, setTranscriptions] = useState<TranscriptionEntry[]>([]);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState<string | null>(null);

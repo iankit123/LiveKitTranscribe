@@ -26,11 +26,24 @@ export function useMeeting() {
 
       // Set up event listeners
       connectedRoom.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
+        console.log('Participant connected:', participant.identity);
         setParticipants(prev => [...prev, participant]);
       });
 
       connectedRoom.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
+        console.log('Participant disconnected:', participant.identity);
         setParticipants(prev => prev.filter(p => p.sid !== participant.sid));
+      });
+
+      connectedRoom.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+        console.log('Track subscribed:', track.kind, 'from', participant.identity);
+        // Force re-render when tracks are subscribed
+        setParticipants(prev => [...prev]);
+      });
+
+      connectedRoom.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+        console.log('Track unsubscribed:', track.kind, 'from', participant.identity);
+        setParticipants(prev => [...prev]);
       });
 
       connectedRoom.on(RoomEvent.LocalTrackPublished, () => {

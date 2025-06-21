@@ -9,15 +9,19 @@ interface VideoGridProps {
 }
 
 function ParticipantVideo({ participant, isLocal = false }: { participant: LocalParticipant | RemoteParticipant, isLocal?: boolean }) {
-  const videoTrack = participant.videoTrackPublications.size > 0 
-    ? Array.from(participant.videoTrackPublications.values())[0]?.track 
+  const videoPublication = participant.videoTrackPublications.size > 0 
+    ? Array.from(participant.videoTrackPublications.values())[0]
     : null;
 
   return (
     <div className="relative aspect-video bg-gray-700 rounded-lg overflow-hidden">
-      {videoTrack ? (
+      {videoPublication?.track ? (
         <VideoTrack
-          trackRef={{ participant: participant, publication: videoTrack.publication, source: videoTrack.source }}
+          trackRef={{ 
+            participant: participant, 
+            publication: videoPublication, 
+            source: videoPublication.source 
+          }}
           className="w-full h-full object-cover"
         />
       ) : (

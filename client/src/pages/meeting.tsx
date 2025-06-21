@@ -42,7 +42,7 @@ export default function Meeting({ params }: MeetingProps) {
     startTranscription,
     stopTranscription,
     clearTranscriptions
-  } = useTranscription();
+  } = useTranscription('deepgram', room);
 
   useEffect(() => {
     if (roomName && !isConnecting && !isConnected && !error) {
