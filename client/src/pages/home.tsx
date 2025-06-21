@@ -49,6 +49,12 @@ export default function Home() {
 
     try {
       setIsConnecting(true);
+      
+      // Store job description in sessionStorage if provided
+      if (jobDescription.trim()) {
+        sessionStorage.setItem('jobDescription', jobDescription.trim());
+      }
+      
       setLocation(`/meeting/${joinRoomName.trim()}`);
     } catch (error) {
       console.error('Error joining meeting:', error);
