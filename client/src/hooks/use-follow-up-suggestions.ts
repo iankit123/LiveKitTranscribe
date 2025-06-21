@@ -9,7 +9,7 @@ export interface FollowUpHistoryEntry {
 }
 
 export function useFollowUpSuggestions() {
-  const [suggestions, setSuggestions] = useState<FollowUpResponse | null>(null);
+  const [suggestions, setSuggestions] = useState<FollowUpSuggestion[] | null>(null);
   const [followUpHistory, setFollowUpHistory] = useState<FollowUpHistoryEntry[]>([]);
   const [pinnedQuestions, setPinnedQuestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -96,17 +96,14 @@ export function useFollowUpSuggestions() {
         // Ensure response has the expected structure
         if (response && response.suggestions && Array.isArray(response.suggestions)) {
           console.log('✅ Setting suggestions in state:', response);
+          console.log('✅ Suggestions array:', response.suggestions);
           
-          // Force clear first, then set new suggestions
-          setSuggestions(null);
+          // Set suggestions directly as the array for simpler UI handling
+          const suggestionsArray = response.suggestions;
+          setSuggestions(suggestionsArray);
+          console.log('✅ Suggestions set as array:', suggestionsArray);
           
-          // Use setTimeout to ensure state update
-          setTimeout(() => {
-            setSuggestions(response);
-            console.log('✅ Suggestions set after timeout:', response);
-          }, 100);
-          
-          // Add to history before setting current suggestions
+          // Add to history
           if (response.suggestions.length > 0) {
             const historyEntry: FollowUpHistoryEntry = {
               suggestions: response.suggestions,

@@ -123,6 +123,9 @@ export default function Meeting({ params }: MeetingProps) {
     isLoading,
     generateSuggestions
   } = useFollowUpSuggestions();
+  
+  console.log('🎯 Component level - suggestions state:', suggestions);
+  console.log('🎯 Component level - isLoading:', isLoading);
 
   const handleGenerateSuggestions = () => {
     console.log('🎯 Generate suggestions clicked');
@@ -634,14 +637,15 @@ export default function Meeting({ params }: MeetingProps) {
 
                   {/* Suggestions List */}
                   <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {console.log('🎯 Rendering suggestions:', suggestions)}
-                    {!suggestions || !suggestions.suggestions || suggestions.suggestions.length === 0 ? (
+                    {console.log('🎯 Rendering suggestions - raw:', suggestions)}
+                    {console.log('🎯 Rendering suggestions - type:', typeof suggestions, 'isArray:', Array.isArray(suggestions))}
+                    {!suggestions || !Array.isArray(suggestions) || suggestions.length === 0 ? (
                       <div className="text-center py-6">
                         <Lightbulb className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                         <p className="text-gray-500 text-sm">Generate follow-up questions based on the conversation</p>
                       </div>
                     ) : (
-                      (suggestions.suggestions || []).slice(0, 5).map((suggestion, index) => (
+                      suggestions.slice(0, 5).map((suggestion, index) => (
                         <div key={index} className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                           <p className="text-sm text-gray-800 font-medium mb-2">
                             {suggestion.question}
