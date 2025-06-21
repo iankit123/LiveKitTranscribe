@@ -14,6 +14,7 @@ export default function Home() {
   const [transcriptionProvider, setTranscriptionProvider] = useState<'deepgram' | 'elevenlabs'>('deepgram');
   const [joinRoomName, setJoinRoomName] = useState('');
   const [jobDescription, setJobDescription] = useState('');
+  const [interviewPlan, setInterviewPlan] = useState('');
   const { toast } = useToast();
 
   const handleStartMeeting = async () => {
@@ -107,6 +108,23 @@ export default function Home() {
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Optional: Helps AI generate more relevant follow-up questions
+                </p>
+              </div>
+
+              {/* Interview Plan Input */}
+              <div>
+                <label htmlFor="interviewPlan" className="block text-sm font-medium mb-2 flex items-center">
+                  📝 Interview Plan (Break into Time Blocks)
+                </label>
+                <Textarea
+                  id="interviewPlan"
+                  placeholder="Intro - 10&#10;Project discussion - 15&#10;Case question - 15&#10;Coding - 15&#10;Wrap-up - 5"
+                  value={interviewPlan}
+                  onChange={(e) => setInterviewPlan(e.target.value)}
+                  className="min-h-[100px] resize-none font-mono text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Optional: Enter each section with time in minutes (e.g., "Intro - 10")
                 </p>
               </div>
 

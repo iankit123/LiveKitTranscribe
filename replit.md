@@ -127,6 +127,12 @@ Changelog:
   * Implemented role-specific meeting URLs with ?role=interviewer/candidate parameters
   * Enhanced meeting link sharing to generate appropriate links for each role
   * Fixed JSON circular reference errors in follow-up suggestions API
+- June 21, 2025. Added interview time planning and smart nudges system
+  * Built interview plan input on home page with time block parsing (e.g., "Intro - 10")
+  * Created interview timer with real-time tracking and block progression
+  * Implemented smart nudge system to remind interviewer of planned transitions
+  * Added timer panel showing current/next blocks and elapsed time
+  * Enhanced interviewer dashboard with time management tools
 ```
 
 ## User Preferences
