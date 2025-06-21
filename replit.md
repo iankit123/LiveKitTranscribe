@@ -122,6 +122,11 @@ Changelog:
   * Fixed proper speaker tagging (Interviewer vs Candidate) in transcripts
   * Implemented follow-up history preservation with pinning functionality
   * Added manual prompt injection for customized LLM suggestions
+- June 21, 2025. UI improvements and role-based URL sharing
+  * Replaced refresh icon with "Add Instructions" text button for better UX
+  * Implemented role-specific meeting URLs with ?role=interviewer/candidate parameters
+  * Enhanced meeting link sharing to generate appropriate links for each role
+  * Fixed JSON circular reference errors in follow-up suggestions API
 ```
 
 ## User Preferences

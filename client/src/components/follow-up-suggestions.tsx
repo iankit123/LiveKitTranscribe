@@ -84,12 +84,11 @@ export default function FollowUpSuggestions({ transcriptions }: FollowUpSuggesti
           <div className="flex items-center space-x-2">
             <Button
               onClick={handleRefreshClick}
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="text-gray-500 hover:text-gray-700"
-              title="Add custom instruction"
+              className="text-xs"
             >
-              <RefreshCw className="w-4 h-4" />
+              Add Instructions
             </Button>
             {(suggestions || followUpHistory.length > 0) && (
               <Button
