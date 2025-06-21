@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Lightbulb, Copy, RefreshCw, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Lightbulb, Copy, RefreshCw, X, Pin, Clock, Send } from "lucide-react";
 import { useFollowUpSuggestions } from "@/hooks/use-follow-up-suggestions";
 import { useToast } from "@/hooks/use-toast";
 import type { TranscriptionEntry } from "@/components/transcription-panel";
@@ -11,13 +13,37 @@ interface FollowUpSuggestionsProps {
 }
 
 export default function FollowUpSuggestions({ transcriptions }: FollowUpSuggestionsProps) {
-  const { suggestions, isLoading, error, generateSuggestions, clearSuggestions } = useFollowUpSuggestions();
+  const { 
+    suggestions, 
+    followUpHistory, 
+    pinnedQuestions, 
+    isLoading, 
+    error, 
+    generateSuggestions, 
+    clearSuggestions, 
+    clearHistory,
+    togglePinQuestion 
+  } = useFollowUpSuggestions();
   const { toast } = useToast();
+  const [showCustomInstruction, setShowCustomInstruction] = useState(false);
+  const [customInstruction, setCustomInstruction] = useState('');
 
-  const handleGenerateSuggestions = () => {
+  const handleGenerateSuggestions = (instruction?: string) => {
     console.log('🎯 Generate suggestions button clicked');
     console.log('📊 Current transcriptions:', transcriptions.length);
-    generateSuggestions(transcriptions);
+    generateSuggestions(transcriptions, instruction);
+    if (instruction) {
+      setCustomInstruction('');
+      setShowCustomInstruction(false);
+    }
+  };
+
+  const handleRefreshClick = () => {
+    if (showCustomInstruction) {
+      handleGenerateSuggestions(customInstruction);
+    } else {
+      setShowCustomInstruction(true);
+    }
   };
 
   const handleCopyQuestion = (question: string) => {
@@ -35,7 +61,7 @@ export default function FollowUpSuggestions({ transcriptions }: FollowUpSuggesti
     });
   };
 
-  const candidateResponseCount = transcriptions.filter(t => t.isFinal && t.speaker !== 'You').length;
+  const candidateResponseCount = transcriptions.filter(t => t.isFinal && t.speaker === 'Candidate').length;
 
   return (
     <Card className="mt-4">
@@ -59,7 +85,44 @@ export default function FollowUpSuggestions({ transcriptions }: FollowUpSuggesti
       </CardHeader>
 
       <CardContent className="pt-0">
-        {!suggestions && !error && (
+        {showCustomInstruction && (
+          <div className="mb-4 p-4 bg-gray-50 rounded-lg border">
+            <label className="block text-sm font-medium mb-2">
+              Add instruction for next suggestion (optional)
+            </label>
+            <div className="flex space-x-2">
+              <Input
+                value={customInstruction}
+                onChange={(e) => setCustomInstruction(e.target.value)}
+                placeholder="e.g., Focus more on technical architecture, Ask about specific technologies..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleGenerateSuggestions(customInstruction);
+                  }
+                }}
+              />
+              <Button
+                onClick={() => handleGenerateSuggestions(customInstruction)}
+                disabled={isLoading}
+                size="sm"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowCustomInstruction(false);
+                  setCustomInstruction('');
+                }}
+                variant="outline"
+                size="sm"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {!suggestions && !error && followUpHistory.length === 0 && (
           <div className="text-center py-6">
             <div className="text-gray-500 mb-4">
               <Lightbulb className="w-12 h-12 mx-auto mb-2 opacity-50" />
@@ -71,7 +134,7 @@ export default function FollowUpSuggestions({ transcriptions }: FollowUpSuggesti
               </p>
             </div>
             <Button 
-              onClick={handleGenerateSuggestions}
+              onClick={() => handleGenerateSuggestions()}
               disabled={isLoading}
               className="bg-yellow-600 hover:bg-yellow-700 text-white"
             >

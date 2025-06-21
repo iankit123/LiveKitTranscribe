@@ -7,15 +7,15 @@ export function useFollowUpSuggestions() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const generateSuggestions = useCallback(async (transcriptions: TranscriptionEntry[]) => {
+  const generateSuggestions = useCallback(async (transcriptions: TranscriptionEntry[], customInstruction?: string) => {
     try {
       console.log('🔍 Starting follow-up question generation...');
       setIsLoading(true);
       setError(null);
       
-      // Get recent candidate responses (last 8 messages from non-interviewer speakers)
+      // Get recent candidate responses (last 8 messages from candidates)
       const candidateResponses = transcriptions
-        .filter(t => t.isFinal && !t.speaker.startsWith('interviewer-'))
+        .filter(t => t.isFinal && t.speaker === 'Candidate')
         .slice(-8);
 
       console.log('📝 Found candidate responses:', candidateResponses.length);
@@ -34,15 +34,29 @@ export function useFollowUpSuggestions() {
 
       // Format transcript for analysis
       const transcriptText = candidateResponses
-        .map(t => `[${t.speaker.startsWith('interviewer-') ? 'Interviewer' : 'Candidate'}]: ${t.text}`)
+        .map(t => `[${t.speaker}]: ${t.text}`)
         .join('\n');
 
       console.log('📋 Formatted transcript for LLM:', transcriptText);
       console.log('🚀 Sending request to Gemini API...');
 
-      const response = await geminiService.getFollowUpSuggestions(transcriptText);
+      // Get job description from session storage
+      const jobDescription = sessionStorage.getItem('jobDescription');
+
+      const response = await geminiService.getFollowUpSuggestions(transcriptText, jobDescription, customInstruction);
       
       console.log('✅ Received response from Gemini:', response);
+      
+      // Add to history before setting current suggestions
+      if (response.suggestions.length > 0) {
+        const historyEntry: FollowUpHistoryEntry = {
+          suggestions: response.suggestions,
+          timestamp: new Date().toLocaleTimeString(),
+          pinnedQuestions: []
+        };
+        setFollowUpHistory(prev => [historyEntry, ...prev]);
+      }
+      
       setSuggestions(response);
     } catch (err) {
       console.error('❌ Error generating suggestions:', err);

@@ -17,7 +17,7 @@ class GeminiService {
     this.ai = new GoogleGenAI({ apiKey: 'proxy' });
   }
 
-  async getFollowUpSuggestions(transcriptText: string): Promise<FollowUpResponse> {
+  async getFollowUpSuggestions(transcriptText: string, jobDescription?: string | null, customInstruction?: string): Promise<FollowUpResponse> {
     try {
       console.log('🌐 Making API request to /api/gemini/follow-up-suggestions');
       
@@ -27,7 +27,9 @@ class GeminiService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          transcriptText
+          transcriptText,
+          jobDescription,
+          customInstruction
         }),
       });
 

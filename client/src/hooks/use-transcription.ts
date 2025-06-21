@@ -163,9 +163,10 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       try {
         const data = JSON.parse(new TextDecoder().decode(payload));
         if (data.type === 'transcription') {
+          const speakerName = participant.identity?.startsWith('interviewer-') ? 'Interviewer' : 'Candidate';
           const entry: TranscriptionEntry = {
             ...data.entry,
-            speaker: participant.name || participant.identity,
+            speaker: speakerName,
             id: `${participant.identity}-${data.entry.id}`,
           };
           

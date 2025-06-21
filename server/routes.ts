@@ -233,7 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/gemini/follow-up-suggestions', async (req: Request, res: Response) => {
     try {
       console.log('🚀 Received follow-up suggestions request');
-      const { transcriptText } = req.body;
+      const { transcriptText, jobDescription, customInstruction } = req.body;
 
       if (!transcriptText) {
         console.log('❌ No transcript text provided');

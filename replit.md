@@ -117,6 +117,11 @@ Changelog:
   * Implemented rolling transcript analysis (last 8 candidate messages)
   * Added server-side Gemini API proxy for secure key handling
   * Created smart interviewer prompts for technical question generation
+- June 21, 2025. Enhanced interview experience with 4 major features
+  * Added job description input on home page for LLM context
+  * Fixed proper speaker tagging (Interviewer vs Candidate) in transcripts
+  * Implemented follow-up history preservation with pinning functionality
+  * Added manual prompt injection for customized LLM suggestions
 ```
 
 ## User Preferences
