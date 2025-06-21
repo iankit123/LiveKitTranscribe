@@ -20,6 +20,11 @@ export default function Home() {
     try {
       setIsConnecting(true);
       
+      // Store job description in sessionStorage if provided
+      if (jobDescription.trim()) {
+        sessionStorage.setItem('jobDescription', jobDescription.trim());
+      }
+      
       // Generate a random room name for demo purposes
       const roomName = `room-${Math.random().toString(36).substring(2, 8)}`;
       
@@ -86,7 +91,25 @@ export default function Home() {
               <span className="text-sm">Connecting to room...</span>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Job Description Input */}
+              <div>
+                <label htmlFor="jobDescription" className="block text-sm font-medium mb-2 flex items-center">
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  Brief Job Description (for AI context)
+                </label>
+                <Textarea
+                  id="jobDescription"
+                  placeholder="e.g., Senior Frontend Developer with React expertise, 5+ years experience..."
+                  value={jobDescription}
+                  onChange={(e) => setJobDescription(e.target.value)}
+                  className="min-h-[80px] resize-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Optional: Helps AI generate more relevant follow-up questions
+                </p>
+              </div>
+
               <Button 
                 onClick={handleStartMeeting}
                 className="w-full bg-livekit hover:bg-livekit-dark text-white font-semibold py-4 px-6 h-auto"
