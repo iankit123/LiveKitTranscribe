@@ -1,5 +1,4 @@
 import { Room, LocalParticipant, RemoteParticipant, Track, RoomEvent, ParticipantEvent } from "livekit-client";
-import { VideoTrack, AudioTrack, RoomAudioRenderer, useParticipants, useLocalParticipant } from "@livekit/components-react";
 import { User, Mic, MicOff, Video as VideoIcon, VideoOff } from "lucide-react";
 import { useEffect, useRef } from "react";
 
@@ -39,27 +38,24 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
       // Handle local participant
       const localParticipant = participant as LocalParticipant;
       
-      const attachLocalVideo = async () => {
-        try {
-          // Enable camera first
-          await localParticipant.setCameraEnabled(true);
-          
-          // Get video track
-          const videoTrack = localParticipant.videoTrackPublications.size > 0 
-            ? Array.from(localParticipant.videoTrackPublications.values())[0]?.videoTrack
-            : localParticipant.cameraTrack;
-
-          if (videoTrack) {
+      const attachLocalVideo = () => {
+        // Get video track from publications
+        const videoTrack = Array.from(localParticipant.videoTrackPublications.values())[0]?.videoTrack;
+        
+        if (videoTrack) {
+          try {
             videoTrack.attach(videoElement);
             console.log('Local video attached for:', localParticipant.identity);
+          } catch (error) {
+            console.error('Error attaching local video:', error);
           }
-        } catch (error) {
-          console.error('Error setting up local video:', error);
         }
       };
 
+      // Try immediate attachment
       attachLocalVideo();
 
+      // Listen for track published events
       const handleTrackPublished = () => {
         setTimeout(attachLocalVideo, 100);
       };
@@ -76,22 +72,34 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
       const attachRemoteVideo = () => {
         const videoTrack = Array.from(remoteParticipant.videoTrackPublications.values())[0]?.videoTrack;
         if (videoTrack) {
-          videoTrack.attach(videoElement);
-          console.log('Remote video attached for:', remoteParticipant.identity);
+          try {
+            videoTrack.attach(videoElement);
+            console.log('Remote video attached for:', remoteParticipant.identity);
+          } catch (error) {
+            console.error('Error attaching remote video:', error);
+          }
         }
       };
 
       const handleTrackSubscribed = (track: Track) => {
         if (track.kind === Track.Kind.Video) {
-          track.attach(videoElement);
-          console.log('Remote video track subscribed for:', remoteParticipant.identity);
+          try {
+            track.attach(videoElement);
+            console.log('Remote video track subscribed for:', remoteParticipant.identity);
+          } catch (error) {
+            console.error('Error attaching subscribed track:', error);
+          }
         }
       };
 
       const handleTrackUnsubscribed = (track: Track) => {
         if (track.kind === Track.Kind.Video) {
-          track.detach(videoElement);
-          console.log('Remote video track unsubscribed for:', remoteParticipant.identity);
+          try {
+            track.detach(videoElement);
+            console.log('Remote video track unsubscribed for:', remoteParticipant.identity);
+          } catch (error) {
+            console.error('Error detaching unsubscribed track:', error);
+          }
         }
       };
 

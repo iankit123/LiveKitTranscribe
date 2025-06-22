@@ -151,6 +151,12 @@ Changelog:
   * Enhanced state management with proper clearing and refresh mechanisms
   * Added comprehensive error handling for WebSocket and AudioContext operations
   * Successfully implemented plan format: "start - 1\nQuestion1 - 2\nQuestion2 - 1\nEnd - 1"
+- June 22, 2025. Fixed video display and track publishing issues
+  * Resolved "No room provided" LiveKit component context errors
+  * Fixed duplicate track publishing that caused connection failures
+  * Enhanced video track attachment logic with proper error handling
+  * Improved participant role labeling for interviewer vs candidate views
+  * Added camera/microphone enablement during room connection process
 ```
 
 ## User Preferences

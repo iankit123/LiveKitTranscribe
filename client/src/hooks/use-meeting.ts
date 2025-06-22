@@ -21,15 +21,6 @@ export function useMeeting() {
       
       setRoom(connectedRoom);
       setIsConnected(true);
-
-      // Enable camera and microphone for local participant
-      try {
-        await connectedRoom.localParticipant.enableCameraAndMicrophone();
-        console.log('Camera and microphone enabled');
-      } catch (error) {
-        console.error('Failed to enable camera/microphone:', error);
-      }
-
       setLocalParticipant(connectedRoom.localParticipant);
       setParticipants(Array.from(connectedRoom.remoteParticipants.values()));
 

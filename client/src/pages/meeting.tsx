@@ -318,7 +318,7 @@ export default function Meeting({ params }: MeetingProps) {
       {/* Main Dashboard */}
       <div className="p-6 pt-20">
         {/* Video Section */}
-        {isConnected && room && (
+        {isConnected && room && localParticipant && (
           <div className="mb-6">
             <VideoGrid 
               room={room} 
