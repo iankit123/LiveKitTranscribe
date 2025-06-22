@@ -224,6 +224,12 @@ Changelog:
   * Enhanced audio track attachment and management in VideoGrid component
   * Improved LiveKit token permissions to include audio publishing/subscribing capabilities
   * Transcription functionality remains fully working and unaffected
+- June 22, 2025. Implemented proper audio element architecture for participant communication
+  * Created AudioEnabledParticipant component with dedicated audio elements for remote participants
+  * Fixed track subscription handling to properly attach audio streams to DOM elements
+  * Enhanced microphone enablement and publishing verification in connection flow
+  * Added comprehensive audio debugging and status logging for troubleshooting
+  * Ensured backward compatibility with working transcription system
 ```
 
 ## User Preferences

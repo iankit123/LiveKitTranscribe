@@ -185,6 +185,101 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
   );
 }
 
+// Audio-enabled participant component
+function AudioEnabledParticipant({ participant, isLocal, userRole }: {
+  participant: LocalParticipant | RemoteParticipant;
+  isLocal: boolean;
+  userRole?: string;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    if (!participant) return;
+
+    const handleTrackSubscribed = (track: Track) => {
+      console.log(`🎵 Track subscribed: ${track.kind} from ${participant.identity}`);
+      
+      if (track.kind === Track.Kind.Video && videoRef.current) {
+        track.attach(videoRef.current);
+        console.log(`✅ Video attached for ${participant.identity}`);
+      } else if (track.kind === Track.Kind.Audio && !isLocal && audioRef.current) {
+        track.attach(audioRef.current);
+        audioRef.current.volume = 1.0;
+        audioRef.current.muted = false;
+        console.log(`✅ Audio attached for ${participant.identity} - Volume: ${audioRef.current.volume}`);
+        
+        // Force audio play to overcome autoplay restrictions
+        audioRef.current.play().catch(e => console.log('Audio autoplay prevented:', e));
+      }
+    };
+
+    const handleTrackUnsubscribed = (track: Track) => {
+      console.log(`❌ Track unsubscribed: ${track.kind} from ${participant.identity}`);
+      
+      if (track.kind === Track.Kind.Video && videoRef.current) {
+        track.detach(videoRef.current);
+      } else if (track.kind === Track.Kind.Audio && audioRef.current) {
+        track.detach(audioRef.current);
+      }
+    };
+
+    // Attach existing tracks immediately
+    participant.audioTrackPublications.forEach((pub) => {
+      if (pub.track) handleTrackSubscribed(pub.track);
+    });
+    
+    participant.videoTrackPublications.forEach((pub) => {
+      if (pub.track) handleTrackSubscribed(pub.track);
+    });
+
+    // Listen for future track changes
+    participant.on(ParticipantEvent.TrackSubscribed, handleTrackSubscribed);
+    participant.on(ParticipantEvent.TrackUnsubscribed, handleTrackUnsubscribed);
+
+    return () => {
+      participant.off(ParticipantEvent.TrackSubscribed, handleTrackSubscribed);
+      participant.off(ParticipantEvent.TrackUnsubscribed, handleTrackUnsubscribed);
+    };
+  }, [participant, isLocal]);
+
+  const getDisplayName = () => {
+    if (isLocal) {
+      return userRole === 'interviewer' ? 'You (Interviewer)' : 'You (Candidate)';
+    } else {
+      const participantRole = participant.identity.includes('interviewer') ? 'Interviewer' : 'Candidate';
+      const shortId = participant.identity.split('-').pop()?.substring(0, 6) || '';
+      return `${participantRole}-${shortId}`;
+    }
+  };
+
+  return (
+    <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video">
+      <video
+        ref={videoRef}
+        className="w-full h-full object-cover"
+        autoPlay
+        playsInline
+        muted={isLocal}
+      />
+      
+      {/* CRITICAL: Audio element for remote participants */}
+      {!isLocal && (
+        <audio
+          ref={audioRef}
+          autoPlay
+          playsInline
+          style={{ display: 'none' }}
+        />
+      )}
+      
+      <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
+        {getDisplayName()}
+      </div>
+    </div>
+  );
+}
+
 export default function VideoGrid({ room, localParticipant, participants, userRole }: VideoGridProps & { userRole?: string }) {
   console.log('VideoGrid - Local participant:', localParticipant?.identity);
   console.log('VideoGrid - Remote participants:', participants.map(p => p.identity));
@@ -193,16 +288,16 @@ export default function VideoGrid({ room, localParticipant, participants, userRo
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
       {/* Local participant */}
       {localParticipant && (
-        <ParticipantVideo 
+        <AudioEnabledParticipant 
           participant={localParticipant} 
           isLocal={true} 
           userRole={userRole}
         />
       )}
       
-      {/* Remote participants */}
+      {/* Remote participants with audio support */}
       {participants.map((participant) => (
-        <ParticipantVideo
+        <AudioEnabledParticipant
           key={participant.identity}
           participant={participant}
           isLocal={false}
