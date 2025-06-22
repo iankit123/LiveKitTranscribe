@@ -56,9 +56,13 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
             pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
           }
           
-          // Send audio data continuously (remove threshold for testing)
-          console.log(`🎤 CAPTURING: PCM=${pcmData.length} samples, level=${audioLevel.toFixed(4)}`);
-          transcriptionServiceRef.current.sendAudio(pcmData.buffer);
+          // Send audio data with threshold to reduce noise
+          if (audioLevel > 0.01) { // Only send meaningful audio
+            if (Math.random() < 0.05) { // Reduced logging
+              console.log(`🎤 CAPTURING: PCM=${pcmData.length} samples, level=${audioLevel.toFixed(4)}`);
+            }
+            transcriptionServiceRef.current.sendAudio(pcmData.buffer);
+          }
         };
 
         source.connect(processor);

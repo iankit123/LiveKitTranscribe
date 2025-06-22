@@ -135,7 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           // Use working Deepgram parameters from June 21st
-          const deepgramUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&interim_results=true&smart_format=true&punctuate=true`;
+          const deepgramUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&interim_results=true&smart_format=true&punctuate=true&encoding=linear16&sample_rate=16000&channels=1`;
           console.log('Connecting to Deepgram with URL:', deepgramUrl);
           
           deepgramWs = new WebSocket(deepgramUrl, {
@@ -232,12 +232,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const audioLevel = Array.from(new Int16Array(audioBuffer.buffer, audioBuffer.byteOffset, audioBuffer.length / 2))
             .reduce((max, val) => Math.max(max, Math.abs(val)), 0);
           
-          console.log(`🔊 SERVER RECEIVED: ${audioBuffer.length}bytes, level=${audioLevel}, format=PCM`);
+          // Reduced server logging for performance
+          if (Math.random() < 0.05) { // Log 5% of chunks
+            console.log(`🔊 SERVER RECEIVED: ${audioBuffer.length}bytes, level=${audioLevel}, format=PCM`);
+          }
           
-          // Send PCM audio to Deepgram WebSocket with proper format
+          // CRITICAL FIX: Send raw binary PCM data to Deepgram (not JSON)
           if (deepgramWs && deepgramWs.readyState === 1) {
-            deepgramWs.send(audioBuffer);
-            console.log(`📤 SENT TO DEEPGRAM: ${audioBuffer.length}bytes PCM audio`);
+            deepgramWs.send(audioBuffer, { binary: true });
+            if (Math.random() < 0.05) {
+              console.log(`📤 SENT RAW PCM TO DEEPGRAM: ${audioBuffer.length}bytes`);
+            }
           } else {
             console.error('📤 ERROR: Deepgram WebSocket not ready, state:', deepgramWs?.readyState);
           }
