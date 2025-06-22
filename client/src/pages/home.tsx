@@ -152,28 +152,47 @@ export default function Home() {
                       How it works
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-4">
+                    {/* Step 1 */}
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-xs font-semibold text-indigo-600">1</span>
                       </div>
-                      <p className="text-sm text-gray-600">Plan your interview
-                      Define your job role and structure the interview timeline with section-wise durations
-</p>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-800 mb-1">Plan your interview</h4>
+                        <p className="text-sm text-gray-600">
+                          Define your job role and structure the interview timeline with section-wise durations.
+                        </p>
+                      </div>
                     </div>
+
+                    {/* Step 2 */}
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-cyan-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-xs font-semibold text-cyan-600">2</span>
                       </div>
-                      <p className="text-sm text-gray-600">Start the meeting and share the candidate link</p>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-800 mb-1">Start the call & invite candidate</h4>
+                        <p className="text-sm text-gray-600">
+                          Launch your session and share a single smart link — no downloads needed.
+                        </p>
+                      </div>
                     </div>
+
+                    {/* Step 3 */}
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-xs font-semibold text-purple-600">3</span>
                       </div>
-                      <p className="text-sm text-gray-600">Get real-time transcription and AI-powered follow-up suggestions</p>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-800 mb-1">Let AI assist you</h4>
+                        <p className="text-sm text-gray-600">
+                          Get live transcription, section time alerts, and smart follow-up suggestions powered by your job description.
+                        </p>
+                      </div>
                     </div>
                   </CardContent>
+
                 </Card>
 
                 <Card className="backdrop-blur-sm bg-white/90 border-0 shadow-xl">
