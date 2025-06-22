@@ -49,10 +49,10 @@ export default function Meeting({ params }: MeetingProps) {
   const [interviewPlanText, setInterviewPlanText] = useState("");
 
   // Role prompt modal state
-  const [showRoleModal, setShowRoleModal] = useState(true); // Start with modal shown
+  const [showRoleModal, setShowRoleModal] = useState(false);
   const [participantName, setParticipantName] = useState("");
   const [userRole, setUserRole] = useState<'Interviewer' | 'Candidate' | ''>('');
-  const [isReadyToConnect, setIsReadyToConnect] = useState(false); // Start not ready to connect
+  const [isReadyToConnect, setIsReadyToConnect] = useState(false);
 
   // Check URL parameters for role specification (fallback)
   const urlParams = new URLSearchParams(window.location.search);
@@ -200,11 +200,9 @@ export default function Meeting({ params }: MeetingProps) {
       setIsReadyToConnect(true);
     } else {
       console.log("❓ Missing data, showing role modal");
-      console.log("🔧 Setting isReadyToConnect to false");
       // Show modal to collect missing information - don't connect until submitted
       setShowRoleModal(true);
       setIsReadyToConnect(false);
-      console.log("🔧 Modal state set - showRoleModal:", true, "isReadyToConnect:", false);
     }
   }, [urlRole]);
 
@@ -342,40 +340,13 @@ export default function Meeting({ params }: MeetingProps) {
   // Show modal if not ready to connect - Force display for testing
   console.log("🔍 Render check - isReadyToConnect:", isReadyToConnect, "showRoleModal:", showRoleModal);
   
-  // Always show modal for testing
-  if (true) {
-    console.log("🔍 Rendering modal (forced for testing)");
+  // Show modal if not ready to connect
+  if (!isReadyToConnect) {
     return (
-      <div 
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.8)',
-          zIndex: 10000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
-        <div 
-          style={{
-            backgroundColor: 'white',
-            padding: '32px',
-            borderRadius: '12px',
-            maxWidth: '500px',
-            width: '90%',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-          }}
-        >
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>
-            Join the Meeting
-          </h2>
-          <p style={{ marginBottom: '24px', color: '#666' }}>
-            Please enter your name and select your role to continue.
-          </p>
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white rounded-lg p-8 w-full max-w-md mx-4 shadow-xl">
+          <h2 className="text-2xl font-bold mb-4">Join the Meeting</h2>
+          <p className="text-gray-600 mb-6">Please enter your name and select your role to continue.</p>
           
           <form onSubmit={(e) => {
             e.preventDefault();
@@ -386,9 +357,9 @@ export default function Meeting({ params }: MeetingProps) {
             if (name && role) {
               handleRoleSubmit({ name, role });
             }
-          }}>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+          }} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Your Name
               </label>
               <input
@@ -396,61 +367,41 @@ export default function Meeting({ params }: MeetingProps) {
                 type="text"
                 placeholder="Enter your full name"
                 required
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #ddd',
-                  borderRadius: '6px',
-                  fontSize: '16px'
-                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 autoFocus
               />
             </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', marginBottom: '12px', fontWeight: '500' }}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
                 Your Role
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '16px',
-                  border: '2px solid #ddd',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}>
+              <div className="grid grid-cols-1 gap-3">
+                <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                   <input
                     type="radio"
                     name="role"
                     value="Interviewer"
                     required
-                    style={{ marginRight: '12px' }}
+                    className="mr-3"
                   />
                   <div>
-                    <div style={{ fontWeight: '500' }}>Interviewer</div>
-                    <div style={{ fontSize: '14px', color: '#666' }}>Conducting the interview</div>
+                    <div className="font-medium">Interviewer</div>
+                    <div className="text-sm text-gray-500">Conducting the interview</div>
                   </div>
                 </label>
                 
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '16px',
-                  border: '2px solid #ddd',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}>
+                <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                   <input
                     type="radio"
                     name="role"
                     value="Candidate"
                     required
-                    style={{ marginRight: '12px' }}
+                    className="mr-3"
                   />
                   <div>
-                    <div style={{ fontWeight: '500' }}>Candidate</div>
-                    <div style={{ fontSize: '14px', color: '#666' }}>Being interviewed</div>
+                    <div className="font-medium">Candidate</div>
+                    <div className="text-sm text-gray-500">Being interviewed</div>
                   </div>
                 </label>
               </div>
@@ -458,17 +409,7 @@ export default function Meeting({ params }: MeetingProps) {
 
             <button
               type="submit"
-              style={{
-                width: '100%',
-                padding: '12px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '16px',
-                fontWeight: '500',
-                cursor: 'pointer'
-              }}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition-colors"
             >
               Continue to Meeting
             </button>
