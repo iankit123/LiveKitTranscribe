@@ -50,30 +50,36 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         const inputData = inputBuffer.getChannelData(0);
         const maxAmplitude = Math.max(...inputData.map(Math.abs));
         
-        // Only process audio with sufficient volume
-        if (maxAmplitude < 0.01) {
-          return; // Skip very quiet audio
-        }
+        // Always process audio data - no volume filtering to avoid missing speech
         
         // Downsample from 44100Hz to 16000Hz for Deepgram
-        const downsampleFactor = Math.round(44100 / 16000);
+        const downsampleFactor = 44100 / 16000;
         const downsampledLength = Math.floor(inputData.length / downsampleFactor);
         const downsampledData = new Float32Array(downsampledLength);
         
+        // Better downsampling with anti-aliasing
         for (let i = 0; i < downsampledLength; i++) {
-          downsampledData[i] = inputData[i * downsampleFactor];
+          const sourceIndex = i * downsampleFactor;
+          const index1 = Math.floor(sourceIndex);
+          const index2 = Math.min(index1 + 1, inputData.length - 1);
+          const fraction = sourceIndex - index1;
+          
+          // Linear interpolation
+          downsampledData[i] = inputData[index1] * (1 - fraction) + inputData[index2] * fraction;
         }
         
-        // Convert to 16-bit PCM with proper scaling
+        // Convert to 16-bit PCM with proper scaling and limiting
         const pcmData = new Int16Array(downsampledLength);
         for (let i = 0; i < downsampledLength; i++) {
-          const sample = downsampledData[i] * 32767;
-          pcmData[i] = Math.max(-32768, Math.min(32767, Math.round(sample)));
+          // Apply some gain to boost quiet speech
+          const gainedSample = downsampledData[i] * 2.0;
+          const sample = gainedSample * 32767;
+          pcmData[i] = Math.max(-32767, Math.min(32767, Math.round(sample)));
         }
         
-        // Log audio processing
-        if (Math.random() < 0.02) {
-          console.log(`Audio: original=${inputData.length}, downsampled=${downsampledLength}, max_amp=${maxAmplitude.toFixed(3)}`);
+        // Log meaningful audio chunks
+        if (maxAmplitude > 0.001 && Math.random() < 0.1) {
+          console.log(`Sending audio: ${downsampledLength} samples, amplitude=${maxAmplitude.toFixed(3)}`);
         }
         
         transcriptionServiceRef.current.sendAudio(pcmData.buffer);
