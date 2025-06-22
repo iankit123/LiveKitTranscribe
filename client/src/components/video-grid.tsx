@@ -1,6 +1,7 @@
-import { Room, LocalParticipant, RemoteParticipant } from "livekit-client";
+import { Room, LocalParticipant, RemoteParticipant, Track, RoomEvent, ParticipantEvent } from "livekit-client";
 import { VideoTrack, AudioTrack, RoomAudioRenderer, useParticipants, useLocalParticipant } from "@livekit/components-react";
 import { User, Mic, MicOff, Video as VideoIcon, VideoOff } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 interface VideoGridProps {
   room: Room;
@@ -13,9 +14,7 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
   isLocal?: boolean,
   userRole?: string 
 }) {
-  const videoPublication = participant.videoTrackPublications.size > 0 
-    ? Array.from(participant.videoTrackPublications.values())[0]
-    : null;
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Determine correct display name based on role
   const getDisplayName = () => {
@@ -31,20 +30,99 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
 
   const displayName = getDisplayName();
 
+  useEffect(() => {
+    if (!videoRef.current) return;
+
+    const videoElement = videoRef.current;
+
+    if (isLocal) {
+      // Handle local participant
+      const localParticipant = participant as LocalParticipant;
+      
+      const attachLocalVideo = async () => {
+        try {
+          // Enable camera first
+          await localParticipant.setCameraEnabled(true);
+          
+          // Get video track
+          const videoTrack = localParticipant.videoTrackPublications.size > 0 
+            ? Array.from(localParticipant.videoTrackPublications.values())[0]?.videoTrack
+            : localParticipant.cameraTrack;
+
+          if (videoTrack) {
+            videoTrack.attach(videoElement);
+            console.log('Local video attached for:', localParticipant.identity);
+          }
+        } catch (error) {
+          console.error('Error setting up local video:', error);
+        }
+      };
+
+      attachLocalVideo();
+
+      const handleTrackPublished = () => {
+        setTimeout(attachLocalVideo, 100);
+      };
+
+      localParticipant.on(ParticipantEvent.LocalTrackPublished, handleTrackPublished);
+
+      return () => {
+        localParticipant.off(ParticipantEvent.LocalTrackPublished, handleTrackPublished);
+      };
+    } else {
+      // Handle remote participant
+      const remoteParticipant = participant as RemoteParticipant;
+
+      const attachRemoteVideo = () => {
+        const videoTrack = Array.from(remoteParticipant.videoTrackPublications.values())[0]?.videoTrack;
+        if (videoTrack) {
+          videoTrack.attach(videoElement);
+          console.log('Remote video attached for:', remoteParticipant.identity);
+        }
+      };
+
+      const handleTrackSubscribed = (track: Track) => {
+        if (track.kind === Track.Kind.Video) {
+          track.attach(videoElement);
+          console.log('Remote video track subscribed for:', remoteParticipant.identity);
+        }
+      };
+
+      const handleTrackUnsubscribed = (track: Track) => {
+        if (track.kind === Track.Kind.Video) {
+          track.detach(videoElement);
+          console.log('Remote video track unsubscribed for:', remoteParticipant.identity);
+        }
+      };
+
+      // Attach existing tracks
+      attachRemoteVideo();
+
+      // Listen for new tracks
+      remoteParticipant.on(ParticipantEvent.TrackSubscribed, handleTrackSubscribed);
+      remoteParticipant.on(ParticipantEvent.TrackUnsubscribed, handleTrackUnsubscribed);
+
+      return () => {
+        remoteParticipant.off(ParticipantEvent.TrackSubscribed, handleTrackSubscribed);
+        remoteParticipant.off(ParticipantEvent.TrackUnsubscribed, handleTrackUnsubscribed);
+      };
+    }
+  }, [participant, isLocal]);
+
+  const hasVideo = participant.videoTrackPublications.size > 0;
+
   return (
     <div className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden">
-      {videoPublication?.track ? (
-        <VideoTrack
-          trackRef={{ 
-            participant: participant, 
-            publication: videoPublication, 
-            source: videoPublication.source 
-          }}
-          className="w-full h-full object-cover"
-          style={{ objectFit: 'cover' }}
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-gray-800">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted={isLocal}
+        className="w-full h-full object-cover"
+      />
+      
+      {!hasVideo && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
           <div className="text-center text-gray-300">
             <User size={48} className="mx-auto mb-2" />
             <div className="text-sm font-medium">{displayName}</div>
