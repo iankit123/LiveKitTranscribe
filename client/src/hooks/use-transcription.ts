@@ -21,10 +21,10 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       // Get user media for audio with settings optimized for speech recognition
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
-          echoCancellation: true,   // Enable for cleaner speech
-          noiseSuppression: true,   // Enable to reduce background noise
-          autoGainControl: true,    // Enable for consistent volume
-          sampleRate: 44100,        // Use browser default, resample later
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 16000,        // Match Deepgram exactly
           channelCount: 1,
         } 
       });
@@ -40,49 +40,34 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         }
       }
 
-      // Use Web Audio API with resampling for Deepgram compatibility
-      audioContextRef.current = new AudioContext({ sampleRate: 44100 });
+      // Use Web Audio API with exact Deepgram sample rate
+      audioContextRef.current = new AudioContext({ sampleRate: 16000 });
       sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
-      processorRef.current = audioContextRef.current.createScriptProcessor(4096, 1, 1);
+      processorRef.current = audioContextRef.current.createScriptProcessor(1024, 1, 1);
       
       processorRef.current.onaudioprocess = (event) => {
         const inputBuffer = event.inputBuffer;
         const inputData = inputBuffer.getChannelData(0);
         const maxAmplitude = Math.max(...inputData.map(Math.abs));
         
-        // Always process audio data - no volume filtering to avoid missing speech
+        // Audio is already at 16kHz, no resampling needed
         
-        // Downsample from 44100Hz to 16000Hz for Deepgram
-        const downsampleFactor = 44100 / 16000;
-        const downsampledLength = Math.floor(inputData.length / downsampleFactor);
-        const downsampledData = new Float32Array(downsampledLength);
+        // Convert directly to 16-bit PCM with proper scaling
+        const pcmData = new Int16Array(inputData.length);
+        for (let i = 0; i < inputData.length; i++) {
+          // Convert float32 [-1,1] to int16 [-32768,32767]
+          const sample = Math.max(-1, Math.min(1, inputData[i]));
+          pcmData[i] = Math.round(sample * 32767);
+        }
         
-        // Better downsampling with anti-aliasing
-        for (let i = 0; i < downsampledLength; i++) {
-          const sourceIndex = i * downsampleFactor;
-          const index1 = Math.floor(sourceIndex);
-          const index2 = Math.min(index1 + 1, inputData.length - 1);
-          const fraction = sourceIndex - index1;
+        // Only send chunks with actual audio content
+        if (maxAmplitude > 0.002) {
+          transcriptionServiceRef.current.sendAudio(pcmData.buffer);
           
-          // Linear interpolation
-          downsampledData[i] = inputData[index1] * (1 - fraction) + inputData[index2] * fraction;
+          if (Math.random() < 0.05) {
+            console.log(`Audio sent: ${pcmData.length} samples, max=${maxAmplitude.toFixed(3)}`);
+          }
         }
-        
-        // Convert to 16-bit PCM with proper scaling and limiting
-        const pcmData = new Int16Array(downsampledLength);
-        for (let i = 0; i < downsampledLength; i++) {
-          // Apply some gain to boost quiet speech
-          const gainedSample = downsampledData[i] * 2.0;
-          const sample = gainedSample * 32767;
-          pcmData[i] = Math.max(-32767, Math.min(32767, Math.round(sample)));
-        }
-        
-        // Log meaningful audio chunks
-        if (maxAmplitude > 0.001 && Math.random() < 0.1) {
-          console.log(`Sending audio: ${downsampledLength} samples, amplitude=${maxAmplitude.toFixed(3)}`);
-        }
-        
-        transcriptionServiceRef.current.sendAudio(pcmData.buffer);
       };
       
       sourceRef.current.connect(processorRef.current);
@@ -104,9 +89,8 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       transcriptionServiceRef.current.onTranscription((result: TranscriptionResult) => {
         console.log(`📝 Received transcription: "${result.transcript}" (final=${result.isFinal}, confidence=${result.confidence})`);
         
-        // Only process non-empty transcripts
+        // Skip empty transcripts to keep UI clean
         if (!result.transcript || result.transcript.trim().length === 0) {
-          console.log('⚠️ Skipping empty transcript');
           return;
         }
         // Determine speaker based on participant identity or role

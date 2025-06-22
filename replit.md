@@ -182,6 +182,12 @@ Changelog:
   * Enhanced PCM conversion with correct bit depth and sample rate handling
   * Improved volume thresholds to capture speech while filtering noise
   * Resolved empty transcript issue by fixing audio encoding pipeline
+- June 22, 2025. Resolved Deepgram "corrupt data" error and implemented proper audio format
+  * Fixed audio capture to use native 16kHz sample rate matching Deepgram requirements
+  * Eliminated unnecessary resampling that was corrupting audio data
+  * Simplified PCM conversion to proper int16 format without distortion
+  * Added visual feedback showing transcription is actively listening
+  * Implemented proper audio chunk filtering to send only meaningful speech data
 ```
 
 ## User Preferences
