@@ -185,31 +185,40 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
   );
 }
 
-export default function VideoGrid({ room, localParticipant, participants }: VideoGridProps) {
-  const allParticipants = localParticipant ? [localParticipant, ...participants] : participants;
+export default function VideoGrid({ room, localParticipant, participants, userRole }: VideoGridProps & { userRole?: string }) {
+  console.log('VideoGrid - Local participant:', localParticipant?.identity);
+  console.log('VideoGrid - Remote participants:', participants.map(p => p.identity));
 
   return (
-    <div className="bg-gray-800 rounded-xl p-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {localParticipant && (
-          <ParticipantVideo participant={localParticipant} isLocal={true} />
-        )}
-        {participants.map((participant) => (
-          <ParticipantVideo key={participant.sid} participant={participant} />
-        ))}
-
-        {/* Empty Participant Slots */}
-        {allParticipants.length < 6 && (
-          <div className="relative aspect-video bg-gray-700 rounded-lg overflow-hidden border-2 border-dashed border-gray-600">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center text-gray-500">
-                <User size={32} className="mx-auto mb-2" />
-                <div className="text-sm">Waiting for participants...</div>
-              </div>
-            </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+      {/* Local participant */}
+      {localParticipant && (
+        <ParticipantVideo 
+          participant={localParticipant} 
+          isLocal={true} 
+          userRole={userRole}
+        />
+      )}
+      
+      {/* Remote participants */}
+      {participants.map((participant) => (
+        <ParticipantVideo
+          key={participant.identity}
+          participant={participant}
+          isLocal={false}
+          userRole={userRole}
+        />
+      ))}
+      
+      {/* Placeholder when no remote participants */}
+      {participants.length === 0 && localParticipant && (
+        <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center border-2 border-dashed border-gray-300">
+          <div className="text-center text-gray-500">
+            <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">Waiting for {userRole === 'interviewer' ? 'candidate' : 'interviewer'}...</p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
