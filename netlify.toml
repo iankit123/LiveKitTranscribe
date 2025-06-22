@@ -1,14 +1,20 @@
 [build]
-  command = "npm run build"
+  command = "vite build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "18"
+  NPM_FLAGS = "--prefix=."
 
-# Redirect all API calls to serverless functions
+# Handle API routes through serverless functions
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  from = "/api/livekit/*"
+  to = "/.netlify/functions/livekit-:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/gemini/*"
+  to = "/.netlify/functions/gemini-:splat"
   status = 200
 
 # Handle client-side routing (SPA)
