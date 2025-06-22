@@ -803,8 +803,139 @@ export default function Meeting({ params }: MeetingProps) {
 
       {/* Role Prompt Modal */}
       {console.log('🔍 Meeting page - showRoleModal:', showRoleModal)}
+      {showRoleModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            zIndex: 10000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <div 
+            style={{
+              backgroundColor: 'white',
+              padding: '32px',
+              borderRadius: '12px',
+              maxWidth: '500px',
+              width: '90%',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+            }}
+          >
+            <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>
+              Join the Meeting
+            </h2>
+            <p style={{ marginBottom: '24px', color: '#666' }}>
+              Please enter your name and select your role to continue.
+            </p>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target as HTMLFormElement);
+              const name = formData.get('name') as string;
+              const role = formData.get('role') as 'Interviewer' | 'Candidate';
+              
+              if (name && role) {
+                handleRoleSubmit({ name, role });
+              }
+            }}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                  Your Name
+                </label>
+                <input
+                  name="name"
+                  type="text"
+                  placeholder="Enter your full name"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '2px solid #ddd',
+                    borderRadius: '6px',
+                    fontSize: '16px'
+                  }}
+                  autoFocus
+                />
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', marginBottom: '12px', fontWeight: '500' }}>
+                  Your Role
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '16px',
+                    border: '2px solid #ddd',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}>
+                    <input
+                      type="radio"
+                      name="role"
+                      value="Interviewer"
+                      required
+                      style={{ marginRight: '12px' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: '500' }}>Interviewer</div>
+                      <div style={{ fontSize: '14px', color: '#666' }}>Conducting the interview</div>
+                    </div>
+                  </label>
+                  
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '16px',
+                    border: '2px solid #ddd',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}>
+                    <input
+                      type="radio"
+                      name="role"
+                      value="Candidate"
+                      required
+                      style={{ marginRight: '12px' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: '500' }}>Candidate</div>
+                      <div style={{ fontSize: '14px', color: '#666' }}>Being interviewed</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}
+              >
+                Continue to Meeting
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
       <RolePromptModal 
-        isOpen={showRoleModal} 
+        isOpen={false} 
         onSubmit={handleRoleSubmit} 
       />
     </div>
