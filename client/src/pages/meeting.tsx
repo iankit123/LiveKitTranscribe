@@ -406,25 +406,7 @@ export default function Meeting({ params }: MeetingProps) {
     return isInterviewer ? "Interviewer" : "Candidate";
   };
 
-  // ADDITIONAL: Enhanced transcription hook initialization
-  // Make sure the transcription hook is properly identifying the current user's role
-  const {
-    transcriptions,
-    isTranscribing,
-    startTranscription,
-    stopTranscription,
-    clearTranscriptions,
-  } = useTranscription(
-    "deepgram",
-    room,
-    isInterviewer ? "interviewer" : "candidate",
-    {
-      // Pass additional context to help with speaker identification
-      localParticipantId: localParticipant?.identity,
-      currentUserRole: isInterviewer ? "interviewer" : "candidate",
-      participants: participants,
-    },
-  );
+  // Note: Transcription hook is already initialized above, no need to duplicate
 
   // ENHANCED: Better participant name generation in useEffect
   useEffect(() => {
