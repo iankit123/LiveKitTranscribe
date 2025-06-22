@@ -197,7 +197,7 @@ export default function Home() {
               {/* Right Column - Setup Form */}
               <Card className="backdrop-blur-sm bg-white/90 border-0 shadow-2xl">
                 <CardHeader className="flex flex-col space-y-1.5 p-6 bg-[#e2e8fe]">
-                  <CardTitle className="text-2xl font-bold text-gray-900">Interview Setup</CardTitle>
+                  <CardTitle className="text-2xl font-bold text-gray-900">Setup Your First Interview</CardTitle>
                   <p className="text-gray-600">Configure your interview session</p>
                 </CardHeader>
                 <CardContent className="space-y-6">
