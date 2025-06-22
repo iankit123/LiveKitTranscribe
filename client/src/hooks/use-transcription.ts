@@ -29,44 +29,9 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       
       audioStreamRef.current = stream;
       
-      processorRef.current.onaudioprocess = (event) => {
-        const inputBuffer = event.inputBuffer;
-        const inputData = inputBuffer.getChannelData(0);
-        const maxAmplitude = Math.max(...inputData.map(Math.abs));
-        
-        // Downsample from 44.1kHz to 16kHz for Deepgram
-        const downsampleRatio = 44100 / 16000;
-        const outputLength = Math.floor(inputData.length / downsampleRatio);
-        const downsampledData = new Float32Array(outputLength);
-        
-        // Simple decimation downsampling
-        for (let i = 0; i < outputLength; i++) {
-          const sourceIndex = Math.floor(i * downsampleRatio);
-          downsampledData[i] = inputData[sourceIndex];
-        }
-        
-        // Convert to 16-bit PCM
-        const pcmData = new Int16Array(outputLength);
-        for (let i = 0; i < outputLength; i++) {
-          const sample = Math.max(-1, Math.min(1, downsampledData[i]));
-          pcmData[i] = Math.round(sample * 32767);
-        }
-        
-        // Send audio with active speech detection
-        if (maxAmplitude > 0.005) {
-          transcriptionServiceRef.current.sendAudio(pcmData.buffer);
-          
-          if (Math.random() < 0.03) {
-            console.log(`Speech audio sent: ${outputLength} samples, amplitude=${maxAmplitude.toFixed(3)}`);
-          }
-        }
-      };
-      
       // Start recording with short intervals for real-time processing
       mediaRecorderRef.current.start(1000); // 1 second intervals
       console.log('MediaRecorder started with 1 second intervals');
-
-      let isRecording = true;
 
       // Set up transcription service callbacks
       transcriptionServiceRef.current.onTranscription((result: TranscriptionResult) => {
@@ -130,7 +95,7 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       await transcriptionServiceRef.current.start();
       
       setIsTranscribing(true);
-      console.log('Transcription started successfully with Web Audio API');
+      console.log('Transcription started successfully with MediaRecorder');
 
     } catch (err) {
       console.error('Failed to start transcription:', err);
