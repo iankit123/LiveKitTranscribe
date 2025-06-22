@@ -10,17 +10,21 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
   const transcriptionServiceRef = useRef(TranscriptionServiceFactory.create(provider));
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
 
   const startTranscription = useCallback(async () => {
     try {
       setError(null);
       
-      // Get user media for audio (simplified approach from working version)
+      // Get user media with settings optimized for speech recognition
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
+          echoCancellation: false,
+          noiseSuppression: false,
+          sampleRate: 16000,
+          channelCount: 1,
         } 
       });
       
@@ -53,7 +57,7 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
             const reader = new FileReader();
             reader.onload = () => {
               const arrayBuffer = reader.result as ArrayBuffer;
-              transcriptionServiceRef.current.sendAudio(arrayBuffer);
+            transcriptionServiceRef.current.sendAudio(arrayBuffer);
             };
             reader.readAsArrayBuffer(event.data);
           }
