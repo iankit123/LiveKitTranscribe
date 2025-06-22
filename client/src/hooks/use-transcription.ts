@@ -15,56 +15,71 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
     try {
       setError(null);
       
-      // Get user media for audio (separate from LiveKit for transcription)
+      // Get user media for audio (simplified approach from working version)
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          sampleRate: 16000,
-          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
         } 
       });
       
       audioStreamRef.current = stream;
-
-      // Use Web Audio API to get raw PCM data instead of compressed audio
-      const audioContext = new AudioContext({ sampleRate: 16000 });
-      const source = audioContext.createMediaStreamSource(stream);
-      const processor = audioContext.createScriptProcessor(4096, 1, 1);
       
-      processor.onaudioprocess = (event) => {
-        const inputBuffer = event.inputBuffer;
-        const inputData = inputBuffer.getChannelData(0);
-        
-        // Convert float32 to int16 PCM
-        const pcmData = new Int16Array(inputData.length);
-        for (let i = 0; i < inputData.length; i++) {
-          pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
+      // Setup MediaRecorder with proper error handling
+      try {
+        // Check MediaRecorder support first
+        if (!MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          console.log('opus not supported, trying webm');
+          if (!MediaRecorder.isTypeSupported('audio/webm')) {
+            console.log('webm not supported, using default');
+            mediaRecorderRef.current = new MediaRecorder(stream);
+          } else {
+            mediaRecorderRef.current = new MediaRecorder(stream, {
+              mimeType: 'audio/webm'
+            });
+          }
+        } else {
+          mediaRecorderRef.current = new MediaRecorder(stream, {
+            mimeType: 'audio/webm;codecs=opus'
+          });
         }
         
-        // Send PCM data to transcription service
-        transcriptionServiceRef.current.sendAudio(pcmData.buffer);
-      };
-      
-      source.connect(processor);
-      processor.connect(audioContext.destination);
-      
-      console.log('Using Web Audio API for PCM audio capture');
-      
-      // Store references for cleanup
-      mediaRecorderRef.current = { 
-        stop: () => {
-          processor.disconnect();
-          source.disconnect();
-          audioContext.close();
-        }
-      } as any;
-
-      let isRecording = true;
+        mediaRecorderRef.current.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            console.log('MediaRecorder data available:', event.data.size, 'bytes');
+            
+            // Convert blob to audio buffer for transcription
+            const reader = new FileReader();
+            reader.onload = () => {
+              const arrayBuffer = reader.result as ArrayBuffer;
+              transcriptionServiceRef.current.sendAudio(arrayBuffer);
+            };
+            reader.readAsArrayBuffer(event.data);
+          }
+        };
+        
+        mediaRecorderRef.current.onerror = (event) => {
+          console.error('MediaRecorder error:', event);
+          setError('MediaRecorder error occurred');
+        };
+        
+        // Start recording with intervals
+        mediaRecorderRef.current.start(1000);
+        console.log('MediaRecorder started successfully');
+        
+      } catch (error) {
+        console.error('MediaRecorder setup failed:', error);
+        throw error;
+      }
 
       // Set up transcription service callbacks
       transcriptionServiceRef.current.onTranscription((result: TranscriptionResult) => {
-        console.log('Received transcription:', result);
+        // Process all transcripts
+        if (!result.transcript || result.transcript.trim().length === 0) {
+          return;
+        }
+        
         // Determine speaker based on participant identity or role
         const participantIdentity = room?.localParticipant?.identity || '';
         const speakerRole = participantIdentity.startsWith('Interviewer-') ? 'Interviewer' : 
@@ -81,8 +96,7 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         };
 
         setTranscriptions(prev => {
-          const finalEntries = prev.filter(t => t.isFinal);
-          const newTranscriptions = result.isFinal ? [...finalEntries, entry] : [...finalEntries, entry];
+          const newTranscriptions = [...prev, entry];
           
           // Broadcast final transcription to interviewer via data channel
           if (result.isFinal && room?.localParticipant && !isInterviewer) {
@@ -115,7 +129,7 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       await transcriptionServiceRef.current.start();
       
       setIsTranscribing(true);
-      console.log('Transcription started successfully with Web Audio API');
+      console.log('Transcription started successfully with MediaRecorder');
 
     } catch (err) {
       console.error('Failed to start transcription:', err);
@@ -125,40 +139,87 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
   }, []);
 
   const stopTranscription = useCallback(async () => {
+    if (!isTranscribing) return;
+
     try {
-      // Stop media recorder
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      console.log('Stopping transcription service...');
+      
+      // Stop transcription service first
+      if (transcriptionServiceRef.current) {
+        await transcriptionServiceRef.current.stop();
+      }
+      
+      // Stop MediaRecorder
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
         mediaRecorderRef.current.stop();
       }
+      
+      // MediaRecorder cleanup (no audio context needed)
 
       // Stop audio stream
       if (audioStreamRef.current) {
-        audioStreamRef.current.getTracks().forEach(track => track.stop());
+        console.log('Stopping media stream...');
+        try {
+          audioStreamRef.current.getTracks().forEach(track => track.stop());
+        } catch (e) {
+          console.warn('Error stopping media tracks:', e);
+        }
         audioStreamRef.current = null;
       }
 
-      // Stop transcription service
-      await transcriptionServiceRef.current.stop();
+      // Clean up MediaRecorder reference
+      mediaRecorderRef.current = null;
       
       setIsTranscribing(false);
+      setError(null);
+      console.log('Transcription stopped successfully');
+      
     } catch (err) {
       console.error('Failed to stop transcription:', err);
       setError(err instanceof Error ? err.message : 'Failed to stop transcription');
+      
+      // Force cleanup even if error occurred
+      audioStreamRef.current = null;
+      mediaRecorderRef.current = null;
+      setIsTranscribing(false);
     }
-  }, []);
+  }, [isTranscribing]);
 
   const clearTranscriptions = useCallback(() => {
     setTranscriptions([]);
   }, []);
 
-  // Clean up on unmount
+  // Clean up on unmount with proper async handling
   useEffect(() => {
     return () => {
       if (isTranscribing) {
-        stopTranscription();
+        stopTranscription().catch(console.error);
       }
     };
   }, [isTranscribing, stopTranscription]);
+
+  // Additional cleanup for page navigation
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (isTranscribing && audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        try {
+          // Synchronous emergency cleanup
+          if (processorRef.current) {
+            processorRef.current.disconnect();
+          }
+          if (sourceRef.current) {
+            sourceRef.current.disconnect();
+          }
+          audioContextRef.current.close();
+        } catch (e) {
+          console.warn('Emergency cleanup failed:', e);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isTranscribing]);
 
   // Listen for transcriptions from other participants (only if interviewer)
   useEffect(() => {
