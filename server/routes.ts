@@ -133,8 +133,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return;
           }
 
-          // Use PCM audio format with enhanced parameters for better speech recognition
-          const deepgramUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&interim_results=true&encoding=linear16&sample_rate=16000&channels=1&smart_format=true&punctuate=true&profanity_filter=false&diarize=false`;
+          // Use optimized Deepgram parameters for speech recognition
+          const deepgramUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&encoding=linear16&sample_rate=16000&channels=1&interim_results=true&smart_format=true&punctuate=true&endpointing=300`;
           console.log('Connecting to Deepgram with URL:', deepgramUrl);
           
           deepgramWs = new WebSocket(deepgramUrl, {
@@ -160,21 +160,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 
                 console.log(`🎙️ Deepgram: type=${result.type}, transcript="${transcript}", confidence=${confidence}, is_final=${result.is_final}`);
                 
-                // Send ALL transcripts to client, including empty ones for debugging
-                ws.send(JSON.stringify({
-                  type: 'transcription',
-                  data: {
-                    transcript: transcript || '',
-                    is_final: result.is_final || false,
-                    confidence: confidence,
-                    timestamp: new Date().toISOString()
-                  }
-                }));
-                
+                // Only send non-empty transcripts to avoid UI clutter
                 if (transcript && transcript.trim().length > 0) {
                   console.log('✅ Valid transcript sent to client');
+                  ws.send(JSON.stringify({
+                    type: 'transcription',
+                    data: {
+                      transcript: transcript.trim(),
+                      is_final: result.is_final || false,
+                      confidence: confidence,
+                      timestamp: new Date().toISOString()
+                    }
+                  }));
                 } else {
-                  console.log('⚠️ Empty transcript sent to client for debugging');
+                  console.log('⚠️ Empty transcript from Deepgram, not sending to client');
                 }
               } else if (result.type === 'Metadata') {
                 console.log('📊 Deepgram metadata:', result.model_info?.name);
@@ -205,15 +204,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (data.audio) {
             const audioBuffer = Buffer.from(data.audio, 'base64');
             
-            // Only log and send non-empty buffers with actual audio data
+            // Validate and send audio data to Deepgram
             if (audioBuffer.length > 0) {
-              // Check if buffer contains actual audio data (not all zeros)
-              const hasAudioData = audioBuffer.some(byte => byte !== 0);
+              // Check for audio signal variation
+              let hasSignal = false;
+              for (let i = 0; i < audioBuffer.length - 1; i += 2) {
+                const sample = audioBuffer.readInt16LE(i);
+                if (Math.abs(sample) > 100) { // Threshold for meaningful audio
+                  hasSignal = true;
+                  break;
+                }
+              }
               
-              if (hasAudioData) {
-                // Log occasionally to track activity
-                if (Math.random() < 0.02) {
-                  console.log(`📢 Active audio: size=${audioBuffer.length}bytes, deepgram_ready=${deepgramWs.readyState === 1}`);
+              if (hasSignal) {
+                if (Math.random() < 0.05) {
+                  console.log(`Sending meaningful audio: ${audioBuffer.length} bytes`);
                 }
                 deepgramWs.send(audioBuffer);
               }

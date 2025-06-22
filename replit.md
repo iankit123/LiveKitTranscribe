@@ -176,6 +176,12 @@ Changelog:
   * Improved Deepgram connection parameters with smart formatting and punctuation
   * Added comprehensive audio pipeline logging for better debugging
   * Optimized PCM audio conversion and transmission to reduce API overhead
+- June 22, 2025. Fixed audio format compatibility issues preventing speech recognition
+  * Implemented proper audio downsampling from 44.1kHz to 16kHz for Deepgram compatibility
+  * Added audio signal validation to ensure meaningful audio data reaches Deepgram
+  * Enhanced PCM conversion with correct bit depth and sample rate handling
+  * Improved volume thresholds to capture speech while filtering noise
+  * Resolved empty transcript issue by fixing audio encoding pipeline
 ```
 
 ## User Preferences
