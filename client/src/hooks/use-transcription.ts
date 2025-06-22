@@ -18,11 +18,12 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
     try {
       setError(null);
       
-      // Get user media for audio (separate from LiveKit for transcription)
+      // Get user media for audio with optimized settings for speech recognition
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
+          echoCancellation: true,  // Enable echo cancellation for better quality
+          noiseSuppression: true,  // Enable noise suppression
+          autoGainControl: true,   // Enable automatic gain control
           sampleRate: 16000,
           channelCount: 1,
         } 
@@ -48,22 +49,33 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         const inputBuffer = event.inputBuffer;
         const inputData = inputBuffer.getChannelData(0);
         
-        // Convert float32 to int16 PCM
-        const pcmData = new Int16Array(inputData.length);
-        for (let i = 0; i < inputData.length; i++) {
-          pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
-        }
-        
         // Check for actual audio activity (non-silence)
-        const hasActivity = inputData.some(sample => Math.abs(sample) > 0.01);
+        const hasActivity = inputData.some(sample => Math.abs(sample) > 0.001);
+        const maxAmplitude = Math.max(...inputData.map(Math.abs));
         
-        // Log audio processing activity (less frequent to avoid spam)
-        if (Math.random() < 0.005) { // Log ~0.5% of audio chunks
-          console.log(`🎵 Audio processing: chunk_size=${pcmData.length}, has_activity=${hasActivity}, max_amplitude=${Math.max(...inputData.map(Math.abs)).toFixed(3)}`);
+        // Only send audio data if there's actual activity
+        if (hasActivity && maxAmplitude > 0.001) {
+          // Convert float32 to int16 PCM with proper scaling
+          const pcmData = new Int16Array(inputData.length);
+          for (let i = 0; i < inputData.length; i++) {
+            // Apply gain and proper clipping
+            const sample = inputData[i] * 32767;
+            pcmData[i] = Math.max(-32768, Math.min(32767, sample));
+          }
+          
+          // Log audio processing activity (less frequent to avoid spam)
+          if (Math.random() < 0.01) { // Log ~1% of audio chunks
+            console.log(`🎵 Audio active: chunk_size=${pcmData.length}, max_amplitude=${maxAmplitude.toFixed(3)}, sending to Deepgram`);
+          }
+          
+          // Send PCM data to transcription service
+          transcriptionServiceRef.current.sendAudio(pcmData.buffer);
+        } else {
+          // Skip silent audio to reduce unnecessary API calls
+          if (Math.random() < 0.001) {
+            console.log(`🔇 Skipping silent audio chunk, max_amplitude=${maxAmplitude.toFixed(6)}`);
+          }
         }
-        
-        // Send PCM data to transcription service
-        transcriptionServiceRef.current.sendAudio(pcmData.buffer);
       };
       
       sourceRef.current.connect(processorRef.current);

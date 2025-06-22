@@ -133,8 +133,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return;
           }
 
-          // Use PCM audio format for better compatibility
-          const deepgramUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&interim_results=true&encoding=linear16&sample_rate=16000&channels=1`;
+          // Use PCM audio format with enhanced parameters for better speech recognition
+          const deepgramUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&interim_results=true&encoding=linear16&sample_rate=16000&channels=1&smart_format=true&punctuate=true&profanity_filter=false&diarize=false`;
           console.log('Connecting to Deepgram with URL:', deepgramUrl);
           
           deepgramWs = new WebSocket(deepgramUrl, {
@@ -202,12 +202,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Forward audio data to Deepgram
           if (data.audio) {
             const audioBuffer = Buffer.from(data.audio, 'base64');
-            console.log(`📢 Audio: size=${audioBuffer.length}bytes, deepgram_state=${deepgramWs.readyState}, first_10_bytes=[${Array.from(audioBuffer.slice(0, 10)).join(',')}]`);
             
+            // Only log and send non-empty buffers with actual audio data
             if (audioBuffer.length > 0) {
-              deepgramWs.send(audioBuffer);
-            } else {
-              console.warn('⚠️ Empty audio buffer, skipping send to Deepgram');
+              // Check if buffer contains actual audio data (not all zeros)
+              const hasAudioData = audioBuffer.some(byte => byte !== 0);
+              
+              if (hasAudioData) {
+                // Log occasionally to track activity
+                if (Math.random() < 0.02) {
+                  console.log(`📢 Active audio: size=${audioBuffer.length}bytes, deepgram_ready=${deepgramWs.readyState === 1}`);
+                }
+                deepgramWs.send(audioBuffer);
+              }
             }
           } else {
             console.warn('⚠️ Received audio_data message but no audio field');

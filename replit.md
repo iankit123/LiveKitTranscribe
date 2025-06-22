@@ -170,6 +170,12 @@ Changelog:
   * Implemented graceful cleanup with error handling for all audio resources
   * Added emergency cleanup for page navigation events
   * Enhanced transcription lifecycle management with proper async handling
+- June 22, 2025. Resolved transcription pipeline issues for accurate speech-to-text
+  * Fixed audio activity detection to skip silent chunks and improve Deepgram efficiency
+  * Enhanced audio preprocessing with proper gain control and echo cancellation
+  * Improved Deepgram connection parameters with smart formatting and punctuation
+  * Added comprehensive audio pipeline logging for better debugging
+  * Optimized PCM audio conversion and transmission to reduce API overhead
 ```
 
 ## User Preferences
