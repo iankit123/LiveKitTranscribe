@@ -184,9 +184,7 @@ export default function Home() {
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">Real-time speech-to-text
-</p>
-                        <p className="text-sm text-gray-600">Real-time speech-to-text</p>
+                        <p className="font-medium text-gray-900">Real-time speech-to-text</p>
                       </div>
                       <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>
                     </div>
