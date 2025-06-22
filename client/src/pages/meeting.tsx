@@ -29,9 +29,9 @@ import { useInterviewTimer } from "@/hooks/use-interview-timer";
 import VideoGrid from "@/components/video-grid";
 import ErrorBoundary from "@/components/error-boundary";
 import MeetingControls from "@/components/meeting-controls";
+import RolePromptModal from "@/components/RolePromptModal";
 import { parseInterviewPlan } from "@/utils/interview-plan-parser";
 import { useToast } from "@/hooks/use-toast";
-import { LiveKitRoom } from "@livekit/components-react";
 
 interface MeetingProps {
   params: {
@@ -44,59 +44,30 @@ export default function Meeting({ params }: MeetingProps) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  // Check URL parameters for role specification
+  // State for storing meeting data (using React state instead of localStorage)
+  const [jobDescription, setJobDescription] = useState("");
+  const [interviewPlanText, setInterviewPlanText] = useState("");
+
+  // Role prompt modal state
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [participantName, setParticipantName] = useState("");
+  const [userRole, setUserRole] = useState<'Interviewer' | 'Candidate' | ''>('');
+  const [isReadyToConnect, setIsReadyToConnect] = useState(false);
+
+  // Check URL parameters for role specification (fallback)
   const urlParams = new URLSearchParams(window.location.search);
   const urlRole = urlParams.get("role");
-  const isInterviewer = urlRole === "interviewer";
+  
+  // Use user-selected role, fallback to URL role, then default
+  const isInterviewer = userRole === 'Interviewer' || (userRole === '' && urlRole === "interviewer");
   const isCurrentUserInterviewer = isInterviewer;
 
-  // Get meeting state from localStorage - check multiple possible keys and sessionStorage
-  const jobDescription =
-    localStorage.getItem(`jobDescription_${roomName}`) ||
-    localStorage.getItem("jobDescription") ||
-    sessionStorage.getItem("jobDescription") ||
-    "";
-
-  const interviewPlanText =
-    localStorage.getItem(`interviewPlan_${roomName}`) ||
-    localStorage.getItem("interviewPlan") ||
-    sessionStorage.getItem("interviewPlan") ||
-    "";
-
-  console.log(
-    "📋 Looking for interview plan in localStorage and sessionStorage...",
-  );
-  console.log("📋 Room-specific key:", `interviewPlan_${roomName}`);
-  console.log(
-    "📋 localStorage general key:",
-    localStorage.getItem("interviewPlan"),
-  );
-  console.log(
-    "📋 sessionStorage general key:",
-    sessionStorage.getItem("interviewPlan"),
-  );
-  console.log(
-    "📋 Room-specific key value:",
-    localStorage.getItem(`interviewPlan_${roomName}`),
-  );
-  console.log("📋 Final plan text found:", interviewPlanText);
-
-  // Debug: Check all localStorage keys
-  console.log("📋 All localStorage keys:", Object.keys(localStorage));
-  console.log("📋 All sessionStorage keys:", Object.keys(sessionStorage));
-
+  // Interview plan parsing
   const interviewPlan = useMemo(() => {
-    // Re-check all possible storage locations
-    const currentPlanText =
-      localStorage.getItem("interviewPlan") ||
-      sessionStorage.getItem("interviewPlan") ||
-      interviewPlanText;
+    console.log("📋 Parsing interview plan text:", interviewPlanText);
 
-    console.log("📋 Final plan text for parsing:", currentPlanText);
-
-    if (!currentPlanText) {
+    if (!interviewPlanText) {
       console.log("⚠️ No interview plan text found, creating fallback plan");
-      // Create a fallback plan based on your home page example
       const fallbackPlan = [
         { label: "Intro", minutes: 5 },
         { label: "Past Projects", minutes: 15 },
@@ -108,8 +79,8 @@ export default function Meeting({ params }: MeetingProps) {
       return fallbackPlan;
     }
 
-    console.log("📋 Parsing interview plan text:", currentPlanText);
-    const parsed = parseInterviewPlan(currentPlanText);
+    console.log("📋 Parsing interview plan text:", interviewPlanText);
+    const parsed = parseInterviewPlan(interviewPlanText);
     console.log("📋 Parsed interview plan result:", parsed);
 
     if (parsed.length === 0) {
@@ -142,8 +113,7 @@ export default function Meeting({ params }: MeetingProps) {
     isVideoDisabled,
   } = useMeeting();
 
-  // FIXED: Pass the current user's role to transcription hook
-  // This will help identify who is speaking based on audio source
+  // FIXED: Single transcription hook declaration with enhanced parameters
   const {
     transcriptions,
     isTranscribing,
@@ -154,6 +124,12 @@ export default function Meeting({ params }: MeetingProps) {
     "deepgram",
     room,
     isInterviewer ? "interviewer" : "candidate",
+    {
+      // Pass additional context to help with speaker identification
+      localParticipantId: localParticipant?.identity,
+      currentUserRole: isInterviewer ? "interviewer" : "candidate",
+      participants: participants,
+    },
   );
 
   // Follow-up suggestions hooks
@@ -162,6 +138,8 @@ export default function Meeting({ params }: MeetingProps) {
 
   console.log("🎯 Component level - suggestions state:", suggestions);
   console.log("🎯 Component level - isLoading:", isLoading);
+
+  const [customInstruction, setCustomInstruction] = useState("");
 
   const handleGenerateSuggestions = () => {
     console.log("🎯 Generate suggestions clicked");
@@ -202,24 +180,63 @@ export default function Meeting({ params }: MeetingProps) {
     });
   }, [timerState, isTimerRunning, interviewPlan]);
 
-  // Connect to room on mount
+  // Initialize role modal and participant data on mount
   useEffect(() => {
-    const participantName = isInterviewer
-      ? `Interviewer-${Math.random().toString(36).substring(2, 8)}`
-      : `Candidate-${Math.random().toString(36).substring(2, 8)}`;
+    // Load saved data from localStorage
+    const savedName = localStorage.getItem('participantName');
+    const savedRole = localStorage.getItem('participantRole') as 'Interviewer' | 'Candidate' | null;
+    
+    // Check if we have both name and role
+    const hasCompleteData = savedName && savedRole;
+    
+    if (hasCompleteData) {
+      setParticipantName(savedName);
+      setUserRole(savedRole);
+      setIsReadyToConnect(true);
+    } else {
+      // Show modal to collect missing information
+      setShowRoleModal(true);
+    }
+  }, []);
+
+  // Handle role modal submission
+  const handleRoleSubmit = ({ name, role }: { name: string; role: 'Interviewer' | 'Candidate' }) => {
+    setParticipantName(name);
+    setUserRole(role);
+    setShowRoleModal(false);
+    setIsReadyToConnect(true);
+  };
+
+  // Connection effect - only runs when ready to connect
+  useEffect(() => {
+    if (!isReadyToConnect || !participantName || !userRole) return;
+
+    // Generate participant name with clear role identification
+    const timestamp = Date.now().toString();
+    const generatedParticipantName = `${userRole}-${roomName}-${timestamp}`;
 
     console.log(
       "Connecting to room with participant name:",
       participantName,
       "Role:",
-      isInterviewer ? "Interviewer" : "Candidate",
+      userRole,
     );
-    connectToRoom(roomName, participantName);
+
+    console.log(
+      "🎯 Connecting to room with enhanced participant name:",
+      generatedParticipantName,
+      "Role:",
+      userRole,
+      "Room:",
+      roomName,
+    );
+
+    connectToRoom(roomName, generatedParticipantName);
 
     return () => {
       disconnectFromRoom();
     };
-  }, [roomName, isInterviewer]);
+  }, [roomName, isReadyToConnect, participantName, userRole, connectToRoom, disconnectFromRoom]);
 
   const handleLeaveRoom = () => {
     disconnectFromRoom();
@@ -261,217 +278,21 @@ export default function Meeting({ params }: MeetingProps) {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const [customInstruction, setCustomInstruction] = useState("");
-
-  // ADDED: Helper function to get proper speaker label
-  // FIXED: Updated getSpeakerLabel function with better participant identification
+  // FIXED: Enhanced getSpeakerLabel function
   const getSpeakerLabel = (transcription) => {
-    console.log("🎤 Getting speaker label for transcription:", transcription);
-    console.log("🎤 Local participant:", localParticipant?.identity);
-    console.log("🎤 Current user is interviewer:", isInterviewer);
-    console.log(
-      "🎤 All participants:",
-      participants?.map((p) => ({ identity: p.identity, name: p.name })),
-    );
-
-    // Method 1: Use participantId/participantIdentity if available
     const participantId =
       transcription.participantId ||
       transcription.participantIdentity ||
       transcription.participant?.identity;
 
-    if (participantId && localParticipant) {
-      console.log(
-        "🎤 Comparing participantId:",
-        participantId,
-        "with local:",
-        localParticipant.identity,
-      );
+    if (!participantId) return "Unknown";
 
-      // If it's the local participant (current user)
-      if (participantId === localParticipant.identity) {
-        const label = isInterviewer ? "Interviewer" : "Candidate";
-        console.log("🎤 Local participant speaking:", label);
-        return label;
-      }
+    const lowerId = participantId.toLowerCase();
 
-      // If it's a remote participant, find them in the participants list
-      const remoteParticipant = participants?.find(
-        (p) => p.identity === participantId,
-      );
-      if (remoteParticipant) {
-        // Try to determine role from participant name/identity
-        const participantName =
-          remoteParticipant.name || remoteParticipant.identity || "";
-        console.log("🎤 Remote participant name:", participantName);
+    if (lowerId.startsWith("interviewer-")) return "Interviewer";
+    if (lowerId.startsWith("candidate-")) return "Candidate";
 
-        if (participantName.toLowerCase().includes("interviewer")) {
-          console.log("🎤 Remote participant is interviewer");
-          return "Interviewer";
-        } else if (participantName.toLowerCase().includes("candidate")) {
-          console.log("🎤 Remote participant is candidate");
-          return "Candidate";
-        }
-
-        // If we can't determine from name, assume opposite role of current user
-        const label = isInterviewer ? "Candidate" : "Interviewer";
-        console.log("🎤 Remote participant (opposite role):", label);
-        return label;
-      }
-    }
-
-    // Method 2: Use audio track source ID to identify speaker
-    if (transcription.trackSid || transcription.audioTrackSid) {
-      const trackSid = transcription.trackSid || transcription.audioTrackSid;
-      console.log("🎤 Using track SID:", trackSid);
-
-      // Check if it's the local participant's audio track
-      if (localParticipant?.audioTracks) {
-        const localAudioTrack = Array.from(
-          localParticipant.audioTracks.values(),
-        )[0];
-        if (localAudioTrack?.trackSid === trackSid) {
-          const label = isInterviewer ? "Interviewer" : "Candidate";
-          console.log("🎤 Local audio track match:", label);
-          return label;
-        }
-      }
-
-      // Check remote participants' audio tracks
-      if (participants) {
-        for (const participant of participants) {
-          if (participant.audioTracks) {
-            const remoteAudioTrack = Array.from(
-              participant.audioTracks.values(),
-            )[0];
-            if (remoteAudioTrack?.trackSid === trackSid) {
-              // Try to determine role from participant name
-              const participantName =
-                participant.name || participant.identity || "";
-              if (participantName.toLowerCase().includes("interviewer")) {
-                console.log("🎤 Remote audio track - interviewer");
-                return "Interviewer";
-              } else if (participantName.toLowerCase().includes("candidate")) {
-                console.log("🎤 Remote audio track - candidate");
-                return "Candidate";
-              }
-
-              // Default to opposite role
-              const label = isInterviewer ? "Candidate" : "Interviewer";
-              console.log("🎤 Remote audio track (opposite role):", label);
-              return label;
-            }
-          }
-        }
-      }
-    }
-
-    // Method 3: Use speaker field if it contains useful information
-    if (transcription.speaker) {
-      console.log("🎤 Using speaker field:", transcription.speaker);
-
-      // If speaker is already correctly labeled
-      if (
-        transcription.speaker === "Interviewer" ||
-        transcription.speaker === "Candidate"
-      ) {
-        console.log("🎤 Speaker already labeled:", transcription.speaker);
-        return transcription.speaker;
-      }
-
-      // If speaker contains role information
-      const speakerLower = transcription.speaker.toLowerCase();
-      if (speakerLower.includes("interviewer")) {
-        console.log("🎤 Speaker contains 'interviewer'");
-        return "Interviewer";
-      } else if (speakerLower.includes("candidate")) {
-        console.log("🎤 Speaker contains 'candidate'");
-        return "Candidate";
-      }
-    }
-
-    // Method 4: Use transcription source/origin if available
-    if (transcription.source === "local" || transcription.isLocal) {
-      const label = isInterviewer ? "Interviewer" : "Candidate";
-      console.log("🎤 Local transcription source:", label);
-      return label;
-    } else if (transcription.source === "remote" || transcription.isRemote) {
-      const label = isInterviewer ? "Candidate" : "Interviewer";
-      console.log("🎤 Remote transcription source:", label);
-      return label;
-    }
-
-    // Final fallback - this shouldn't happen often
-    console.log("🎤 Using final fallback - assuming current user");
-    return isInterviewer ? "Interviewer" : "Candidate";
-  };
-
-  // ADDITIONAL: Enhanced transcription hook initialization
-  // Make sure the transcription hook is properly identifying the current user's role
-  const {
-    transcriptions,
-    isTranscribing,
-    startTranscription,
-    stopTranscription,
-    clearTranscriptions,
-  } = useTranscription(
-    "deepgram",
-    room,
-    isInterviewer ? "interviewer" : "candidate",
-    {
-      // Pass additional context to help with speaker identification
-      localParticipantId: localParticipant?.identity,
-      currentUserRole: isInterviewer ? "interviewer" : "candidate",
-      participants: participants,
-    },
-  );
-
-  // ENHANCED: Better participant name generation in useEffect
-  useEffect(() => {
-    // Generate more descriptive participant names that include role information
-    const timestamp = Math.random().toString(36).substring(2, 8);
-    const participantName = isInterviewer
-      ? `Interviewer-${roomName}-${timestamp}`
-      : `Candidate-${roomName}-${timestamp}`;
-
-    console.log(
-      "🎯 Connecting to room with enhanced participant name:",
-      participantName,
-      "Role:",
-      isInterviewer ? "Interviewer" : "Candidate",
-      "Room:",
-      roomName,
-    );
-
-    connectToRoom(roomName, participantName);
-
-    return () => {
-      disconnectFromRoom();
-    };
-  }, [roomName, isInterviewer]);
-
-  // DEBUGGING: Add this function to help debug transcription issues
-  const debugTranscription = (transcription) => {
-    console.log("🔍 TRANSCRIPTION DEBUG:", {
-      transcriptionId: transcription.id,
-      text: transcription.text,
-      participantId: transcription.participantId,
-      participantIdentity: transcription.participantIdentity,
-      speaker: transcription.speaker,
-      trackSid: transcription.trackSid,
-      audioTrackSid: transcription.audioTrackSid,
-      source: transcription.source,
-      isLocal: transcription.isLocal,
-      isRemote: transcription.isRemote,
-      localParticipantId: localParticipant?.identity,
-      currentUserRole: isInterviewer ? "interviewer" : "candidate",
-      participantsCount: participants?.length || 0,
-      participantsList: participants?.map((p) => ({
-        identity: p.identity,
-        name: p.name,
-        hasAudio: p.audioTracks?.size > 0,
-      })),
-    });
+    return "Unknown";
   };
 
   if (error && !isConnecting) {
@@ -516,7 +337,9 @@ export default function Meeting({ params }: MeetingProps) {
           <div className="flex items-center space-x-6 text-sm">
             <div className="flex items-center space-x-2">
               <div
-                className={`w-2 h-2 rounded-full ${isTranscribing ? "bg-red-500 animate-pulse" : "bg-gray-400"}`}
+                className={`w-2 h-2 rounded-full ${
+                  isTranscribing ? "bg-red-500 animate-pulse" : "bg-gray-400"
+                }`}
               ></div>
               <span className="font-medium">
                 {isTranscribing ? "Transcribing" : "Not Recording"}
@@ -530,8 +353,8 @@ export default function Meeting({ params }: MeetingProps) {
               <Clock className="w-3 h-3" />
               <span className="font-mono font-medium">
                 {formatTime(
-                  timerState.elapsedMinutes,
-                  timerState.elapsedSeconds,
+                  timerState?.elapsedMinutes || 0,
+                  timerState?.elapsedSeconds || 0,
                 )}
               </span>
             </div>
@@ -631,12 +454,6 @@ export default function Meeting({ params }: MeetingProps) {
                   <div className="text-sm text-gray-600 mb-4">Elapsed Time</div>
 
                   {/* Interview Plan Progress */}
-                  {console.log(
-                    "🎯 Rendering timer section. Current block:",
-                    timerState?.currentBlock,
-                    "Next block:",
-                    timerState?.nextBlock,
-                  )}
                   {interviewPlan.length > 0 ? (
                     <div className="mb-4 text-sm">
                       {timerState?.currentBlock ? (
@@ -645,28 +462,15 @@ export default function Meeting({ params }: MeetingProps) {
                             Current: {timerState.currentBlock.label} (
                             {timerState.currentBlock.minutes}min)
                           </div>
-                          {console.log(
-                            "📍 Rendered current block:",
-                            timerState.currentBlock.label,
-                          )}
                           {timerState.nextBlock && (
-                            <>
-                              <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-                                Next: {timerState.nextBlock.label} (
-                                {timerState.nextBlock.minutes}min)
-                              </div>
-                              {console.log(
-                                "📍 Rendered next block:",
-                                timerState.nextBlock.label,
-                              )}
-                            </>
+                            <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
+                              Next: {timerState.nextBlock.label} (
+                              {timerState.nextBlock.minutes}min)
+                            </div>
                           )}
                         </>
                       ) : (
                         <div className="text-gray-500 text-xs">
-                          {console.log(
-                            "🔍 No current block, showing plan overview",
-                          )}
                           Plan:{" "}
                           {interviewPlan
                             .map(
@@ -678,7 +482,6 @@ export default function Meeting({ params }: MeetingProps) {
                     </div>
                   ) : (
                     <div className="mb-4 text-sm text-gray-500">
-                      {console.log(" �� No interview plan available")}
                       No interview plan set
                     </div>
                   )}
@@ -686,15 +489,9 @@ export default function Meeting({ params }: MeetingProps) {
                   <div className="flex justify-center space-x-2">
                     <Button
                       onClick={() => {
-                        console.log(
-                          "🎯 Timer button clicked, isRunning:",
-                          isTimerRunning,
-                        );
                         if (isTimerRunning) {
-                          console.log("⏸️ Stopping timer");
                           stopTimer();
                         } else {
-                          console.log("▶️ Starting timer");
                           startTimer();
                         }
                       }}
@@ -707,21 +504,14 @@ export default function Meeting({ params }: MeetingProps) {
                         <Play className="w-4 h-4" />
                       )}
                     </Button>
-                    <Button
-                      onClick={() => {
-                        console.log("🔄 Reset timer clicked");
-                        resetTimer();
-                      }}
-                      size="sm"
-                      variant="outline"
-                    >
+                    <Button onClick={resetTimer} size="sm" variant="outline">
                       <RotateCcw className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
 
                 {/* Current Segment */}
-                {timerState.currentBlock && (
+                {timerState?.currentBlock && (
                   <div className="space-y-3">
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
@@ -759,7 +549,7 @@ export default function Meeting({ params }: MeetingProps) {
                 )}
 
                 {/* Soft Nudge */}
-                {timerState.shouldShowNudge && timerState.nextBlock && (
+                {timerState?.shouldShowNudge && timerState.nextBlock && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                     <div className="flex items-start space-x-3">
                       <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
@@ -789,7 +579,6 @@ export default function Meeting({ params }: MeetingProps) {
             {/* RIGHT PANEL - Input & Suggestions */}
             <div className="space-y-6">
               {/* Live Transcription */}
-              {/* Live Transcription - FIXED VERSION */}
               <Card className="rounded-xl bg-white/90 backdrop-blur shadow-lg border-0">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
@@ -827,34 +616,7 @@ export default function Meeting({ params }: MeetingProps) {
                       </div>
                     ) : (
                       (transcriptions || []).slice(-10).map((transcription) => {
-                        // FIXED: Enhanced speaker identification with debugging
-                        console.log(
-                          "🎤 Processing transcription for display:",
-                          transcription,
-                        );
-
-                        // Call debug function to log all available data
-                        const debugInfo = {
-                          transcriptionId: transcription.id,
-                          text: transcription.text,
-                          participantId: transcription.participantId,
-                          participantIdentity:
-                            transcription.participantIdentity,
-                          speaker: transcription.speaker,
-                          trackSid: transcription.trackSid,
-                          audioTrackSid: transcription.audioTrackSid,
-                          source: transcription.source,
-                          isLocal: transcription.isLocal,
-                          isRemote: transcription.isRemote,
-                          localParticipantId: localParticipant?.identity,
-                          currentUserIsInterviewer: isInterviewer,
-                          participantsCount: participants?.length || 0,
-                        };
-                        console.log("🔍 TRANSCRIPTION DEBUG:", debugInfo);
-
-                        // Use the enhanced getSpeakerLabel function
                         const speakerLabel = getSpeakerLabel(transcription);
-                        console.log("🎯 Final speaker label:", speakerLabel);
 
                         return (
                           <div
@@ -887,15 +649,6 @@ export default function Meeting({ params }: MeetingProps) {
                                 )}
                                 %
                               </span>
-                              {/* DEBUG: Show participant ID in development */}
-                              {process.env.NODE_ENV === "development" && (
-                                <span className="text-xs text-purple-500">
-                                  ID:{" "}
-                                  {transcription.participantId ||
-                                    transcription.participantIdentity ||
-                                    "unknown"}
-                                </span>
-                              )}
                             </div>
                             <p className="text-sm text-gray-700">
                               {transcription.text}
@@ -905,22 +658,6 @@ export default function Meeting({ params }: MeetingProps) {
                       })
                     )}
                   </div>
-
-                  {/* ADDED: Debug panel (only in development) */}
-                  {process.env.NODE_ENV === "development" && (
-                    <div className="mt-4 p-3 bg-gray-100 rounded text-xs">
-                      <div className="font-medium mb-2">Debug Info:</div>
-                      <div>Local Participant: {localParticipant?.identity}</div>
-                      <div>
-                        Current User Role:{" "}
-                        {isInterviewer ? "Interviewer" : "Candidate"}
-                      </div>
-                      <div>Participants: {participants?.length || 0}</div>
-                      <div>
-                        Recent Transcriptions: {transcriptions?.length || 0}
-                      </div>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
 
@@ -1054,6 +791,12 @@ export default function Meeting({ params }: MeetingProps) {
         onOpenSettings={() => {
           /* TODO: Implement settings */
         }}
+      />
+
+      {/* Role Prompt Modal */}
+      <RolePromptModal 
+        isOpen={showRoleModal} 
+        onSubmit={handleRoleSubmit} 
       />
     </div>
   );
