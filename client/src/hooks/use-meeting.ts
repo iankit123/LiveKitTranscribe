@@ -20,9 +20,18 @@ export function useMeeting() {
       const connectedRoom = await liveKitService.connectToRoom(roomName, participantName);
       
       setRoom(connectedRoom);
+      setIsConnected(true);
+
+      // Enable camera and microphone for local participant
+      try {
+        await connectedRoom.localParticipant.enableCameraAndMicrophone();
+        console.log('Camera and microphone enabled');
+      } catch (error) {
+        console.error('Failed to enable camera/microphone:', error);
+      }
+
       setLocalParticipant(connectedRoom.localParticipant);
       setParticipants(Array.from(connectedRoom.remoteParticipants.values()));
-      setIsConnected(true);
 
       // Set up event listeners
       connectedRoom.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {

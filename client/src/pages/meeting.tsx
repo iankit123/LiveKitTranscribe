@@ -317,98 +317,15 @@ export default function Meeting({ params }: MeetingProps) {
 
       {/* Main Dashboard */}
       <div className="p-6 pt-20">
-        {/* Video Section - Optimized for 2 participants */}
+        {/* Video Section */}
         {isConnected && room && (
           <div className="mb-6">
-            <LiveKitRoom room={room}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-                {localParticipant && (
-                  <div className="relative bg-gray-900 rounded-xl overflow-hidden aspect-video">
-                    <video
-                      ref={(video) => {
-                        console.log('🎥 Setting up local video element:', video);
-                        console.log('🎥 Local participant:', localParticipant);
-                        console.log('🎥 Video track publications:', localParticipant?.videoTrackPublications);
-                        
-                        if (video && localParticipant) {
-                          // Try to get video track from publications or cameraTrack
-                          let videoTrack = null;
-                          
-                          if (localParticipant.videoTrackPublications.size > 0) {
-                            videoTrack = Array.from(localParticipant.videoTrackPublications.values())[0]?.videoTrack;
-                          } else if (localParticipant.cameraTrack) {
-                            videoTrack = localParticipant.cameraTrack;
-                          }
-                          
-                          console.log('🎥 Found video track:', videoTrack);
-                          
-                          if (videoTrack) {
-                            try {
-                              videoTrack.attach(video);
-                              console.log('✅ Local video attached successfully');
-                            } catch (error) {
-                              console.error('❌ Error attaching local video:', error);
-                            }
-                          } else {
-                            console.log('⚠️ No video track found, trying to enable camera...');
-                            // Try to enable camera if not already done
-                            if (room) {
-                              room.localParticipant.setCameraEnabled(true).then(() => {
-                                console.log('📷 Camera enabled successfully');
-                              }).catch(err => {
-                                console.error('❌ Failed to enable camera:', err);
-                              });
-                            }
-                          }
-                        } else {
-                          console.log('⚠️ Local video element or participant not available');
-                        }
-                      }}
-                      className="w-full h-full object-cover"
-                      autoPlay
-                      muted
-                      playsInline
-                    />
-                    <div className="absolute bottom-3 left-3 bg-black/60 text-white px-2 py-1 rounded text-sm">
-                      You (Interviewer)
-                    </div>
-                    <div className="absolute top-3 right-3">
-                      {isMuted ? <MicOff className="w-5 h-5 text-red-500" /> : <Mic className="w-5 h-5 text-green-500" />}
-                    </div>
-                  </div>
-                )}
-                
-                {participants.length > 0 ? (
-                  participants.slice(0, 1).map((participant) => (
-                    <div key={participant.identity} className="relative bg-gray-900 rounded-xl overflow-hidden aspect-video">
-                      <video
-                        ref={(video) => {
-                          if (video && participant.videoTrackPublication?.videoTrack) {
-                            participant.videoTrackPublication.videoTrack.attach(video);
-                          }
-                        }}
-                        className="w-full h-full object-cover"
-                        autoPlay
-                        playsInline
-                      />
-                      <div className="absolute bottom-3 left-3 bg-black/60 text-white px-2 py-1 rounded text-sm">
-                        {participant.name || 'Candidate'}
-                      </div>
-                      <div className="absolute top-3 right-3">
-                        {participant.isMuted ? <MicOff className="w-5 h-5 text-red-500" /> : <Mic className="w-5 h-5 text-green-500" />}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="bg-gray-100 rounded-xl aspect-video flex items-center justify-center border-2 border-dashed border-gray-300">
-                    <div className="text-center text-gray-500">
-                      <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Waiting for candidate...</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </LiveKitRoom>
+            <VideoGrid 
+              room={room} 
+              localParticipant={localParticipant}
+              participants={participants}
+              userRole={isInterviewer ? 'interviewer' : 'candidate'}
+            />
           </div>
         )}
 
