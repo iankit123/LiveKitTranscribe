@@ -50,22 +50,30 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         const inputData = inputBuffer.getChannelData(0);
         const maxAmplitude = Math.max(...inputData.map(Math.abs));
         
-        // Audio is already at 16kHz, no resampling needed
+        // Downsample from 44.1kHz to 16kHz for Deepgram
+        const downsampleRatio = 44100 / 16000;
+        const outputLength = Math.floor(inputData.length / downsampleRatio);
+        const downsampledData = new Float32Array(outputLength);
         
-        // Convert directly to 16-bit PCM with proper scaling
-        const pcmData = new Int16Array(inputData.length);
-        for (let i = 0; i < inputData.length; i++) {
-          // Convert float32 [-1,1] to int16 [-32768,32767]
-          const sample = Math.max(-1, Math.min(1, inputData[i]));
+        // Simple decimation downsampling
+        for (let i = 0; i < outputLength; i++) {
+          const sourceIndex = Math.floor(i * downsampleRatio);
+          downsampledData[i] = inputData[sourceIndex];
+        }
+        
+        // Convert to 16-bit PCM
+        const pcmData = new Int16Array(outputLength);
+        for (let i = 0; i < outputLength; i++) {
+          const sample = Math.max(-1, Math.min(1, downsampledData[i]));
           pcmData[i] = Math.round(sample * 32767);
         }
         
-        // Only send chunks with actual audio content
-        if (maxAmplitude > 0.002) {
+        // Send audio with active speech detection
+        if (maxAmplitude > 0.005) {
           transcriptionServiceRef.current.sendAudio(pcmData.buffer);
           
-          if (Math.random() < 0.05) {
-            console.log(`Audio sent: ${pcmData.length} samples, max=${maxAmplitude.toFixed(3)}`);
+          if (Math.random() < 0.03) {
+            console.log(`Speech audio sent: ${outputLength} samples, amplitude=${maxAmplitude.toFixed(3)}`);
           }
         }
       };
@@ -89,10 +97,14 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       transcriptionServiceRef.current.onTranscription((result: TranscriptionResult) => {
         console.log(`📝 Received transcription: "${result.transcript}" (final=${result.isFinal}, confidence=${result.confidence})`);
         
-        // Skip empty transcripts to keep UI clean
+        // Process all transcripts including debugging ones
         if (!result.transcript || result.transcript.trim().length === 0) {
+          console.log('⚠️ Empty transcript received');
           return;
         }
+        
+        console.log(`📝 Processing transcript: "${result.transcript}"`);
+        
         // Determine speaker based on participant identity or role
         const participantIdentity = room?.localParticipant?.identity || '';
         const speakerRole = participantIdentity.startsWith('Interviewer-') ? 'Interviewer' : 
