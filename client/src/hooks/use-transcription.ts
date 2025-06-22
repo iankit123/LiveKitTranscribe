@@ -10,6 +10,9 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
   const transcriptionServiceRef = useRef(TranscriptionServiceFactory.create(provider));
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
 
   const startTranscription = useCallback(async () => {
     try {
@@ -27,12 +30,21 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       
       audioStreamRef.current = stream;
 
+      // Clean up any existing audio context
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        try {
+          await audioContextRef.current.close();
+        } catch (e) {
+          console.warn('Error closing existing audio context:', e);
+        }
+      }
+
       // Use Web Audio API to get raw PCM data instead of compressed audio
-      const audioContext = new AudioContext({ sampleRate: 16000 });
-      const source = audioContext.createMediaStreamSource(stream);
-      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      audioContextRef.current = new AudioContext({ sampleRate: 16000 });
+      sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
+      processorRef.current = audioContextRef.current.createScriptProcessor(4096, 1, 1);
       
-      processor.onaudioprocess = (event) => {
+      processorRef.current.onaudioprocess = (event) => {
         const inputBuffer = event.inputBuffer;
         const inputData = inputBuffer.getChannelData(0);
         
@@ -46,18 +58,17 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         transcriptionServiceRef.current.sendAudio(pcmData.buffer);
       };
       
-      source.connect(processor);
-      processor.connect(audioContext.destination);
+      sourceRef.current.connect(processorRef.current);
+      processorRef.current.connect(audioContextRef.current.destination);
       
       console.log('Using Web Audio API for PCM audio capture');
       
-      // Store references for cleanup
+      // Store references for cleanup (fake MediaRecorder for compatibility)
       mediaRecorderRef.current = { 
         stop: () => {
-          processor.disconnect();
-          source.disconnect();
-          audioContext.close();
-        }
+          // This will be handled by the proper stopTranscription function
+        },
+        state: 'recording'
       } as any;
 
       let isRecording = true;
@@ -125,40 +136,119 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
   }, []);
 
   const stopTranscription = useCallback(async () => {
+    if (!isTranscribing) return;
+
     try {
-      // Stop media recorder
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
+      console.log('Stopping transcription service...');
+      
+      // Stop transcription service first
+      if (transcriptionServiceRef.current) {
+        await transcriptionServiceRef.current.stop();
+      }
+      
+      // Clean up audio processor
+      if (processorRef.current) {
+        console.log('Disconnecting audio processor...');
+        try {
+          processorRef.current.disconnect();
+          processorRef.current.onaudioprocess = null;
+        } catch (e) {
+          console.warn('Error disconnecting processor:', e);
+        }
+        processorRef.current = null;
+      }
+      
+      // Clean up audio source
+      if (sourceRef.current) {
+        try {
+          sourceRef.current.disconnect();
+        } catch (e) {
+          console.warn('Error disconnecting source:', e);
+        }
+        sourceRef.current = null;
+      }
+      
+      // Clean up audio context with state check
+      if (audioContextRef.current) {
+        console.log('Audio context state:', audioContextRef.current.state);
+        if (audioContextRef.current.state !== 'closed') {
+          console.log('Closing audio context...');
+          try {
+            await audioContextRef.current.close();
+          } catch (e) {
+            console.warn('Error closing audio context:', e);
+          }
+        }
+        audioContextRef.current = null;
       }
 
       // Stop audio stream
       if (audioStreamRef.current) {
-        audioStreamRef.current.getTracks().forEach(track => track.stop());
+        console.log('Stopping media stream...');
+        try {
+          audioStreamRef.current.getTracks().forEach(track => track.stop());
+        } catch (e) {
+          console.warn('Error stopping media tracks:', e);
+        }
         audioStreamRef.current = null;
       }
 
-      // Stop transcription service
-      await transcriptionServiceRef.current.stop();
+      // Clean up MediaRecorder reference
+      mediaRecorderRef.current = null;
       
       setIsTranscribing(false);
+      setError(null);
+      console.log('Transcription stopped successfully');
+      
     } catch (err) {
       console.error('Failed to stop transcription:', err);
       setError(err instanceof Error ? err.message : 'Failed to stop transcription');
+      
+      // Force cleanup even if error occurred
+      audioContextRef.current = null;
+      processorRef.current = null;
+      sourceRef.current = null;
+      audioStreamRef.current = null;
+      mediaRecorderRef.current = null;
+      setIsTranscribing(false);
     }
-  }, []);
+  }, [isTranscribing]);
 
   const clearTranscriptions = useCallback(() => {
     setTranscriptions([]);
   }, []);
 
-  // Clean up on unmount
+  // Clean up on unmount with proper async handling
   useEffect(() => {
     return () => {
       if (isTranscribing) {
-        stopTranscription();
+        stopTranscription().catch(console.error);
       }
     };
   }, [isTranscribing, stopTranscription]);
+
+  // Additional cleanup for page navigation
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (isTranscribing && audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        try {
+          // Synchronous emergency cleanup
+          if (processorRef.current) {
+            processorRef.current.disconnect();
+          }
+          if (sourceRef.current) {
+            sourceRef.current.disconnect();
+          }
+          audioContextRef.current.close();
+        } catch (e) {
+          console.warn('Emergency cleanup failed:', e);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isTranscribing]);
 
   // Listen for transcriptions from other participants (only if interviewer)
   useEffect(() => {

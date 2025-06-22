@@ -164,6 +164,12 @@ Changelog:
   * Improved error handling for media enablement with graceful fallbacks
   * Enhanced connection monitoring with reduced auto-reconnect attempts
   * Added comprehensive test validation for all critical functionality
+- June 22, 2025. Fixed critical AudioContext management preventing transcription crashes
+  * Resolved "Cannot close a closed AudioContext" error in transcription stops
+  * Added proper AudioContext state checking before operations
+  * Implemented graceful cleanup with error handling for all audio resources
+  * Added emergency cleanup for page navigation events
+  * Enhanced transcription lifecycle management with proper async handling
 ```
 
 ## User Preferences
