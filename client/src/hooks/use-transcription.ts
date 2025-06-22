@@ -155,26 +155,9 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         await transcriptionServiceRef.current.stop();
       }
       
-      // Clean up audio processor
-      if (processorRef.current) {
-        console.log('Disconnecting audio processor...');
-        try {
-          processorRef.current.disconnect();
-          processorRef.current.onaudioprocess = null;
-        } catch (e) {
-          console.warn('Error disconnecting processor:', e);
-        }
-        processorRef.current = null;
-      }
-      
-      // Clean up audio source
-      if (sourceRef.current) {
-        try {
-          sourceRef.current.disconnect();
-        } catch (e) {
-          console.warn('Error disconnecting source:', e);
-        }
-        sourceRef.current = null;
+      // Stop MediaRecorder
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
       }
       
       // MediaRecorder cleanup (no audio context needed)
