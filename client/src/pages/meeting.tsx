@@ -508,7 +508,7 @@ export default function Meeting({ params }: MeetingProps) {
                       (transcriptions || []).slice(-10).map((transcription) => (
                         <div key={transcription.id} className="border-l-2 border-gray-200 pl-3 py-2">
                           <div className="flex items-center space-x-2 mb-1">
-                            <Badge variant={transcription.speaker === 'Interviewer' ? 'default' : 'secondary'}>
+                            <Badge variant={transcription.speaker === 'TestBadge' ? 'default' : 'secondary'}>
                               {transcription.speaker}
                             </Badge>
                             <span className="text-xs text-gray-500">
