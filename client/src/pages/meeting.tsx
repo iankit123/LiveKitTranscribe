@@ -803,7 +803,8 @@ export default function Meeting({ params }: MeetingProps) {
 
       {/* Role Prompt Modal */}
       {console.log('🔍 Meeting page - showRoleModal:', showRoleModal)}
-      {showRoleModal && (
+      {console.log('🔍 All modal states:', { showRoleModal, participantName, userRole, isReadyToConnect })}
+      {(showRoleModal || true) && (
         <div 
           style={{
             position: 'fixed',
