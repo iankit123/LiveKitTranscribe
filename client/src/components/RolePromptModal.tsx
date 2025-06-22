@@ -9,11 +9,17 @@ export default function RolePromptModal({ isOpen, onSubmit }: RolePromptModalPro
   const [name, setName] = useState('');
   const [role, setRole] = useState<'Interviewer' | 'Candidate' | ''>('');
 
+  // Debug logging
+  console.log('🔍 RolePromptModal render:', { isOpen, name, role });
+
   // Pre-fill from localStorage on mount
   useEffect(() => {
     if (isOpen) {
+      console.log('🔍 Modal opened, checking localStorage...');
       const savedName = localStorage.getItem('participantName');
       const savedRole = localStorage.getItem('participantRole') as 'Interviewer' | 'Candidate' | null;
+      
+      console.log('🔍 Found saved data:', { savedName, savedRole });
       
       if (savedName) setName(savedName);
       if (savedRole) setRole(savedRole);
@@ -22,6 +28,8 @@ export default function RolePromptModal({ isOpen, onSubmit }: RolePromptModalPro
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('🔍 Form submitted with:', { name: name.trim(), role });
     
     if (!name.trim() || !role) return;
 
@@ -34,11 +42,43 @@ export default function RolePromptModal({ isOpen, onSubmit }: RolePromptModalPro
 
   const isFormValid = name.trim().length > 0 && role !== '';
 
-  if (!isOpen) return null;
+  console.log('🔍 Modal should render:', isOpen);
+
+  if (!isOpen) {
+    console.log('🔍 Modal not open, returning null');
+    return null;
+  }
+
+  console.log('🔍 Modal rendering with styles...');
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      style={{ 
+        position: 'fixed', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        backgroundColor: 'rgba(0,0,0,0.5)', 
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      <div 
+        className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-xl"
+        style={{
+          backgroundColor: 'white',
+          padding: '24px',
+          borderRadius: '8px',
+          maxWidth: '400px',
+          width: '100%',
+          margin: '16px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+        }}
+      >
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-2">Join the Meeting</h2>
           <p className="text-gray-600">Please enter your name and select your role to continue.</p>
