@@ -177,19 +177,7 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         sourceRef.current = null;
       }
       
-      // Clean up audio context with state check
-      if (audioContextRef.current) {
-        console.log('Audio context state:', audioContextRef.current.state);
-        if (audioContextRef.current.state !== 'closed') {
-          console.log('Closing audio context...');
-          try {
-            await audioContextRef.current.close();
-          } catch (e) {
-            console.warn('Error closing audio context:', e);
-          }
-        }
-        audioContextRef.current = null;
-      }
+      // MediaRecorder cleanup (no audio context needed)
 
       // Stop audio stream
       if (audioStreamRef.current) {
@@ -214,9 +202,6 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       setError(err instanceof Error ? err.message : 'Failed to stop transcription');
       
       // Force cleanup even if error occurred
-      audioContextRef.current = null;
-      processorRef.current = null;
-      sourceRef.current = null;
       audioStreamRef.current = null;
       mediaRecorderRef.current = null;
       setIsTranscribing(false);
