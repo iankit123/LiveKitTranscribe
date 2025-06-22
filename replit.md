@@ -157,6 +157,13 @@ Changelog:
   * Enhanced video track attachment logic with proper error handling
   * Improved participant role labeling for interviewer vs candidate views
   * Added camera/microphone enablement during room connection process
+- June 22, 2025. Comprehensive stability fixes and error handling
+  * Fixed ErrorBoundary import issue causing component crashes
+  * Enhanced LiveKit room configuration with DTX disabled to prevent silence detection
+  * Added timeout protection for metadata operations to prevent connection hangs
+  * Improved error handling for media enablement with graceful fallbacks
+  * Enhanced connection monitoring with reduced auto-reconnect attempts
+  * Added comprehensive test validation for all critical functionality
 ```
 
 ## User Preferences

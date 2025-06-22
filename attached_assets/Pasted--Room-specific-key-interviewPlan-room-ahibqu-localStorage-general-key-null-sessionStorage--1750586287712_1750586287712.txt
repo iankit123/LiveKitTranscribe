@@ -1,0 +1,54 @@
+📋 Room-specific key: interviewPlan_room-ahibqu
+📋 localStorage general key: null
+📋 sessionStorage general key: start - 1
+Question1 - 2
+Question2 - 1
+End - 1
+📋 Room-specific key value: null
+📋 Final plan text found: start - 1
+Question1 - 2
+Question2 - 1
+End - 1
+📋 All localStorage keys: 
+(6) ["eruda-entry-button", "eruda-dev-tools", "eruda-console", "eruda-resources", "ERUDA_LAST_TOOL", "eruda-elements"]
+📋 All sessionStorage keys: 
+(2) ["jobDescription", "interviewPlan"]
+🎯 Component level - suggestions state: null
+🎯 Component level - isLoading: false
+ErrorBoundary is not defined
+The above error occurred in the <Meeting> component:
+
+    at Meeting (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/src/pages/meeting.tsx:33:35)
+    at Route (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=90b61f29:323:16)
+    at Switch (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=90b61f29:379:17)
+    at Router
+    at Provider (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YNVQRCZ5.js?v=90b61f29:39:15)
+    at TooltipProvider (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=90b61f29:2249:5)
+    at QueryClientProvider (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=90b61f29:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+at Meeting (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/src/pages/meeting.tsx:33:35)
+at Route (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=90b61f29:323:16)
+at Switch (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=90b61f29:379:17)
+at Router
+at Provider (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YNVQRCZ5.js?v=90b61f29:39:15)
+at TooltipProvider (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=90b61f29:2249:5)
+at QueryClientProvider (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=90b61f29:2805:3)
+at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+at t.value (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+ErrorBoundary is not defined
+disconnect from room 
+Object {room: "room-ahibqu", roomID: "RM_kruzoAUk33WN", participant: "candidate-Interviewer-3ej47n-1750586282239", pID: "PA_E8rVWJaxtgjW"}
+Room disconnected: 1
+Unexpected disconnection, attempting to reconnect...
+silence detected on local audio track 
+Object {room: "room-ahibqu", roomID: "RM_kruzoAUk33WN", participant: "candidate-Interviewer-3ej47n-1750586282239", pID: "PA_E8rVWJaxtgjW", trackID: "TR_AM7uynpZk9deHy", …}

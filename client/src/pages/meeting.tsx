@@ -318,7 +318,7 @@ export default function Meeting({ params }: MeetingProps) {
       {/* Main Dashboard */}
       <div className="p-6 pt-20">
         {/* Video Section */}
-        {isConnected && room && localParticipant && (
+        {isConnected && room && localParticipant ? (
           <div className="mb-6">
             <ErrorBoundary fallback={
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
@@ -333,7 +333,11 @@ export default function Meeting({ params }: MeetingProps) {
               />
             </ErrorBoundary>
           </div>
-        )}
+        ) : isConnected && room ? (
+          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+            <p className="text-yellow-800">Setting up video connection...</p>
+          </div>
+        ) : null}
 
         {/* Only show dashboard to interviewer */}
         {isInterviewer && (
