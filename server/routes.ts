@@ -122,7 +122,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Initialize Deepgram connection
           const deepgramApiKey = process.env.DEEPGRAM_API_KEY;
           
+          console.log('🔑 Checking Deepgram API key...', deepgramApiKey ? 'FOUND' : 'MISSING');
+          
           if (!deepgramApiKey) {
+            console.error('❌ Deepgram API key not configured');
             ws.send(JSON.stringify({
               type: 'error',
               error: 'Deepgram API key not configured'
@@ -141,7 +144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           deepgramWs.on('open', () => {
-            console.log('Connected to Deepgram');
+            console.log('✅ Connected to Deepgram successfully');
             ws.send(JSON.stringify({
               type: 'transcription_started'
             }));
@@ -182,10 +185,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           deepgramWs.on('error', (error) => {
-            console.error('Deepgram WebSocket error:', error);
+            console.error('❌ Deepgram WebSocket error:', error.message || error);
             ws.send(JSON.stringify({
               type: 'error',
-              error: 'Transcription service error'
+              error: 'Transcription service error: ' + (error.message || 'Unknown error')
             }));
           });
 
