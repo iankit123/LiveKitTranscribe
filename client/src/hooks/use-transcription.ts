@@ -104,6 +104,7 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         setTranscriptions(prev => {
           const newTranscriptions = [...prev, entry];
           console.log(`📝 HOOK: New transcriptions array length: ${newTranscriptions.length}`);
+          console.log(`📝 HOOK: All transcriptions:`, newTranscriptions.map(t => t.text));
           
           // Broadcast final transcription to interviewer via data channel
           if (result.isFinal && room?.localParticipant && !isInterviewer) {
