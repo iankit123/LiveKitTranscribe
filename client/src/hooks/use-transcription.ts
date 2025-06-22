@@ -28,20 +28,6 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       });
       
       audioStreamRef.current = stream;
-
-      // Clean up any existing audio context
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        try {
-          await audioContextRef.current.close();
-        } catch (e) {
-          console.warn('Error closing existing audio context:', e);
-        }
-      }
-
-      // Use Web Audio API with exact Deepgram sample rate
-      audioContextRef.current = new AudioContext({ sampleRate: 16000 });
-      sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
-      processorRef.current = audioContextRef.current.createScriptProcessor(1024, 1, 1);
       
       processorRef.current.onaudioprocess = (event) => {
         const inputBuffer = event.inputBuffer;
