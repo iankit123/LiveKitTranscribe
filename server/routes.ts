@@ -154,18 +154,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           deepgramWs.on('message', (deepgramMessage) => {
             try {
               const result = JSON.parse(deepgramMessage.toString());
-              console.log(`📥 DEEPGRAM RESPONSE: ${JSON.stringify(result).substring(0, 200)}...`);
+              console.log(`📥 DEEPGRAM FULL RESPONSE:`, JSON.stringify(result, null, 2));
               
-              // Handle multiple Deepgram response formats
-              if (result.type === 'Results' && result.channel?.alternatives?.length > 0) {
-                const transcript = result.channel.alternatives[0].transcript;
-                const confidence = result.channel.alternatives[0].confidence || 0;
-                const isFinal = result.is_final || false;
+              // Check all possible transcript locations
+              if (result.type === 'Results') {
+                const alternatives = result.channel?.alternatives || [];
+                console.log(`🔍 Results format: ${alternatives.length} alternatives found`);
                 
-                console.log(`🎯 TRANSCRIPT: "${transcript}" (final=${isFinal}, conf=${confidence})`);
-                
-                if (transcript && transcript.trim().length > 0) {
-                  console.log(`✅ SENDING TO UI: "${transcript.trim()}"`);
+                if (alternatives.length > 0 && alternatives[0].transcript) {
+                  const transcript = alternatives[0].transcript;
+                  const confidence = alternatives[0].confidence || 0;
+                  const isFinal = result.is_final || false;
+                  
+                  console.log(`🎯 FOUND TRANSCRIPT: "${transcript}" (final=${isFinal}, conf=${confidence})`);
+                  
                   ws.send(JSON.stringify({
                     type: 'transcription',
                     data: {
@@ -175,32 +177,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       timestamp: new Date().toISOString()
                     }
                   }));
-                } else {
-                  console.log(`⚠️ EMPTY TRANSCRIPT: type=${result.type}`);
                 }
-              } else if (result.channel?.alternatives?.length > 0) {
-                // Alternative format without type field
-                const transcript = result.channel.alternatives[0].transcript;
-                if (transcript?.trim()) {
-                  console.log(`✅ ALT FORMAT: "${transcript.trim()}"`);
+              } else if (result.alternatives && result.alternatives.length > 0) {
+                // Direct alternatives format
+                const transcript = result.alternatives[0].transcript;
+                if (transcript) {
+                  console.log(`🎯 DIRECT ALTERNATIVES: "${transcript}"`);
+                  
                   ws.send(JSON.stringify({
                     type: 'transcription',
                     data: {
                       transcript: transcript.trim(),
                       is_final: true,
-                      confidence: result.channel.alternatives[0].confidence || 0.9,
+                      confidence: result.alternatives[0].confidence || 0.9,
                       timestamp: new Date().toISOString()
                     }
                   }));
                 }
-              } else if (result.type === 'Metadata') {
-                console.log(`📊 METADATA: model=${result.model_info?.name}`);
               } else {
-                console.log(`📡 OTHER: type=${result.type}, keys=[${Object.keys(result).join(',')}]`);
+                console.log(`📊 NON-TRANSCRIPT: type=${result.type || 'unknown'}`);
               }
             } catch (error) {
-              console.error('❌ PARSE ERROR:', error);
-              console.error('❌ RAW MESSAGE:', deepgramMessage.toString().substring(0, 500));
+              console.error('❌ JSON PARSE ERROR:', error.message);
+              console.error('❌ RAW RESPONSE:', deepgramMessage.toString());
             }
           });
 
