@@ -204,18 +204,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
             type: 'transcription',
             data: data.data
           }));
-        } else if (data.type === 'audio_data' && deepgramWs && deepgramWs.readyState === WebSocket.OPEN) {
-          // Forward audio data to Deepgram
-          if (data.audio) {
-            const audioBuffer = Buffer.from(data.audio, 'base64');
-            
-            // Send audio data to Deepgram (restored working approach)
-            if (audioBuffer.length > 0 && deepgramWs.readyState === 1) {
-              deepgramWs.send(audioBuffer);
-              console.log(`Audio sent to Deepgram: ${audioBuffer.length} bytes`);
+        } else if (data.type === 'audio_data' && data.audio) {
+          const audioBuffer = Buffer.from(data.audio, 'base64');
+          
+          // Send to Deepgram WebSocket (may not work with WebM format)
+          if (deepgramWs && deepgramWs.readyState === 1) {
+            deepgramWs.send(audioBuffer);
+            console.log(`Audio sent to Deepgram WebSocket: ${audioBuffer.length} bytes`);
+          }
+          
+          // Use Deepgram REST API for WebM compatibility  
+          if (Math.random() < 0.2) { // Process every ~5th chunk
+            try {
+              console.log(`🔄 Processing audio chunk via REST API`);
+              const response = await fetch('https://api.deepgram.com/v1/listen?model=nova-2&language=en-US&smart_format=true&punctuate=true', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Token ${process.env.DEEPGRAM_API_KEY}`,
+                  'Content-Type': 'audio/webm'
+                },
+                body: audioBuffer
+              });
+              
+              if (response.ok) {
+                const result = await response.json();
+                const transcript = result.results?.channels?.[0]?.alternatives?.[0]?.transcript;
+                const confidence = result.results?.channels?.[0]?.alternatives?.[0]?.confidence || 0;
+                
+                if (transcript && transcript.trim().length > 0) {
+                  console.log(`✅ REST API transcript: "${transcript}" (confidence: ${confidence})`);
+                  ws.send(JSON.stringify({
+                    type: 'transcription',
+                    data: {
+                      transcript: transcript.trim(),
+                      is_final: true,
+                      confidence: confidence,
+                      timestamp: new Date().toISOString()
+                    }
+                  }));
+                } else {
+                  console.log(`📝 REST API returned empty transcript`);
+                }
+              } else {
+                console.log(`❌ REST API error: ${response.status} ${response.statusText}`);
+              }
+            } catch (error) {
+              console.log(`❌ REST API exception:`, error.message);
             }
-          } else {
-            console.warn('⚠️ Received audio_data message but no audio field');
           }
         } else if (data.type === 'stop_transcription' && deepgramWs) {
           deepgramWs.close();
