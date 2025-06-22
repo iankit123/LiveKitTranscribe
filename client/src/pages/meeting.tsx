@@ -49,10 +49,10 @@ export default function Meeting({ params }: MeetingProps) {
   const [interviewPlanText, setInterviewPlanText] = useState("");
 
   // Role prompt modal state
-  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showRoleModal, setShowRoleModal] = useState(true); // Start with modal shown
   const [participantName, setParticipantName] = useState("");
   const [userRole, setUserRole] = useState<'Interviewer' | 'Candidate' | ''>('');
-  const [isReadyToConnect, setIsReadyToConnect] = useState(false);
+  const [isReadyToConnect, setIsReadyToConnect] = useState(false); // Start not ready to connect
 
   // Check URL parameters for role specification (fallback)
   const urlParams = new URLSearchParams(window.location.search);
@@ -200,9 +200,11 @@ export default function Meeting({ params }: MeetingProps) {
       setIsReadyToConnect(true);
     } else {
       console.log("❓ Missing data, showing role modal");
+      console.log("🔧 Setting isReadyToConnect to false");
       // Show modal to collect missing information - don't connect until submitted
       setShowRoleModal(true);
       setIsReadyToConnect(false);
+      console.log("🔧 Modal state set - showRoleModal:", true, "isReadyToConnect:", false);
     }
   }, [urlRole]);
 
@@ -338,7 +340,9 @@ export default function Meeting({ params }: MeetingProps) {
   }
 
   // Show modal if not ready to connect
+  console.log("🔍 Render check - isReadyToConnect:", isReadyToConnect, "showRoleModal:", showRoleModal);
   if (!isReadyToConnect) {
+    console.log("🔍 Rendering modal because not ready to connect");
     return (
       <div 
         style={{
