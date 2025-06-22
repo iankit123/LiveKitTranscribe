@@ -232,16 +232,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const audioLevel = Array.from(new Int16Array(audioBuffer.buffer, audioBuffer.byteOffset, audioBuffer.length / 2))
             .reduce((max, val) => Math.max(max, Math.abs(val)), 0);
           
-          if (Math.random() < 0.1) { // Log 10% of chunks
-            console.log(`🔊 SERVER AUDIO: ${audioBuffer.length}bytes, level=${audioLevel}, format=PCM`);
-          }
+          console.log(`🔊 SERVER RECEIVED: ${audioBuffer.length}bytes, level=${audioLevel}, format=PCM`);
           
-          // Send PCM audio to Deepgram WebSocket
+          // Send PCM audio to Deepgram WebSocket with proper format
           if (deepgramWs && deepgramWs.readyState === 1) {
             deepgramWs.send(audioBuffer);
-            if (Math.random() < 0.1) {
-              console.log(`📤 TO DEEPGRAM: ${audioBuffer.length}bytes PCM audio sent`);
-            }
+            console.log(`📤 SENT TO DEEPGRAM: ${audioBuffer.length}bytes PCM audio`);
           } else {
             console.error('📤 ERROR: Deepgram WebSocket not ready, state:', deepgramWs?.readyState);
           }

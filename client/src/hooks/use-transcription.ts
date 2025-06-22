@@ -30,50 +30,61 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       
       audioStreamRef.current = stream;
       
-      // Setup MediaRecorder with proper error handling
+      // CRITICAL: Use Web Audio API for PCM audio capture (replaces MediaRecorder)
+      console.log('🎤 INITIALIZING: Web Audio API for PCM audio capture');
+      
       try {
-        // Check MediaRecorder support first
-        if (!MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-          console.log('opus not supported, trying webm');
-          if (!MediaRecorder.isTypeSupported('audio/webm')) {
-            console.log('webm not supported, using default');
-            mediaRecorderRef.current = new MediaRecorder(stream);
-          } else {
-            mediaRecorderRef.current = new MediaRecorder(stream, {
-              mimeType: 'audio/webm'
-            });
+        const audioContext = new AudioContext({ sampleRate: 16000 });
+        console.log('🎤 AudioContext created:', audioContext.sampleRate, 'Hz');
+        
+        const source = audioContext.createMediaStreamSource(stream);
+        console.log('🎤 MediaStreamSource created');
+        
+        const processor = audioContext.createScriptProcessor(4096, 1, 1);
+        console.log('🎤 ScriptProcessor created');
+
+        processor.onaudioprocess = (event) => {
+          const inputBuffer = event.inputBuffer;
+          const inputData = inputBuffer.getChannelData(0);
+          
+          // Check for meaningful audio
+          const audioLevel = Math.max(...inputData.map(Math.abs));
+          
+          // Convert float32 to int16 PCM
+          const pcmData = new Int16Array(inputData.length);
+          for (let i = 0; i < inputData.length; i++) {
+            pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
           }
-        } else {
-          mediaRecorderRef.current = new MediaRecorder(stream, {
-            mimeType: 'audio/webm;codecs=opus'
-          });
-        }
-        
-        mediaRecorderRef.current.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            console.log('MediaRecorder data available:', event.data.size, 'bytes');
-            
-            // Convert blob to audio buffer for transcription
-            const reader = new FileReader();
-            reader.onload = () => {
-              const arrayBuffer = reader.result as ArrayBuffer;
-            transcriptionServiceRef.current.sendAudio(arrayBuffer);
-            };
-            reader.readAsArrayBuffer(event.data);
-          }
+          
+          // Send audio data continuously (remove threshold for testing)
+          console.log(`🎤 CAPTURING: PCM=${pcmData.length} samples, level=${audioLevel.toFixed(4)}`);
+          transcriptionServiceRef.current.sendAudio(pcmData.buffer);
         };
+
+        source.connect(processor);
+        processor.connect(audioContext.destination);
+
+        // Store references for cleanup
+        audioContextRef.current = audioContext;
+        sourceRef.current = source;
+        processorRef.current = processor;
         
-        mediaRecorderRef.current.onerror = (event) => {
-          console.error('MediaRecorder error:', event);
-          setError('MediaRecorder error occurred');
-        };
-        
-        // Start recording with intervals
-        mediaRecorderRef.current.start(1000);
-        console.log('MediaRecorder started successfully');
+        // Mock MediaRecorder interface for compatibility
+        mediaRecorderRef.current = { 
+          stop: () => {
+            console.log('🎤 CLEANUP: Stopping Web Audio API');
+            if (processor) processor.disconnect();
+            if (source) source.disconnect();
+            if (audioContext && audioContext.state !== 'closed') audioContext.close();
+          },
+          state: 'recording'
+        } as any;
+
+        console.log('🎤 SUCCESS: Web Audio API transcription started');
+        console.log('Transcription started successfully with Web Audio API');
         
       } catch (error) {
-        console.error('MediaRecorder setup failed:', error);
+        console.error('🎤 FAILED: Web Audio API setup error:', error);
         throw error;
       }
 
