@@ -90,12 +90,10 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
-      
       {/* Floating Elements */}
       <div className="absolute top-20 left-10 w-20 h-20 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" />
       <div className="absolute top-40 right-10 w-32 h-32 bg-cyan-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse delay-300" />
       <div className="absolute -bottom-8 left-1/2 w-40 h-40 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse delay-700" />
-
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-6xl mx-auto">
           {/* Header */}
@@ -186,7 +184,8 @@ export default function Home() {
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">Deepgram</p>
+                        <p className="font-medium text-gray-900">Real-time speech-to-text
+</p>
                         <p className="text-sm text-gray-600">Real-time speech-to-text</p>
                       </div>
                       <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>
