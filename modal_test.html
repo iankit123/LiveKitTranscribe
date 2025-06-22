@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Modal Test</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.8);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 32px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        input, button { padding: 12px; font-size: 16px; }
+        .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .role-option { display: flex; align-items: center; padding: 16px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <h2>Join the Meeting</h2>
+            <p>Please enter your name and select your role to continue.</p>
+            <form id="modalForm">
+                <div style="margin-bottom: 20px;">
+                    <label>Your Name</label>
+                    <input name="name" type="text" placeholder="Enter your full name" required style="width: 100%;">
+                </div>
+                <div style="margin-bottom: 24px;">
+                    <label>Your Role</label>
+                    <div class="role-grid">
+                        <label class="role-option">
+                            <input type="radio" name="role" value="Interviewer" required>
+                            <div style="margin-left: 12px;">
+                                <div>Interviewer</div>
+                                <div style="font-size: 14px; color: #666;">Conducting the interview</div>
+                            </div>
+                        </label>
+                        <label class="role-option">
+                            <input type="radio" name="role" value="Candidate" required>
+                            <div style="margin-left: 12px;">
+                                <div>Candidate</div>
+                                <div style="font-size: 14px; color: #666;">Being interviewed</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <button type="submit" style="width: 100%; background-color: #3b82f6; color: white; border: none; border-radius: 6px;">
+                    Continue to Meeting
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Test the modal functionality
+        console.log("=== Modal Test Results ===");
+        
+        // TC1: Modal Display
+        const modal = document.querySelector('.modal-overlay');
+        const nameInput = document.querySelector('input[name="name"]');
+        const roleInputs = document.querySelectorAll('input[name="role"]');
+        
+        console.log("TC1 - Modal Display:", {
+            modalVisible: !!modal,
+            nameInputExists: !!nameInput,
+            roleInputsCount: roleInputs.length,
+            RESULT: modal && nameInput && roleInputs.length === 2 ? "PASS" : "FAIL"
+        });
+
+        // TC2: Form Validation
+        const form = document.getElementById('modalForm');
+        console.log("TC2 - Form Validation:", {
+            formExists: !!form,
+            hasRequiredFields: nameInput?.required && roleInputs[0]?.required,
+            RESULT: form && nameInput?.required ? "PASS" : "FAIL"
+        });
+
+        // TC3: Role Selection
+        roleInputs[0]?.addEventListener('change', () => {
+            console.log("TC3 - Role Selection: Interviewer selected");
+        });
+        roleInputs[1]?.addEventListener('change', () => {
+            console.log("TC3 - Role Selection: Candidate selected");
+        });
+
+        // TC4: Form Submission
+        form?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const name = formData.get('name');
+            const role = formData.get('role');
+            
+            console.log("TC4 - Form Submission:", {
+                name: name,
+                role: role,
+                isValid: !!(name && role),
+                RESULT: name && role ? "PASS" : "FAIL"
+            });
+            
+            if (name && role) {
+                localStorage.setItem('participantName', name);
+                localStorage.setItem('participantRole', role);
+                console.log("TC5 - LocalStorage: Data saved");
+                
+                // Simulate navigation
+                window.location.href = `/meeting/test-room-${Date.now()}`;
+            }
+        });
+
+        console.log("Modal test page loaded successfully");
+    </script>
+</body>
+</html>
