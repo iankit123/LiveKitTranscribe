@@ -9,7 +9,7 @@ export interface FollowUpHistoryEntry {
 }
 
 export function useFollowUpSuggestions() {
-  const [suggestions, setSuggestions] = useState<FollowUpSuggestion[] | null>(null);
+  const [suggestions, setSuggestions] = useState<FollowUpResponse | null>(null);
   const [followUpHistory, setFollowUpHistory] = useState<FollowUpHistoryEntry[]>([]);
   const [pinnedQuestions, setPinnedQuestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,56 +18,24 @@ export function useFollowUpSuggestions() {
   const generateSuggestions = useCallback(async (transcriptions: TranscriptionEntry[], customInstruction?: string) => {
     try {
       console.log('🔍 Starting follow-up question generation...');
-      console.log('📝 Received transcriptions:', transcriptions);
-      console.log('📝 Transcriptions type:', typeof transcriptions, Array.isArray(transcriptions));
-      
       setIsLoading(true);
       setError(null);
       
-      // Ensure transcriptions is an array
-      const safeTranscriptions = Array.isArray(transcriptions) ? transcriptions : [];
-      
-      if (safeTranscriptions.length === 0) {
-        console.log('⚠️ No transcriptions provided, checking for stored data...');
-        
-        // Get job description from localStorage/sessionStorage
-        const jobDescription = localStorage.getItem('jobDescription') || sessionStorage.getItem('jobDescription');
-        
-        if (!jobDescription && !customInstruction) {
-          setError('No conversation found. Start transcription or provide job description first.');
-          return;
-        }
-        
-        // Use job description as base for suggestions if no transcripts
-        const baseText = jobDescription || "General technical interview discussion";
-        
-        try {
-          const response = await geminiService.getFollowUpSuggestions(baseText, jobDescription, customInstruction);
-          console.log('✅ Job-based suggestions generated:', response);
-          setSuggestions(response.suggestions);
-        } catch (error) {
-          console.error('❌ Failed to generate suggestions:', error);
-          setError('Failed to generate suggestions. Please check API configuration.');
-        }
-        return;
-      }
-      
       // Get recent candidate responses (last 8 messages from candidates)
-      const candidateResponses = safeTranscriptions
+      const candidateResponses = transcriptions
         .filter(t => t.isFinal && t.speaker === 'Candidate')
         .slice(-8);
 
       console.log('📝 Found candidate responses:', candidateResponses.length);
-      console.log('📝 All transcriptions:', safeTranscriptions.map(t => ({ speaker: t.speaker, text: t.text, isFinal: t.isFinal })));
+      console.log('📝 All transcriptions:', transcriptions.map(t => ({ speaker: t.speaker, text: t.text, isFinal: t.isFinal })));
       
       if (candidateResponses.length === 0) {
         console.log('⚠️ No candidate responses found, using all transcriptions for analysis');
         // Fallback: use all final transcriptions if no specific candidate responses
-        const allFinalResponses = safeTranscriptions.filter(t => t.isFinal).slice(-5);
+        const allFinalResponses = transcriptions.filter(t => t.isFinal).slice(-5);
         if (allFinalResponses.length === 0) {
-          // Use test data for now to test the API
-          const testTranscript = "Test conversation for follow-up generation";
-          console.log('📝 Using test transcript:', testTranscript);
+          setError('No responses found to analyze');
+          return;
         }
         candidateResponses.push(...allFinalResponses);
       }
@@ -95,15 +63,7 @@ export function useFollowUpSuggestions() {
         
         // Ensure response has the expected structure
         if (response && response.suggestions && Array.isArray(response.suggestions)) {
-          console.log('✅ Setting suggestions in state:', response);
-          console.log('✅ Suggestions array:', response.suggestions);
-          
-          // Set suggestions directly as the array for simpler UI handling
-          const suggestionsArray = response.suggestions;
-          setSuggestions(suggestionsArray);
-          console.log('✅ Suggestions set as array:', suggestionsArray);
-          
-          // Add to history
+          // Add to history before setting current suggestions
           if (response.suggestions.length > 0) {
             const historyEntry: FollowUpHistoryEntry = {
               suggestions: response.suggestions,
@@ -112,6 +72,8 @@ export function useFollowUpSuggestions() {
             };
             setFollowUpHistory(prev => [historyEntry, ...prev]);
           }
+          
+          setSuggestions(response);
         } else {
           throw new Error('Invalid response format from API');
         }

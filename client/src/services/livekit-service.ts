@@ -31,49 +31,20 @@ export class LiveKitService {
 
   async connectToRoom(roomName: string, participantName: string): Promise<Room> {
     try {
-      // Disconnect existing room first
-      if (this.room) {
-        await this.disconnectFromRoom();
-      }
-
       const { token, url } = await this.getAccessToken(roomName, participantName);
       
       this.room = new Room({
         adaptiveStream: true,
         dynacast: true,
-        publishDefaults: {
-          dtx: false, // Disable discontinuous transmission
-          stopMicTrackOnMute: false,
-          videoCodec: 'vp8',
-        },
-        audioCaptureDefaults: {
-          autoGainControl: true,
-          echoCancellation: true,
-          noiseSuppression: true,
-        },
       });
 
-      console.log('Connecting to room with enhanced configuration...');
       await this.room.connect(url, token);
-      console.log('Successfully connected to room');
       
-      // Enable camera and microphone with error handling
-      try {
-        await this.room.localParticipant.enableCameraAndMicrophone();
-        console.log('Camera and microphone enabled successfully');
-      } catch (mediaError) {
-        console.warn('Failed to enable media, will allow manual retry:', mediaError);
-      }
+      // Enable camera and microphone by default
+      await this.room.localParticipant.enableCameraAndMicrophone();
       
-      // Set participant metadata with timeout protection
-      try {
-        await Promise.race([
-          this.room.localParticipant.setMetadata(JSON.stringify({ name: participantName })),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Metadata timeout')), 2000))
-        ]);
-      } catch (metadataError) {
-        console.warn('Metadata setting failed, continuing:', metadataError);
-      }
+      // Set participant name for display
+      this.room.localParticipant.setMetadata(JSON.stringify({ name: participantName }));
 
       return this.room;
     } catch (error) {

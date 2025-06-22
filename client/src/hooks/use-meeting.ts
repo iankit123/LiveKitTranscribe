@@ -20,11 +20,11 @@ export function useMeeting() {
       const connectedRoom = await liveKitService.connectToRoom(roomName, participantName);
       
       setRoom(connectedRoom);
-      setIsConnected(true);
       setLocalParticipant(connectedRoom.localParticipant);
       setParticipants(Array.from(connectedRoom.remoteParticipants.values()));
+      setIsConnected(true);
 
-      // Set up event listeners with error handling
+      // Set up event listeners
       connectedRoom.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
         console.log('Participant connected:', participant.identity);
         setParticipants(prev => [...prev, participant]);
@@ -57,21 +57,11 @@ export function useMeeting() {
       });
 
       connectedRoom.on(RoomEvent.Disconnected, (reason) => {
-        console.log('Room disconnected, reason:', reason);
-        // Only log unexpected disconnections, don't attempt auto-reconnect to avoid loops
-        if (reason !== 'CLIENT_INITIATED') {
-          console.warn('Unexpected disconnection detected');
-        }
+        console.log('Room disconnected:', reason);
         setIsConnected(false);
         setRoom(null);
         setLocalParticipant(null);
         setParticipants([]);
-      });
-
-      connectedRoom.on(RoomEvent.ConnectionQualityChanged, (quality, participant) => {
-        if (quality === 'poor') {
-          console.warn('Poor connection quality for:', participant.identity);
-        }
       });
 
       // Simple event handlers without complex reconnection logic

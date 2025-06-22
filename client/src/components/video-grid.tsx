@@ -1,6 +1,6 @@
-import { Room, LocalParticipant, RemoteParticipant, Track, RoomEvent, ParticipantEvent } from "livekit-client";
+import { Room, LocalParticipant, RemoteParticipant } from "livekit-client";
+import { VideoTrack, AudioTrack, RoomAudioRenderer, useParticipants, useLocalParticipant } from "@livekit/components-react";
 import { User, Mic, MicOff, Video as VideoIcon, VideoOff } from "lucide-react";
-import { useEffect, useRef } from "react";
 
 interface VideoGridProps {
   room: Room;
@@ -8,153 +8,41 @@ interface VideoGridProps {
   participants: RemoteParticipant[];
 }
 
-function ParticipantVideo({ participant, isLocal = false, userRole }: { 
-  participant: LocalParticipant | RemoteParticipant, 
-  isLocal?: boolean,
-  userRole?: string 
-}) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  // Determine correct display name based on role
-  const getDisplayName = () => {
-    if (isLocal) {
-      return userRole === 'interviewer' ? 'You (Interviewer)' : 'You (Candidate)';
-    } else {
-      // For remote participants, determine their role from their identity
-      const participantRole = participant.identity.includes('interviewer') ? 'Interviewer' : 'Candidate';
-      const shortId = participant.identity.split('-').pop()?.substring(0, 6) || '';
-      return `${participantRole}-${shortId}`;
-    }
-  };
-
-  const displayName = getDisplayName();
-
-  useEffect(() => {
-    if (!videoRef.current) return;
-
-    const videoElement = videoRef.current;
-
-    if (isLocal) {
-      // Handle local participant
-      const localParticipant = participant as LocalParticipant;
-      
-      const attachLocalVideo = () => {
-        // Get video track from publications
-        const videoTrack = Array.from(localParticipant.videoTrackPublications.values())[0]?.videoTrack;
-        
-        if (videoTrack && videoElement) {
-          try {
-            // Ensure element is ready before attaching
-            if (videoElement.readyState !== undefined) {
-              videoTrack.attach(videoElement);
-              console.log('Local video attached for:', localParticipant.identity);
-            }
-          } catch (error) {
-            console.error('Error attaching local video:', error);
-          }
-        }
-      };
-
-      // Try immediate attachment
-      attachLocalVideo();
-
-      // Listen for track published events
-      const handleTrackPublished = () => {
-        setTimeout(attachLocalVideo, 100);
-      };
-
-      localParticipant.on(ParticipantEvent.LocalTrackPublished, handleTrackPublished);
-
-      return () => {
-        localParticipant.off(ParticipantEvent.LocalTrackPublished, handleTrackPublished);
-      };
-    } else {
-      // Handle remote participant
-      const remoteParticipant = participant as RemoteParticipant;
-
-      const attachRemoteVideo = () => {
-        const videoTrack = Array.from(remoteParticipant.videoTrackPublications.values())[0]?.videoTrack;
-        if (videoTrack && videoElement) {
-          try {
-            // Ensure element is ready before attaching
-            if (videoElement.readyState !== undefined) {
-              videoTrack.attach(videoElement);
-              console.log('Remote video attached for:', remoteParticipant.identity);
-            }
-          } catch (error) {
-            console.error('Error attaching remote video:', error);
-          }
-        }
-      };
-
-      const handleTrackSubscribed = (track: Track) => {
-        if (track.kind === Track.Kind.Video) {
-          try {
-            track.attach(videoElement);
-            console.log('Remote video track subscribed for:', remoteParticipant.identity);
-          } catch (error) {
-            console.error('Error attaching subscribed track:', error);
-          }
-        }
-      };
-
-      const handleTrackUnsubscribed = (track: Track) => {
-        if (track.kind === Track.Kind.Video) {
-          try {
-            track.detach(videoElement);
-            console.log('Remote video track unsubscribed for:', remoteParticipant.identity);
-          } catch (error) {
-            console.error('Error detaching unsubscribed track:', error);
-          }
-        }
-      };
-
-      // Attach existing tracks
-      attachRemoteVideo();
-
-      // Listen for new tracks
-      remoteParticipant.on(ParticipantEvent.TrackSubscribed, handleTrackSubscribed);
-      remoteParticipant.on(ParticipantEvent.TrackUnsubscribed, handleTrackUnsubscribed);
-
-      return () => {
-        remoteParticipant.off(ParticipantEvent.TrackSubscribed, handleTrackSubscribed);
-        remoteParticipant.off(ParticipantEvent.TrackUnsubscribed, handleTrackUnsubscribed);
-      };
-    }
-  }, [participant, isLocal]);
-
-  const hasVideo = participant.videoTrackPublications.size > 0;
+function ParticipantVideo({ participant, isLocal = false }: { participant: LocalParticipant | RemoteParticipant, isLocal?: boolean }) {
+  const videoPublication = participant.videoTrackPublications.size > 0 
+    ? Array.from(participant.videoTrackPublications.values())[0]
+    : null;
 
   return (
-    <div className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden">
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted={isLocal}
-        className="w-full h-full object-cover"
-      />
-      
-      {!hasVideo && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-          <div className="text-center text-gray-300">
+    <div className="relative aspect-video bg-gray-700 rounded-lg overflow-hidden">
+      {videoPublication?.track ? (
+        <VideoTrack
+          trackRef={{ 
+            participant: participant, 
+            publication: videoPublication, 
+            source: videoPublication.source 
+          }}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-gray-700">
+          <div className="text-center text-gray-400">
             <User size={48} className="mx-auto mb-2" />
-            <div className="text-sm font-medium">{displayName}</div>
-            <div className="text-xs text-gray-400 mt-1">Camera Off</div>
+            <div className="text-sm">{isLocal ? 'You' : participant.name || participant.identity}</div>
           </div>
         </div>
       )}
       
       {/* Participant Info Overlay */}
       <div className="absolute bottom-3 left-3 flex items-center space-x-2">
-        <div className="bg-black bg-opacity-70 rounded px-2 py-1 flex items-center space-x-1">
+        <div className="bg-black bg-opacity-50 rounded-full px-2 py-1 flex items-center space-x-1">
           {participant.isMicrophoneEnabled ? (
-            <Mic size={12} className="text-green-400" />
+            <Mic size={12} className="text-white" />
           ) : (
             <MicOff size={12} className="text-red-400" />
           )}
           <span className="text-xs text-white font-medium">
-            {displayName}
+            {isLocal ? 'You' : participant.name || participant.identity}
           </span>
         </div>
       </div>
@@ -185,40 +73,32 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
   );
 }
 
-export default function VideoGrid({ room, localParticipant, participants, userRole }: VideoGridProps & { userRole?: string }) {
-  console.log('VideoGrid - Local participant:', localParticipant?.identity);
-  console.log('VideoGrid - Remote participants:', participants.map(p => p.identity));
+export default function VideoGrid({ room, localParticipant, participants }: VideoGridProps) {
+  const allParticipants = localParticipant ? [localParticipant, ...participants] : participants;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-      {/* Local participant */}
-      {localParticipant && (
-        <ParticipantVideo 
-          participant={localParticipant} 
-          isLocal={true} 
-          userRole={userRole}
-        />
-      )}
-      
-      {/* Remote participants */}
-      {participants.map((participant) => (
-        <ParticipantVideo
-          key={participant.identity}
-          participant={participant}
-          isLocal={false}
-          userRole={userRole}
-        />
-      ))}
-      
-      {/* Placeholder when no remote participants */}
-      {participants.length === 0 && localParticipant && (
-        <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center border-2 border-dashed border-gray-300">
-          <div className="text-center text-gray-500">
-            <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Waiting for {userRole === 'interviewer' ? 'candidate' : 'interviewer'}...</p>
+    <div className="bg-gray-800 rounded-xl p-4">
+      <RoomAudioRenderer />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {localParticipant && (
+          <ParticipantVideo participant={localParticipant} isLocal={true} />
+        )}
+        {participants.map((participant) => (
+          <ParticipantVideo key={participant.sid} participant={participant} />
+        ))}
+
+        {/* Empty Participant Slots */}
+        {allParticipants.length < 6 && (
+          <div className="relative aspect-video bg-gray-700 rounded-lg overflow-hidden border-2 border-dashed border-gray-600">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-gray-500">
+                <User size={32} className="mx-auto mb-2" />
+                <div className="text-sm">Waiting for participants...</div>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

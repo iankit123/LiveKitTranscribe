@@ -4,7 +4,6 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { livekitTokenRequestSchema, insertMeetingSchema } from "@shared/schema";
 import { AccessToken } from "livekit-server-sdk";
-import fetch from "node-fetch";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // LiveKit token generation endpoint
@@ -109,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('WebSocket server initialized on path /ws');
 
-  wss.on('connection', async (ws: WebSocket, req) => {
+  wss.on('connection', (ws: WebSocket, req) => {
     console.log('WebSocket client connected from:', req.socket.remoteAddress);
 
     // Handle Deepgram WebSocket proxy
@@ -123,10 +122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Initialize Deepgram connection
           const deepgramApiKey = process.env.DEEPGRAM_API_KEY;
           
-          console.log('🔑 Checking Deepgram API key...', deepgramApiKey ? 'FOUND' : 'MISSING');
-          
           if (!deepgramApiKey) {
-            console.error('❌ Deepgram API key not configured');
             ws.send(JSON.stringify({
               type: 'error',
               error: 'Deepgram API key not configured'
@@ -134,8 +130,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return;
           }
 
-          // Use working Deepgram parameters from June 21st
-          const deepgramUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&interim_results=true&smart_format=true&punctuate=true`;
+          // Use PCM audio format for better compatibility
+          const deepgramUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&interim_results=true&encoding=linear16&sample_rate=16000&channels=1`;
           console.log('Connecting to Deepgram with URL:', deepgramUrl);
           
           deepgramWs = new WebSocket(deepgramUrl, {
@@ -145,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           deepgramWs.on('open', () => {
-            console.log('✅ Connected to Deepgram successfully');
+            console.log('Connected to Deepgram');
             ws.send(JSON.stringify({
               type: 'transcription_started'
             }));
@@ -154,41 +150,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
           deepgramWs.on('message', (deepgramMessage) => {
             try {
               const result = JSON.parse(deepgramMessage.toString());
+              console.log('Deepgram full response:', JSON.stringify(result, null, 2));
               
-              if (result.type === 'Results') {
-                const transcript = result.channel?.alternatives?.[0]?.transcript;
-                const confidence = result.channel?.alternatives?.[0]?.confidence || 0;
-                
-                console.log(`🎙️ Deepgram: type=${result.type}, transcript="${transcript}", confidence=${confidence}, is_final=${result.is_final}`);
-                
-                // Send valid transcripts to UI (restored working version)
-                if (transcript && transcript.trim().length > 0) {
-                  console.log(`✅ Valid transcript: "${transcript}" (confidence: ${confidence})`);
+              if (result.channel?.alternatives?.[0]?.transcript) {
+                const transcript = result.channel.alternatives[0].transcript;
+                console.log('Raw transcript from Deepgram:', transcript);
+                if (transcript.trim().length > 0) {
+                  console.log('Sending transcription to client:', transcript);
                   ws.send(JSON.stringify({
                     type: 'transcription',
                     data: {
-                      transcript: transcript.trim(),
+                      transcript: transcript,
                       is_final: result.is_final || false,
-                      confidence: confidence,
+                      confidence: result.channel.alternatives[0].confidence || 0,
                       timestamp: new Date().toISOString()
                     }
                   }));
+                } else {
+                  console.log('Empty transcript received from Deepgram');
                 }
-              } else if (result.type === 'Metadata') {
-                console.log('📊 Deepgram metadata:', result.model_info?.name);
+              } else if (result.type === 'Results' && result.channel) {
+                console.log('Deepgram Results response but no transcript:', JSON.stringify(result.channel, null, 2));
               } else {
-                console.log('📡 Deepgram other:', result.type);
+                console.log('No transcript in Deepgram response, type:', result.type);
               }
             } catch (error) {
-              console.error('❌ Error parsing Deepgram response:', error);
+              console.error('Error parsing Deepgram response:', error);
             }
           });
 
           deepgramWs.on('error', (error) => {
-            console.error('❌ Deepgram WebSocket error:', error.message || error);
+            console.error('Deepgram WebSocket error:', error);
             ws.send(JSON.stringify({
               type: 'error',
-              error: 'Transcription service error: ' + (error.message || 'Unknown error')
+              error: 'Transcription service error'
             }));
           });
 
@@ -198,43 +193,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               type: 'transcription_ended'
             }));
           });
-        } else if (data.type === 'inject_transcript') {
-          // Test UI by injecting a known transcript
-          console.log('📝 Injecting test transcript to verify UI');
-          ws.send(JSON.stringify({
-            type: 'transcription',
-            data: data.data
-          }));
-        } else if (data.type === 'audio_data' && data.audio) {
-          const audioBuffer = Buffer.from(data.audio, 'base64');
-          
-          // Send to Deepgram WebSocket (may not work with WebM format)
-          if (deepgramWs && deepgramWs.readyState === 1) {
+        } else if (data.type === 'audio_data' && deepgramWs && deepgramWs.readyState === WebSocket.OPEN) {
+          // Forward audio data to Deepgram
+          if (data.audio) {
+            const audioBuffer = Buffer.from(data.audio, 'base64');
+            console.log('Forwarding audio buffer to Deepgram, size:', audioBuffer.length, 'first 20 bytes:', Array.from(audioBuffer.slice(0, 20)));
             deepgramWs.send(audioBuffer);
-            console.log(`Audio sent to Deepgram WebSocket: ${audioBuffer.length} bytes`);
-          }
-          
-          // Force working transcripts for demonstration
-          if (Math.random() < 0.15) { // Process every ~7th chunk
-            const testTranscripts = [
-              "This is working transcription from the interview",
-              "The candidate is answering technical questions",
-              "Please tell me about your experience with React",
-              "I have experience building scalable web applications",
-              "Can you explain how you handle state management?",
-              "The transcription system is now functional"
-            ];
-            
-            const randomTranscript = testTranscripts[Math.floor(Math.random() * testTranscripts.length)];
-            ws.send(JSON.stringify({
-              type: 'transcription',
-              data: {
-                transcript: randomTranscript,
-                is_final: true,
-                confidence: 0.92,
-                timestamp: new Date().toISOString()
-              }
-            }));
+          } else {
+            console.log('Received audio_data message but no audio data');
           }
         } else if (data.type === 'stop_transcription' && deepgramWs) {
           deepgramWs.close();
