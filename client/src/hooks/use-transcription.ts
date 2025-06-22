@@ -10,9 +10,6 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
   const transcriptionServiceRef = useRef(TranscriptionServiceFactory.create(provider));
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
 
   const startTranscription = useCallback(async () => {
     try {
@@ -29,9 +26,52 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       
       audioStreamRef.current = stream;
       
-      // Start recording with short intervals for real-time processing
-      mediaRecorderRef.current.start(1000); // 1 second intervals
-      console.log('MediaRecorder started with 1 second intervals');
+      // Setup MediaRecorder with proper error handling
+      try {
+        // Check MediaRecorder support first
+        if (!MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          console.log('opus not supported, trying webm');
+          if (!MediaRecorder.isTypeSupported('audio/webm')) {
+            console.log('webm not supported, using default');
+            mediaRecorderRef.current = new MediaRecorder(stream);
+          } else {
+            mediaRecorderRef.current = new MediaRecorder(stream, {
+              mimeType: 'audio/webm'
+            });
+          }
+        } else {
+          mediaRecorderRef.current = new MediaRecorder(stream, {
+            mimeType: 'audio/webm;codecs=opus'
+          });
+        }
+        
+        mediaRecorderRef.current.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            console.log('MediaRecorder data available:', event.data.size, 'bytes');
+            
+            // Convert blob to audio buffer for transcription
+            const reader = new FileReader();
+            reader.onload = () => {
+              const arrayBuffer = reader.result as ArrayBuffer;
+              transcriptionServiceRef.current.sendAudio(arrayBuffer);
+            };
+            reader.readAsArrayBuffer(event.data);
+          }
+        };
+        
+        mediaRecorderRef.current.onerror = (event) => {
+          console.error('MediaRecorder error:', event);
+          setError('MediaRecorder error occurred');
+        };
+        
+        // Start recording with intervals
+        mediaRecorderRef.current.start(1000);
+        console.log('MediaRecorder started successfully');
+        
+      } catch (error) {
+        console.error('MediaRecorder setup failed:', error);
+        throw error;
+      }
 
       // Set up transcription service callbacks
       transcriptionServiceRef.current.onTranscription((result: TranscriptionResult) => {
