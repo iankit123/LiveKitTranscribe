@@ -157,7 +157,9 @@ export default function Home() {
                       <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-xs font-semibold text-indigo-600">1</span>
                       </div>
-                      <p className="text-sm text-gray-600">Set up your interview plan and job description</p>
+                      <p className="text-sm text-gray-600">Plan your interview
+                      Define your job role and structure the interview timeline with section-wise durations
+</p>
                     </div>
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-cyan-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
