@@ -200,15 +200,9 @@ export default function Meeting({ params }: MeetingProps) {
       setIsReadyToConnect(true);
     } else {
       console.log("❓ Missing data, showing role modal");
-      // Temporary: Use URL role as fallback and set default name
-      const defaultName = "User";
-      const defaultRole = urlRole === "interviewer" ? "Interviewer" : "Candidate";
-      
-      console.log("🔧 Using defaults temporarily:", { defaultName, defaultRole });
-      setParticipantName(defaultName);
-      setUserRole(defaultRole);
-      setShowRoleModal(true); // Still show modal but don't block connection
-      setIsReadyToConnect(true); // Allow connection with defaults
+      // Show modal to collect missing information - don't connect until submitted
+      setShowRoleModal(true);
+      setIsReadyToConnect(false);
     }
   }, [urlRole]);
 
