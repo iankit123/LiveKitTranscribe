@@ -104,6 +104,7 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         }
         
         console.log(`📝 Processing transcript: "${result.transcript}"`);
+        console.log(`📝 Creating transcription entry...`);
         
         // Determine speaker based on participant identity or role
         const participantIdentity = room?.localParticipant?.identity || '';
@@ -294,7 +295,12 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
             id: `${participant.identity}-${data.entry.id}`,
           };
           
-          setTranscriptions(prev => [...prev, entry]);
+          console.log(`📝 Adding entry to transcriptions:`, entry);
+        setTranscriptions(prev => {
+          const newTranscriptions = [...prev, entry];
+          console.log(`📝 New transcriptions array length: ${newTranscriptions.length}`);
+          return newTranscriptions;
+        });
         }
       } catch (error) {
         console.error('Error parsing transcription data:', error);
