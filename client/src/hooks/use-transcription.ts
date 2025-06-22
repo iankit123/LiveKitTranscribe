@@ -75,15 +75,10 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
 
       // Set up transcription service callbacks
       transcriptionServiceRef.current.onTranscription((result: TranscriptionResult) => {
-        console.log(`📝 HOOK: Received transcription: "${result.transcript}" (final=${result.isFinal}, confidence=${result.confidence})`);
-        
-        // Process all transcripts including debugging ones
+        // Process all transcripts
         if (!result.transcript || result.transcript.trim().length === 0) {
-          console.log('⚠️ HOOK: Empty transcript received');
           return;
         }
-        
-        console.log(`📝 HOOK: Processing transcript: "${result.transcript}"`);
         
         // Determine speaker based on participant identity or role
         const participantIdentity = room?.localParticipant?.identity || '';
@@ -100,11 +95,8 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
           confidence: result.confidence,
         };
 
-        console.log(`📝 HOOK: Adding transcript to state:`, entry);
         setTranscriptions(prev => {
           const newTranscriptions = [...prev, entry];
-          console.log(`📝 HOOK: New transcriptions array length: ${newTranscriptions.length}`);
-          console.log(`📝 HOOK: All transcriptions:`, newTranscriptions.map(t => t.text));
           
           // Broadcast final transcription to interviewer via data channel
           if (result.isFinal && room?.localParticipant && !isInterviewer) {

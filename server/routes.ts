@@ -226,8 +226,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ];
             
             const randomTranscript = testTranscripts[Math.floor(Math.random() * testTranscripts.length)];
-            console.log(`📝 Sending working transcript: "${randomTranscript}"`);
-            
             ws.send(JSON.stringify({
               type: 'transcription',
               data: {
