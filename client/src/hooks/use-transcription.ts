@@ -49,12 +49,12 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         const inputBuffer = event.inputBuffer;
         const inputData = inputBuffer.getChannelData(0);
         
-        // Check for actual audio activity (non-silence)
-        const hasActivity = inputData.some(sample => Math.abs(sample) > 0.001);
+        // Check for actual audio activity (non-silence) with lower threshold
+        const hasActivity = inputData.some(sample => Math.abs(sample) > 0.0001);
         const maxAmplitude = Math.max(...inputData.map(Math.abs));
         
-        // Only send audio data if there's actual activity
-        if (hasActivity && maxAmplitude > 0.001) {
+        // Send audio data if there's any activity (lowered threshold for testing)
+        if (hasActivity && maxAmplitude > 0.0001) {
           // Convert float32 to int16 PCM with proper scaling
           const pcmData = new Int16Array(inputData.length);
           for (let i = 0; i < inputData.length; i++) {
@@ -63,8 +63,8 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
             pcmData[i] = Math.max(-32768, Math.min(32767, sample));
           }
           
-          // Log audio processing activity (less frequent to avoid spam)
-          if (Math.random() < 0.01) { // Log ~1% of audio chunks
+          // Log audio processing activity for debugging
+          if (Math.random() < 0.1) { // Log ~10% of audio chunks for debugging
             console.log(`🎵 Audio active: chunk_size=${pcmData.length}, max_amplitude=${maxAmplitude.toFixed(3)}, sending to Deepgram`);
           }
           

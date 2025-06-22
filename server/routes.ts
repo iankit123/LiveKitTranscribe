@@ -160,19 +160,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 
                 console.log(`🎙️ Deepgram: type=${result.type}, transcript="${transcript}", confidence=${confidence}, is_final=${result.is_final}`);
                 
+                // Send ALL transcripts to client, including empty ones for debugging
+                ws.send(JSON.stringify({
+                  type: 'transcription',
+                  data: {
+                    transcript: transcript || '',
+                    is_final: result.is_final || false,
+                    confidence: confidence,
+                    timestamp: new Date().toISOString()
+                  }
+                }));
+                
                 if (transcript && transcript.trim().length > 0) {
-                  console.log('✅ Sending valid transcript to client');
-                  ws.send(JSON.stringify({
-                    type: 'transcription',
-                    data: {
-                      transcript: transcript.trim(),
-                      is_final: result.is_final || false,
-                      confidence: confidence,
-                      timestamp: new Date().toISOString()
-                    }
-                  }));
+                  console.log('✅ Valid transcript sent to client');
                 } else {
-                  console.log('⚠️ Empty or invalid transcript, skipping');
+                  console.log('⚠️ Empty transcript sent to client for debugging');
                 }
               } else if (result.type === 'Metadata') {
                 console.log('📊 Deepgram metadata:', result.model_info?.name);
