@@ -18,14 +18,12 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
     try {
       setError(null);
       
-      // Get user media for audio with settings optimized for speech recognition
+      // Get user media for audio (simplified approach from working version)
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          sampleRate: 16000,        // Match Deepgram exactly
-          channelCount: 1,
         } 
       });
       
@@ -78,18 +76,9 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         }
       };
       
-      sourceRef.current.connect(processorRef.current);
-      processorRef.current.connect(audioContextRef.current.destination);
-      
-      console.log('Using Web Audio API for PCM audio capture');
-      
-      // Store references for cleanup (fake MediaRecorder for compatibility)
-      mediaRecorderRef.current = { 
-        stop: () => {
-          // This will be handled by the proper stopTranscription function
-        },
-        state: 'recording'
-      } as any;
+      // Start recording with short intervals for real-time processing
+      mediaRecorderRef.current.start(1000); // 1 second intervals
+      console.log('MediaRecorder started with 1 second intervals');
 
       let isRecording = true;
 
@@ -104,7 +93,6 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         }
         
         console.log(`📝 Processing transcript: "${result.transcript}"`);
-        console.log(`📝 Creating transcription entry...`);
         
         // Determine speaker based on participant identity or role
         const participantIdentity = room?.localParticipant?.identity || '';
@@ -295,12 +283,7 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
             id: `${participant.identity}-${data.entry.id}`,
           };
           
-          console.log(`📝 Adding entry to transcriptions:`, entry);
-        setTranscriptions(prev => {
-          const newTranscriptions = [...prev, entry];
-          console.log(`📝 New transcriptions array length: ${newTranscriptions.length}`);
-          return newTranscriptions;
-        });
+          setTranscriptions(prev => [...prev, entry]);
         }
       } catch (error) {
         console.error('Error parsing transcription data:', error);
