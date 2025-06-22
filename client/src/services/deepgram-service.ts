@@ -70,10 +70,17 @@ export class DeepgramService extends TranscriptionService {
       const uint8Array = new Uint8Array(audioData);
       const base64Audio = btoa(String.fromCharCode(...uint8Array));
       
+      // Log audio data being sent (occasionally to avoid spam)
+      if (Math.random() < 0.01) { // Log ~1% of chunks
+        console.log(`🎤 Sending audio: size=${audioData.byteLength}bytes, ws_state=${this.ws.readyState}`);
+      }
+      
       this.ws.send(JSON.stringify({
         type: 'audio_data',
         audio: base64Audio
       }));
+    } else {
+      console.warn('⚠️ WebSocket not ready for audio data, state:', this.ws?.readyState);
     }
   }
 

@@ -54,6 +54,14 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
           pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
         }
         
+        // Check for actual audio activity (non-silence)
+        const hasActivity = inputData.some(sample => Math.abs(sample) > 0.01);
+        
+        // Log audio processing activity (less frequent to avoid spam)
+        if (Math.random() < 0.005) { // Log ~0.5% of audio chunks
+          console.log(`🎵 Audio processing: chunk_size=${pcmData.length}, has_activity=${hasActivity}, max_amplitude=${Math.max(...inputData.map(Math.abs)).toFixed(3)}`);
+        }
+        
         // Send PCM data to transcription service
         transcriptionServiceRef.current.sendAudio(pcmData.buffer);
       };
@@ -75,7 +83,7 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
 
       // Set up transcription service callbacks
       transcriptionServiceRef.current.onTranscription((result: TranscriptionResult) => {
-        console.log('Received transcription:', result);
+        console.log(`📝 Received transcription: "${result.transcript}" (final=${result.isFinal}, confidence=${result.confidence})`);
         // Determine speaker based on participant identity or role
         const participantIdentity = room?.localParticipant?.identity || '';
         const speakerRole = participantIdentity.startsWith('Interviewer-') ? 'Interviewer' : 
