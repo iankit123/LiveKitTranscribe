@@ -48,8 +48,6 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
       processorRef.current.onaudioprocess = (event) => {
         const inputBuffer = event.inputBuffer;
         const inputData = inputBuffer.getChannelData(0);
-        
-        const inputData = inputBuffer.getChannelData(0);
         const maxAmplitude = Math.max(...inputData.map(Math.abs));
         
         // Only process audio with sufficient volume
