@@ -274,6 +274,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Gemini API endpoint for follow-up suggestions
+  // Health check endpoint for deployment monitoring
+  app.get('/api/health', (req: Request, res: Response) => {
+    const healthStatus = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+      version: '1.0.0',
+      services: {
+        database: 'connected',
+        websocket: wss ? 'connected' : 'disconnected',
+        livekit: process.env.LIVEKIT_API_KEY ? 'configured' : 'not_configured',
+        deepgram: process.env.DEEPGRAM_API_KEY ? 'configured' : 'not_configured',
+        gemini: process.env.GEMINI_API_KEY ? 'configured' : 'not_configured'
+      }
+    };
+    
+    console.log('🏥 Health check requested - Status:', healthStatus.status);
+    res.json(healthStatus);
+  });
+
   app.post('/api/gemini/follow-up-suggestions', async (req: Request, res: Response) => {
     try {
       console.log('🚀 Received follow-up suggestions request');

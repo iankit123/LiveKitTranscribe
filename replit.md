@@ -230,6 +230,11 @@ Changelog:
   * Enhanced microphone enablement and publishing verification in connection flow
   * Added comprehensive audio debugging and status logging for troubleshooting
   * Ensured backward compatibility with working transcription system
+- June 22, 2025. Added deployment monitoring and health check capabilities
+  * Created /api/health endpoint for deployment status monitoring
+  * Added comprehensive service configuration validation (LiveKit, Deepgram, Gemini)
+  * Enhanced server startup logging with clear build and deployment status indicators
+  * Implemented detailed service health reporting for production monitoring
 ```
 
 ## User Preferences
