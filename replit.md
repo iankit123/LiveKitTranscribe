@@ -188,6 +188,12 @@ Changelog:
   * Simplified PCM conversion to proper int16 format without distortion
   * Added visual feedback showing transcription is actively listening
   * Implemented proper audio chunk filtering to send only meaningful speech data
+- June 22, 2025. Comprehensive transcription testing and audio format validation
+  * Tested synthetic English speech generation with proper formants and speech characteristics
+  * Validated Deepgram API integration with WAV format and REST endpoints
+  * Confirmed audio pipeline sends data correctly but Deepgram returns empty transcripts
+  * Implemented UI status messages to provide user feedback during transcription
+  * Enhanced debugging throughout entire pipeline for troubleshooting
 ```
 
 ## User Preferences

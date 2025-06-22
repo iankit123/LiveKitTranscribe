@@ -175,15 +175,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     }
                   }));
                 } else {
-                  // For debugging - send a placeholder after several empty results
-                  if (result.is_final && Math.random() < 0.2) {
-                    console.log(`📝 Sending debug transcript to test UI`);
+                  // For long silences, send feedback to user
+                  if (result.is_final && Math.random() < 0.1) {
+                    console.log(`📝 Sending status message to UI`);
                     ws.send(JSON.stringify({
                       type: 'transcription',
                       data: {
-                        transcript: 'Audio detected but no speech recognized',
+                        transcript: '[Listening for speech - please speak clearly]',
                         is_final: true,
-                        confidence: 0,
+                        confidence: 0.1,
                         timestamp: new Date().toISOString()
                       }
                     }));
