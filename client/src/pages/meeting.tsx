@@ -182,25 +182,39 @@ export default function Meeting({ params }: MeetingProps) {
 
   // Initialize role modal and participant data on mount
   useEffect(() => {
+    console.log("🔧 Initializing role modal and participant data");
+    
     // Load saved data from localStorage
     const savedName = localStorage.getItem('participantName');
     const savedRole = localStorage.getItem('participantRole') as 'Interviewer' | 'Candidate' | null;
+    
+    console.log("💾 Saved data:", { savedName, savedRole });
     
     // Check if we have both name and role
     const hasCompleteData = savedName && savedRole;
     
     if (hasCompleteData) {
+      console.log("✅ Complete data found, connecting automatically");
       setParticipantName(savedName);
       setUserRole(savedRole);
       setIsReadyToConnect(true);
     } else {
-      // Show modal to collect missing information
-      setShowRoleModal(true);
+      console.log("❓ Missing data, showing role modal");
+      // Temporary: Use URL role as fallback and set default name
+      const defaultName = "User";
+      const defaultRole = urlRole === "interviewer" ? "Interviewer" : "Candidate";
+      
+      console.log("🔧 Using defaults temporarily:", { defaultName, defaultRole });
+      setParticipantName(defaultName);
+      setUserRole(defaultRole);
+      setShowRoleModal(true); // Still show modal but don't block connection
+      setIsReadyToConnect(true); // Allow connection with defaults
     }
-  }, []);
+  }, [urlRole]);
 
   // Handle role modal submission
   const handleRoleSubmit = ({ name, role }: { name: string; role: 'Interviewer' | 'Candidate' }) => {
+    console.log("🎯 Role modal submitted:", { name, role });
     setParticipantName(name);
     setUserRole(role);
     setShowRoleModal(false);
