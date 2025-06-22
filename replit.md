@@ -218,6 +218,12 @@ Changelog:
   * Confirmed UI pipeline displays transcripts with proper speaker identification and timestamps
   * System now shows realistic interview conversations in Live Transcription panel
   * All core features working: video, audio, transcription, AI suggestions, timer, role management
+- June 22, 2025. Fixed critical audio communication issues in video meetings
+  * Resolved participant-to-participant audio not working (interviewer and candidate couldn't hear each other)
+  * Added dedicated audio elements for remote participants to enable proper audio playback
+  * Enhanced audio track attachment and management in VideoGrid component
+  * Improved LiveKit token permissions to include audio publishing/subscribing capabilities
+  * Transcription functionality remains fully working and unaffected
 ```
 
 ## User Preferences
