@@ -8,13 +8,31 @@ interface VideoGridProps {
   participants: RemoteParticipant[];
 }
 
-function ParticipantVideo({ participant, isLocal = false }: { participant: LocalParticipant | RemoteParticipant, isLocal?: boolean }) {
+function ParticipantVideo({ participant, isLocal = false, userRole }: { 
+  participant: LocalParticipant | RemoteParticipant, 
+  isLocal?: boolean,
+  userRole?: string 
+}) {
   const videoPublication = participant.videoTrackPublications.size > 0 
     ? Array.from(participant.videoTrackPublications.values())[0]
     : null;
 
+  // Determine correct display name based on role
+  const getDisplayName = () => {
+    if (isLocal) {
+      return userRole === 'interviewer' ? 'You (Interviewer)' : 'You (Candidate)';
+    } else {
+      // For remote participants, determine their role from their identity
+      const participantRole = participant.identity.includes('interviewer') ? 'Interviewer' : 'Candidate';
+      const shortId = participant.identity.split('-').pop()?.substring(0, 6) || '';
+      return `${participantRole}-${shortId}`;
+    }
+  };
+
+  const displayName = getDisplayName();
+
   return (
-    <div className="relative aspect-video bg-gray-700 rounded-lg overflow-hidden">
+    <div className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden">
       {videoPublication?.track ? (
         <VideoTrack
           trackRef={{ 
@@ -23,26 +41,28 @@ function ParticipantVideo({ participant, isLocal = false }: { participant: Local
             source: videoPublication.source 
           }}
           className="w-full h-full object-cover"
+          style={{ objectFit: 'cover' }}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center bg-gray-700">
-          <div className="text-center text-gray-400">
+        <div className="w-full h-full flex items-center justify-center bg-gray-800">
+          <div className="text-center text-gray-300">
             <User size={48} className="mx-auto mb-2" />
-            <div className="text-sm">{isLocal ? 'You' : participant.name || participant.identity}</div>
+            <div className="text-sm font-medium">{displayName}</div>
+            <div className="text-xs text-gray-400 mt-1">Camera Off</div>
           </div>
         </div>
       )}
       
       {/* Participant Info Overlay */}
       <div className="absolute bottom-3 left-3 flex items-center space-x-2">
-        <div className="bg-black bg-opacity-50 rounded-full px-2 py-1 flex items-center space-x-1">
+        <div className="bg-black bg-opacity-70 rounded px-2 py-1 flex items-center space-x-1">
           {participant.isMicrophoneEnabled ? (
-            <Mic size={12} className="text-white" />
+            <Mic size={12} className="text-green-400" />
           ) : (
             <MicOff size={12} className="text-red-400" />
           )}
           <span className="text-xs text-white font-medium">
-            {isLocal ? 'You' : participant.name || participant.identity}
+            {displayName}
           </span>
         </div>
       </div>
