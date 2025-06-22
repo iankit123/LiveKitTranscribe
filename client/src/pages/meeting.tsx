@@ -4,24 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  LogOut,
-  Settings,
-  Copy,
-  Share2,
-  Clock,
-  Play,
-  Pause,
-  RotateCcw,
-  MessageSquare,
-  Lightbulb,
-  Users,
-  Video,
-  Mic,
-  MicOff,
-  VideoOff,
-  AlertTriangle,
-} from "lucide-react";
+import { LogOut, Settings, Copy, Share2, Clock, Play, Pause, RotateCcw, MessageSquare, Lightbulb, Users, Video, Mic, MicOff, VideoOff, AlertTriangle } from "lucide-react";
 import { useMeeting } from "@/hooks/use-meeting";
 import { useTranscription } from "@/hooks/use-transcription";
 import { useFollowUpSuggestions } from "@/hooks/use-follow-up-suggestions";
@@ -29,9 +12,9 @@ import { useInterviewTimer } from "@/hooks/use-interview-timer";
 import VideoGrid from "@/components/video-grid";
 import ErrorBoundary from "@/components/error-boundary";
 import MeetingControls from "@/components/meeting-controls";
-import RolePromptModal from "@/components/RolePromptModal";
 import { parseInterviewPlan } from "@/utils/interview-plan-parser";
 import { useToast } from "@/hooks/use-toast";
+import { LiveKitRoom } from "@livekit/components-react";
 
 interface MeetingProps {
   params: {
@@ -43,57 +26,70 @@ export default function Meeting({ params }: MeetingProps) {
   const { roomName } = params;
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-
-  // State for storing meeting data (using React state instead of localStorage)
-  const [jobDescription, setJobDescription] = useState("");
-  const [interviewPlanText, setInterviewPlanText] = useState("");
-
-  // Role prompt modal state
-  const [showRoleModal, setShowRoleModal] = useState(false);
-  const [participantName, setParticipantName] = useState("");
-  const [userRole, setUserRole] = useState<'Interviewer' | 'Candidate' | ''>('');
-  const [isReadyToConnect, setIsReadyToConnect] = useState(false);
-
-  // Check URL parameters for role specification (fallback)
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlRole = urlParams.get("role");
   
-  // Use user-selected role, fallback to URL role, then default
-  const isInterviewer = userRole === 'Interviewer' || (userRole === '' && urlRole === "interviewer");
+  // Check URL parameters for role specification
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlRole = urlParams.get('role');
+  const isInterviewer = urlRole === 'interviewer';
   const isCurrentUserInterviewer = isInterviewer;
 
-  // Interview plan parsing
+  // Get meeting state from localStorage - check multiple possible keys and sessionStorage
+  const jobDescription = localStorage.getItem(`jobDescription_${roomName}`) || 
+                        localStorage.getItem('jobDescription') || 
+                        sessionStorage.getItem('jobDescription') || '';
+  
+  const interviewPlanText = localStorage.getItem(`interviewPlan_${roomName}`) || 
+                           localStorage.getItem('interviewPlan') || 
+                           sessionStorage.getItem('interviewPlan') || '';
+  
+  console.log('📋 Looking for interview plan in localStorage and sessionStorage...');
+  console.log('📋 Room-specific key:', `interviewPlan_${roomName}`);
+  console.log('📋 localStorage general key:', localStorage.getItem('interviewPlan'));
+  console.log('📋 sessionStorage general key:', sessionStorage.getItem('interviewPlan'));
+  console.log('📋 Room-specific key value:', localStorage.getItem(`interviewPlan_${roomName}`));
+  console.log('📋 Final plan text found:', interviewPlanText);
+  
+  // Debug: Check all localStorage keys
+  console.log('📋 All localStorage keys:', Object.keys(localStorage));
+  console.log('📋 All sessionStorage keys:', Object.keys(sessionStorage));
+  
   const interviewPlan = useMemo(() => {
-    console.log("📋 Parsing interview plan text:", interviewPlanText);
-
-    if (!interviewPlanText) {
-      console.log("⚠️ No interview plan text found, creating fallback plan");
+    // Re-check all possible storage locations
+    const currentPlanText = localStorage.getItem('interviewPlan') || 
+                           sessionStorage.getItem('interviewPlan') || 
+                           interviewPlanText;
+    
+    console.log('📋 Final plan text for parsing:', currentPlanText);
+    
+    if (!currentPlanText) {
+      console.log('⚠️ No interview plan text found, creating fallback plan');
+      // Create a fallback plan based on your home page example
       const fallbackPlan = [
-        { label: "Intro", minutes: 5 },
-        { label: "Past Projects", minutes: 15 },
-        { label: "Case Study", minutes: 15 },
-        { label: "Coding", minutes: 20 },
-        { label: "Wrap-up", minutes: 5 },
+        { label: 'Intro', minutes: 5 },
+        { label: 'Past Projects', minutes: 15 },
+        { label: 'Case Study', minutes: 15 },
+        { label: 'Coding', minutes: 20 },
+        { label: 'Wrap-up', minutes: 5 }
       ];
-      console.log("📋 Using fallback plan:", fallbackPlan);
+      console.log('📋 Using fallback plan:', fallbackPlan);
       return fallbackPlan;
     }
-
-    console.log("📋 Parsing interview plan text:", interviewPlanText);
-    const parsed = parseInterviewPlan(interviewPlanText);
-    console.log("📋 Parsed interview plan result:", parsed);
-
+    
+    console.log('📋 Parsing interview plan text:', currentPlanText);
+    const parsed = parseInterviewPlan(currentPlanText);
+    console.log('📋 Parsed interview plan result:', parsed);
+    
     if (parsed.length === 0) {
-      console.log("⚠️ Parsing resulted in empty plan, using fallback");
+      console.log('⚠️ Parsing resulted in empty plan, using fallback');
       return [
-        { label: "Intro", minutes: 5 },
-        { label: "Past Projects", minutes: 15 },
-        { label: "Case Study", minutes: 15 },
-        { label: "Coding", minutes: 20 },
-        { label: "Wrap-up", minutes: 5 },
+        { label: 'Intro', minutes: 5 },
+        { label: 'Past Projects', minutes: 15 },
+        { label: 'Case Study', minutes: 15 },
+        { label: 'Coding', minutes: 20 },
+        { label: 'Wrap-up', minutes: 5 }
       ];
     }
-
+    
     return parsed;
   }, [interviewPlanText]);
 
@@ -110,51 +106,36 @@ export default function Meeting({ params }: MeetingProps) {
     toggleMute,
     toggleVideo,
     isMuted,
-    isVideoDisabled,
+    isVideoDisabled
   } = useMeeting();
 
-  // FIXED: Single transcription hook declaration with enhanced parameters
+  // Transcription hooks
   const {
     transcriptions,
     isTranscribing,
     startTranscription,
     stopTranscription,
-    clearTranscriptions,
-  } = useTranscription(
-    "deepgram",
-    room,
-    isInterviewer ? "interviewer" : "candidate",
-    {
-      // Pass additional context to help with speaker identification
-      localParticipantId: localParticipant?.identity,
-      currentUserRole: isInterviewer ? "interviewer" : "candidate",
-      participants: participants,
-    },
-  );
+    clearTranscriptions
+  } = useTranscription('deepgram', room, isInterviewer);
 
   // Follow-up suggestions hooks
-  const { suggestions, isLoading, generateSuggestions } =
-    useFollowUpSuggestions();
-
-  console.log("🎯 Component level - suggestions state:", suggestions);
-  console.log("🎯 Component level - isLoading:", isLoading);
-
-  const [customInstruction, setCustomInstruction] = useState("");
+  const {
+    suggestions,
+    isLoading,
+    generateSuggestions
+  } = useFollowUpSuggestions();
+  
+  console.log('🎯 Component level - suggestions state:', suggestions);
+  console.log('🎯 Component level - isLoading:', isLoading);
 
   const handleGenerateSuggestions = () => {
-    console.log("🎯 Generate suggestions clicked");
-    console.log("📝 Current transcriptions:", transcriptions);
-    console.log("📝 Transcriptions length:", transcriptions?.length);
-    console.log(
-      "📝 Transcriptions type:",
-      typeof transcriptions,
-      Array.isArray(transcriptions),
-    );
-
+    console.log('🎯 Generate suggestions clicked');
+    console.log('📝 Current transcriptions:', transcriptions);
+    console.log('📝 Transcriptions length:', transcriptions?.length);
+    console.log('📝 Transcriptions type:', typeof transcriptions, Array.isArray(transcriptions));
+    
     // Ensure transcriptions is an array
-    const safeTranscriptions = Array.isArray(transcriptions)
-      ? transcriptions
-      : [];
+    const safeTranscriptions = Array.isArray(transcriptions) ? transcriptions : [];
     generateSuggestions(safeTranscriptions, customInstruction);
   };
 
@@ -166,142 +147,75 @@ export default function Meeting({ params }: MeetingProps) {
     startTimer,
     stopTimer,
     resetTimer,
-    dismissNudge,
+    dismissNudge
   } = timerHookResult;
 
   // Debug timer state
   useEffect(() => {
-    console.log("⏰ Timer state updated:", {
+    console.log('⏰ Timer state updated:', {
       timerState,
       isRunning: isTimerRunning,
       currentBlock: timerState?.currentBlock,
       nextBlock: timerState?.nextBlock,
-      interviewPlan: interviewPlan,
+      interviewPlan: interviewPlan
     });
   }, [timerState, isTimerRunning, interviewPlan]);
 
-  // Initialize role modal and participant data on mount
+  // Connect to room on mount
   useEffect(() => {
-    console.log("🔧 Initializing role modal and participant data");
+    const participantName = isInterviewer ? 
+      `Interviewer-${Math.random().toString(36).substring(2, 8)}` : 
+      `Candidate-${Math.random().toString(36).substring(2, 8)}`;
     
-    // Load saved data from localStorage
-    const savedName = localStorage.getItem('participantName');
-    const savedRole = localStorage.getItem('participantRole') as 'Interviewer' | 'Candidate' | null;
-    
-    console.log("💾 Saved data:", { savedName, savedRole });
-    
-    // Check if we have both name and role
-    const hasCompleteData = savedName && savedRole;
-    
-    if (hasCompleteData) {
-      console.log("✅ Complete data found, connecting automatically");
-      setParticipantName(savedName);
-      setUserRole(savedRole);
-      setIsReadyToConnect(true);
-    } else {
-      console.log("❓ Missing data, showing role modal");
-      // Show modal to collect missing information - don't connect until submitted
-      setShowRoleModal(true);
-      setIsReadyToConnect(false);
-    }
-  }, [urlRole]);
-
-  // Handle role modal submission
-  const handleRoleSubmit = ({ name, role }: { name: string; role: 'Interviewer' | 'Candidate' }) => {
-    console.log("🎯 Role modal submitted:", { name, role });
-    setParticipantName(name);
-    setUserRole(role);
-    setShowRoleModal(false);
-    setIsReadyToConnect(true);
-  };
-
-  // Connection effect - only runs when ready to connect
-  useEffect(() => {
-    if (!isReadyToConnect || !participantName || !userRole) return;
-
-    // Generate participant name with clear role identification
-    const timestamp = Date.now().toString();
-    const generatedParticipantName = `${userRole}-${roomName}-${timestamp}`;
-
-    console.log(
-      "Connecting to room with participant name:",
-      participantName,
-      "Role:",
-      userRole,
-    );
-
-    console.log(
-      "🎯 Connecting to room with enhanced participant name:",
-      generatedParticipantName,
-      "Role:",
-      userRole,
-      "Room:",
-      roomName,
-    );
-
-    connectToRoom(roomName, generatedParticipantName);
+    console.log('Connecting to room with participant name:', participantName, 'Role:', isInterviewer ? 'Interviewer' : 'Candidate');
+    connectToRoom(roomName, participantName);
 
     return () => {
       disconnectFromRoom();
     };
-  }, [roomName, isReadyToConnect, participantName, userRole, connectToRoom, disconnectFromRoom]);
+  }, [roomName, isInterviewer]);
 
   const handleLeaveRoom = () => {
     disconnectFromRoom();
-    setLocation("/");
+    setLocation('/');
   };
 
   const handleShare = () => {
-    const shareUrl = isCurrentUserInterviewer
-      ? `${window.location.origin}/meeting/${roomName}?role=candidate`
-      : `${window.location.origin}/meeting/${roomName}?role=interviewer`;
-
+    const shareUrl = isCurrentUserInterviewer ? 
+      `${window.location.origin}/meeting/${roomName}?role=candidate` :
+      `${window.location.origin}/meeting/${roomName}?role=interviewer`;
+    
     if (navigator.share) {
       navigator.share({
-        title: "Join Interview",
-        url: shareUrl,
+        title: 'Join Interview',
+        url: shareUrl
       });
     } else {
       navigator.clipboard.writeText(shareUrl);
       toast({
         title: "Link copied!",
-        description: `${isCurrentUserInterviewer ? "Candidate" : "Interviewer"} link copied to clipboard`,
+        description: `${isCurrentUserInterviewer ? 'Candidate' : 'Interviewer'} link copied to clipboard`,
       });
     }
   };
 
   const handleCopyLink = () => {
-    const shareUrl = isCurrentUserInterviewer
-      ? `${window.location.origin}/meeting/${roomName}?role=candidate`
-      : `${window.location.origin}/meeting/${roomName}?role=interviewer`;
-
+    const shareUrl = isCurrentUserInterviewer ? 
+      `${window.location.origin}/meeting/${roomName}?role=candidate` :
+      `${window.location.origin}/meeting/${roomName}?role=interviewer`;
+    
     navigator.clipboard.writeText(shareUrl);
     toast({
       title: "Link copied!",
-      description: `${isCurrentUserInterviewer ? "Candidate" : "Interviewer"} link copied to clipboard`,
+      description: `${isCurrentUserInterviewer ? 'Candidate' : 'Interviewer'} link copied to clipboard`,
     });
   };
 
   const formatTime = (minutes: number, seconds: number) => {
-    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // FIXED: Enhanced getSpeakerLabel function
-  const getSpeakerLabel = (transcription) => {
-    const participantId =
-      transcription.participantId ||
-      transcription.participantIdentity ||
-      transcription.participant?.identity;
-
-    if (!participantId) return "Unknown";
-
-    const lowerId = participantId.toLowerCase();
-
-    if (lowerId.startsWith("interviewer-")) return "Interviewer";
-    if (lowerId.startsWith("candidate-")) return "Candidate";
-
-    return "Unknown";
-  };
+  const [customInstruction, setCustomInstruction] = useState('');
 
   if (error && !isConnecting) {
     return (
@@ -311,11 +225,9 @@ export default function Meeting({ params }: MeetingProps) {
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-8 h-8 text-red-600" />
             </div>
-            <h2 className="text-xl font-bold text-red-900 mb-2">
-              Connection Error
-            </h2>
+            <h2 className="text-xl font-bold text-red-900 mb-2">Connection Error</h2>
             <p className="text-red-700 mb-6">{error}</p>
-            <Button onClick={() => setLocation("/")} className="w-full">
+            <Button onClick={() => setLocation('/')} className="w-full">
               Back to Home
             </Button>
           </CardContent>
@@ -330,90 +242,8 @@ export default function Meeting({ params }: MeetingProps) {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
           <p className="text-gray-600 text-lg">
-            {isConnecting ? "Connecting to room..." : "Setting up room..."}
+            {isConnecting ? 'Connecting to room...' : 'Setting up room...'}
           </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show modal if not ready to connect - Force display for testing
-  console.log("🔍 Render check - isReadyToConnect:", isReadyToConnect, "showRoleModal:", showRoleModal);
-  
-  // Show modal if not ready to connect
-  if (!isReadyToConnect) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white rounded-lg p-8 w-full max-w-md mx-4 shadow-xl">
-          <h2 className="text-2xl font-bold mb-4">Join the Meeting</h2>
-          <p className="text-gray-600 mb-6">Please enter your name and select your role to continue.</p>
-          
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target as HTMLFormElement);
-            const name = formData.get('name') as string;
-            const role = formData.get('role') as 'Interviewer' | 'Candidate';
-            
-            if (name && role) {
-              handleRoleSubmit({ name, role });
-            }
-          }} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your Name
-              </label>
-              <input
-                name="name"
-                type="text"
-                placeholder="Enter your full name"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                autoFocus
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Your Role
-              </label>
-              <div className="grid grid-cols-1 gap-3">
-                <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="role"
-                    value="Interviewer"
-                    required
-                    className="mr-3"
-                  />
-                  <div>
-                    <div className="font-medium">Interviewer</div>
-                    <div className="text-sm text-gray-500">Conducting the interview</div>
-                  </div>
-                </label>
-                
-                <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="role"
-                    value="Candidate"
-                    required
-                    className="mr-3"
-                  />
-                  <div>
-                    <div className="font-medium">Candidate</div>
-                    <div className="text-sm text-gray-500">Being interviewed</div>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition-colors"
-            >
-              Continue to Meeting
-            </button>
-          </form>
         </div>
       </div>
     );
@@ -426,14 +256,8 @@ export default function Meeting({ params }: MeetingProps) {
         <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-full px-6 py-3 shadow-xl">
           <div className="flex items-center space-x-6 text-sm">
             <div className="flex items-center space-x-2">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  isTranscribing ? "bg-red-500 animate-pulse" : "bg-gray-400"
-                }`}
-              ></div>
-              <span className="font-medium">
-                {isTranscribing ? "Transcribing" : "Not Recording"}
-              </span>
+              <div className={`w-2 h-2 rounded-full ${isTranscribing ? 'bg-red-500 animate-pulse' : 'bg-gray-400'}`}></div>
+              <span className="font-medium">{isTranscribing ? 'Transcribing' : 'Not Recording'}</span>
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -442,18 +266,12 @@ export default function Meeting({ params }: MeetingProps) {
             <div className="flex items-center space-x-2">
               <Clock className="w-3 h-3" />
               <span className="font-mono font-medium">
-                {formatTime(
-                  timerState?.elapsedMinutes || 0,
-                  timerState?.elapsedSeconds || 0,
-                )}
+                {formatTime(timerState.elapsedMinutes, timerState.elapsedSeconds)}
               </span>
             </div>
             <div className="flex items-center space-x-2">
               <Users className="w-3 h-3" />
-              <span>
-                {(participants?.length || 0) + (localParticipant ? 1 : 0)}{" "}
-                participants
-              </span>
+              <span>{(participants?.length || 0) + (localParticipant ? 1 : 0)} participants</span>
             </div>
           </div>
         </div>
@@ -463,29 +281,34 @@ export default function Meeting({ params }: MeetingProps) {
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Interview: {roomName}
-            </h1>
-            <p className="text-gray-600">
-              {isInterviewer ? "Interviewer Dashboard" : "Candidate View"}
-            </p>
+            <h1 className="text-2xl font-bold text-gray-900">Interview: {roomName}</h1>
+            <p className="text-gray-600">{isInterviewer ? 'Interviewer Dashboard' : 'Candidate View'}</p>
           </div>
-
+          
           <div className="flex items-center space-x-3">
-            <Button onClick={handleShare} variant="outline" size="sm">
+            <Button 
+              onClick={handleShare}
+              variant="outline"
+              size="sm"
+            >
               <Share2 className="mr-2" size={16} />
-              Share {isCurrentUserInterviewer
-                ? "Candidate"
-                : "Interviewer"}{" "}
-              Link
+              Share {isCurrentUserInterviewer ? 'Candidate' : 'Interviewer'} Link
             </Button>
-
-            <Button onClick={handleCopyLink} variant="outline" size="sm">
+            
+            <Button 
+              onClick={handleCopyLink}
+              variant="outline"
+              size="sm"
+            >
               <Copy className="mr-2" size={16} />
               Copy Link
             </Button>
-
-            <Button onClick={handleLeaveRoom} variant="destructive" size="sm">
+            
+            <Button 
+              onClick={handleLeaveRoom}
+              variant="destructive"
+              size="sm"
+            >
               <LogOut className="mr-2" size={16} />
               Leave
             </Button>
@@ -498,20 +321,16 @@ export default function Meeting({ params }: MeetingProps) {
         {/* Video Section */}
         {isConnected && room && localParticipant ? (
           <div className="mb-6">
-            <ErrorBoundary
-              fallback={
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                  <p className="text-red-800">
-                    Video component failed to load. Please refresh the page.
-                  </p>
-                </div>
-              }
-            >
-              <VideoGrid
-                room={room}
+            <ErrorBoundary fallback={
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                <p className="text-red-800">Video component failed to load. Please refresh the page.</p>
+              </div>
+            }>
+              <VideoGrid 
+                room={room} 
                 localParticipant={localParticipant}
                 participants={participants}
-                userRole={isInterviewer ? "interviewer" : "candidate"}
+                userRole={isInterviewer ? 'interviewer' : 'candidate'}
               />
             </ErrorBoundary>
           </div>
@@ -536,78 +355,79 @@ export default function Meeting({ params }: MeetingProps) {
                 {/* Timer Section */}
                 <div className="text-center bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-6">
                   <div className="text-4xl font-mono font-bold text-indigo-600 mb-2">
-                    {formatTime(
-                      timerState?.elapsedMinutes || 0,
-                      timerState?.elapsedSeconds || 0,
-                    )}
+                    {formatTime(timerState?.elapsedMinutes || 0, timerState?.elapsedSeconds || 0)}
                   </div>
                   <div className="text-sm text-gray-600 mb-4">Elapsed Time</div>
-
+                  
                   {/* Interview Plan Progress */}
+                  {console.log('🎯 Rendering timer section. Current block:', timerState?.currentBlock, 'Next block:', timerState?.nextBlock)}
                   {interviewPlan.length > 0 ? (
                     <div className="mb-4 text-sm">
                       {timerState?.currentBlock ? (
                         <>
                           <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full mb-2">
-                            Current: {timerState.currentBlock.label} (
-                            {timerState.currentBlock.minutes}min)
+                            Current: {timerState.currentBlock.label} ({timerState.currentBlock.minutes}min)
                           </div>
+                          {console.log('📍 Rendered current block:', timerState.currentBlock.label)}
                           {timerState.nextBlock && (
-                            <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-                              Next: {timerState.nextBlock.label} (
-                              {timerState.nextBlock.minutes}min)
-                            </div>
+                            <>
+                              <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
+                                Next: {timerState.nextBlock.label} ({timerState.nextBlock.minutes}min)
+                              </div>
+                              {console.log('📍 Rendered next block:', timerState.nextBlock.label)}
+                            </>
                           )}
                         </>
                       ) : (
                         <div className="text-gray-500 text-xs">
-                          Plan:{" "}
-                          {interviewPlan
-                            .map(
-                              (block) => `${block.label} (${block.minutes}m)`,
-                            )
-                            .join(" → ")}
+                          {console.log('🔍 No current block, showing plan overview')}
+                          Plan: {interviewPlan.map(block => `${block.label} (${block.minutes}m)`).join(' → ')}
                         </div>
                       )}
                     </div>
                   ) : (
                     <div className="mb-4 text-sm text-gray-500">
+                      {console.log('❌ No interview plan available')}
                       No interview plan set
                     </div>
                   )}
-
+                  
                   <div className="flex justify-center space-x-2">
                     <Button
                       onClick={() => {
+                        console.log('🎯 Timer button clicked, isRunning:', isTimerRunning);
                         if (isTimerRunning) {
+                          console.log('⏸️ Stopping timer');
                           stopTimer();
                         } else {
+                          console.log('▶️ Starting timer');
                           startTimer();
                         }
                       }}
                       size="sm"
                       className="bg-indigo-600 hover:bg-indigo-700"
                     >
-                      {isTimerRunning ? (
-                        <Pause className="w-4 h-4" />
-                      ) : (
-                        <Play className="w-4 h-4" />
-                      )}
+                      {isTimerRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                     </Button>
-                    <Button onClick={resetTimer} size="sm" variant="outline">
+                    <Button
+                      onClick={() => {
+                        console.log('🔄 Reset timer clicked');
+                        resetTimer();
+                      }}
+                      size="sm"
+                      variant="outline"
+                    >
                       <RotateCcw className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
 
                 {/* Current Segment */}
-                {timerState?.currentBlock && (
+                {timerState.currentBlock && (
                   <div className="space-y-3">
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-green-800">
-                          Current Section
-                        </span>
+                        <span className="text-sm font-medium text-green-800">Current Section</span>
                         <Badge className="bg-green-100 text-green-800">
                           {timerState.currentBlock.label}
                         </Badge>
@@ -620,13 +440,8 @@ export default function Meeting({ params }: MeetingProps) {
                     {timerState.nextBlock && (
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-blue-800">
-                            Next Section
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className="text-blue-800 border-blue-300"
-                          >
+                          <span className="text-sm font-medium text-blue-800">Next Section</span>
+                          <Badge variant="outline" className="text-blue-800 border-blue-300">
                             {timerState.nextBlock.label}
                           </Badge>
                         </div>
@@ -639,17 +454,14 @@ export default function Meeting({ params }: MeetingProps) {
                 )}
 
                 {/* Soft Nudge */}
-                {timerState?.shouldShowNudge && timerState.nextBlock && (
+                {timerState.shouldShowNudge && timerState.nextBlock && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                     <div className="flex items-start space-x-3">
                       <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-orange-800 mb-2">
-                          Time Reminder
-                        </p>
+                        <p className="text-sm font-medium text-orange-800 mb-2">Time Reminder</p>
                         <p className="text-sm text-orange-700 mb-3">
-                          You planned to start "{timerState.nextBlock.label}"
-                          now. Continue with current section or move on?
+                          You planned to start "{timerState.nextBlock.label}" now. Continue with current section or move on?
                         </p>
                         <Button
                           onClick={dismissNudge}
@@ -677,21 +489,11 @@ export default function Meeting({ params }: MeetingProps) {
                       Live Transcription
                     </CardTitle>
                     <Button
-                      onClick={
-                        isTranscribing ? stopTranscription : startTranscription
-                      }
+                      onClick={isTranscribing ? stopTranscription : startTranscription}
                       size="sm"
-                      className={
-                        isTranscribing
-                          ? "bg-red-600 hover:bg-red-700"
-                          : "bg-green-600 hover:bg-green-700"
-                      }
+                      className={isTranscribing ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
                     >
-                      {isTranscribing ? (
-                        <MicOff className="w-4 h-4" />
-                      ) : (
-                        <Mic className="w-4 h-4" />
-                      )}
+                      {isTranscribing ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                     </Button>
                   </div>
                 </CardHeader>
@@ -700,52 +502,25 @@ export default function Meeting({ params }: MeetingProps) {
                     {(transcriptions?.length || 0) === 0 ? (
                       <div className="text-center py-8">
                         <MessageSquare className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500 text-sm">
-                          Start transcription to see live conversation
-                        </p>
+                        <p className="text-gray-500 text-sm">Start transcription to see live conversation</p>
                       </div>
                     ) : (
-                      (transcriptions || []).slice(-10).map((transcription) => {
-                        const speakerLabel = getSpeakerLabel(transcription);
-
-                        return (
-                          <div
-                            key={transcription.id}
-                            className="border-l-2 border-gray-200 pl-3 py-2"
-                          >
-                            <div className="flex items-center space-x-2 mb-1">
-                              <Badge
-                                variant={
-                                  speakerLabel === "Interviewer"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                                className={
-                                  speakerLabel === "Interviewer"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : "bg-green-100 text-green-800"
-                                }
-                              >
-                                {speakerLabel}
-                              </Badge>
-                              <span className="text-xs text-gray-500">
-                                {new Date(
-                                  transcription.timestamp,
-                                ).toLocaleTimeString()}
-                              </span>
-                              <span className="text-xs text-gray-400">
-                                {Math.round(
-                                  (transcription.confidence || 0) * 100,
-                                )}
-                                %
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-700">
-                              {transcription.text}
-                            </p>
+                      (transcriptions || []).slice(-10).map((transcription) => (
+                        <div key={transcription.id} className="border-l-2 border-gray-200 pl-3 py-2">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <Badge variant={transcription.speaker === 'TestBadge' ? 'default' : 'secondary'}>
+                              {transcription.speaker}
+                            </Badge>
+                            <span className="text-xs text-gray-500">
+                              {new Date(transcription.timestamp).toLocaleTimeString()}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {Math.round(transcription.confidence * 100)}%
+                            </span>
                           </div>
-                        );
-                      })
+                          <p className="text-sm text-gray-700">{transcription.text}</p>
+                        </div>
+                      ))
                     )}
                   </div>
                 </CardContent>
@@ -773,59 +548,33 @@ export default function Meeting({ params }: MeetingProps) {
                     />
                   </div>
 
-                  <Button
+                  <Button 
                     onClick={() => {
-                      console.log(
-                        "🎯 Button clicked, clearing suggestions first",
-                      );
+                      console.log('🎯 Button clicked, clearing suggestions first');
                       // Force clear suggestions and regenerate
-                      const safeTranscriptions = Array.isArray(transcriptions)
-                        ? transcriptions
-                        : [];
-                      console.log(
-                        "🔄 Force regenerating with:",
-                        safeTranscriptions.length,
-                        "transcriptions",
-                      );
-                      generateSuggestions(
-                        safeTranscriptions,
-                        customInstruction,
-                      );
+                      const safeTranscriptions = Array.isArray(transcriptions) ? transcriptions : [];
+                      console.log('🔄 Force regenerating with:', safeTranscriptions.length, 'transcriptions');
+                      generateSuggestions(safeTranscriptions, customInstruction);
                     }}
                     disabled={isLoading}
                     className="w-full bg-amber-600 hover:bg-amber-700"
                   >
                     <Lightbulb className="w-4 h-4 mr-2" />
-                    {isLoading ? "Generating..." : "Get Follow-Up Questions"}
+                    {isLoading ? 'Generating...' : 'Get Follow-Up Questions'}
                   </Button>
 
                   {/* Suggestions List */}
                   <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {console.log(
-                      "🎯 Rendering suggestions - raw:",
-                      suggestions,
-                    )}
-                    {console.log(
-                      "🎯 Rendering suggestions - type:",
-                      typeof suggestions,
-                      "isArray:",
-                      Array.isArray(suggestions),
-                    )}
-                    {!suggestions ||
-                    !Array.isArray(suggestions) ||
-                    suggestions.length === 0 ? (
+                    {console.log('🎯 Rendering suggestions - raw:', suggestions)}
+                    {console.log('🎯 Rendering suggestions - type:', typeof suggestions, 'isArray:', Array.isArray(suggestions))}
+                    {!suggestions || !Array.isArray(suggestions) || suggestions.length === 0 ? (
                       <div className="text-center py-6">
                         <Lightbulb className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500 text-sm">
-                          Generate follow-up questions based on the conversation
-                        </p>
+                        <p className="text-gray-500 text-sm">Generate follow-up questions based on the conversation</p>
                       </div>
                     ) : (
                       suggestions.slice(0, 5).map((suggestion, index) => (
-                        <div
-                          key={index}
-                          className="bg-amber-50 border border-amber-200 rounded-lg p-3"
-                        >
+                        <div key={index} className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                           <p className="text-sm text-gray-800 font-medium mb-2">
                             {suggestion.question}
                           </p>
@@ -835,9 +584,7 @@ export default function Meeting({ params }: MeetingProps) {
                             </p>
                           )}
                           <Button
-                            onClick={() =>
-                              navigator.clipboard.writeText(suggestion.question)
-                            }
+                            onClick={() => navigator.clipboard.writeText(suggestion.question)}
                             size="sm"
                             variant="ghost"
                             className="mt-2 h-6 px-2 text-xs"
@@ -859,12 +606,8 @@ export default function Meeting({ params }: MeetingProps) {
         {!isInterviewer && (
           <div className="text-center py-12">
             <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Candidate View
-            </h2>
-            <p className="text-gray-600">
-              Focus on the interview - your responses are being recorded
-            </p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Candidate View</h2>
+            <p className="text-gray-600">Focus on the interview - your responses are being recorded</p>
           </div>
         )}
       </div>
@@ -875,15 +618,9 @@ export default function Meeting({ params }: MeetingProps) {
         isVideoDisabled={isVideoDisabled}
         onToggleMute={toggleMute}
         onToggleVideo={toggleVideo}
-        onToggleScreenShare={() => {
-          /* TODO: Implement screen share */
-        }}
-        onOpenSettings={() => {
-          /* TODO: Implement settings */
-        }}
+        onToggleScreenShare={() => {/* TODO: Implement screen share */}}
+        onOpenSettings={() => {/* TODO: Implement settings */}}
       />
-
-
     </div>
   );
 }
