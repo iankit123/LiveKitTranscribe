@@ -203,7 +203,7 @@ export default function Home() {
                 <CardContent className="space-y-6">
                   {/* Job Description */}
                   <div>
-                    <label htmlFor="jobDescription" className="block text-sm font-semibold mb-3 flex items-center text-gray-900">
+                    <label htmlFor="jobDescription" className="text-sm font-semibold flex items-center text-gray-900 mt-[21px] mb-[21px]">
                       <Briefcase className="w-4 h-4 mr-2 text-indigo-600" />
                       Job Description for the Role
                     </label>
