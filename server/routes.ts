@@ -154,33 +154,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
           deepgramWs.on('message', (deepgramMessage) => {
             try {
               const result = JSON.parse(deepgramMessage.toString());
+              console.log(`📥 DEEPGRAM RESPONSE: ${JSON.stringify(result).substring(0, 200)}...`);
               
-              if (result.type === 'Results') {
-                const transcript = result.channel?.alternatives?.[0]?.transcript;
-                const confidence = result.channel?.alternatives?.[0]?.confidence || 0;
+              // Handle multiple Deepgram response formats
+              if (result.type === 'Results' && result.channel?.alternatives?.length > 0) {
+                const transcript = result.channel.alternatives[0].transcript;
+                const confidence = result.channel.alternatives[0].confidence || 0;
+                const isFinal = result.is_final || false;
                 
-                console.log(`🎙️ Deepgram: type=${result.type}, transcript="${transcript}", confidence=${confidence}, is_final=${result.is_final}`);
+                console.log(`🎯 TRANSCRIPT: "${transcript}" (final=${isFinal}, conf=${confidence})`);
                 
-                // Send valid transcripts to UI (restored working version)
                 if (transcript && transcript.trim().length > 0) {
-                  console.log(`✅ Valid transcript: "${transcript}" (confidence: ${confidence})`);
+                  console.log(`✅ SENDING TO UI: "${transcript.trim()}"`);
                   ws.send(JSON.stringify({
                     type: 'transcription',
                     data: {
                       transcript: transcript.trim(),
-                      is_final: result.is_final || false,
+                      is_final: isFinal,
                       confidence: confidence,
+                      timestamp: new Date().toISOString()
+                    }
+                  }));
+                } else {
+                  console.log(`⚠️ EMPTY TRANSCRIPT: type=${result.type}`);
+                }
+              } else if (result.channel?.alternatives?.length > 0) {
+                // Alternative format without type field
+                const transcript = result.channel.alternatives[0].transcript;
+                if (transcript?.trim()) {
+                  console.log(`✅ ALT FORMAT: "${transcript.trim()}"`);
+                  ws.send(JSON.stringify({
+                    type: 'transcription',
+                    data: {
+                      transcript: transcript.trim(),
+                      is_final: true,
+                      confidence: result.channel.alternatives[0].confidence || 0.9,
                       timestamp: new Date().toISOString()
                     }
                   }));
                 }
               } else if (result.type === 'Metadata') {
-                console.log('📊 Deepgram metadata:', result.model_info?.name);
+                console.log(`📊 METADATA: model=${result.model_info?.name}`);
               } else {
-                console.log('📡 Deepgram other:', result.type);
+                console.log(`📡 OTHER: type=${result.type}, keys=[${Object.keys(result).join(',')}]`);
               }
             } catch (error) {
-              console.error('❌ Error parsing Deepgram response:', error);
+              console.error('❌ PARSE ERROR:', error);
+              console.error('❌ RAW MESSAGE:', deepgramMessage.toString().substring(0, 500));
             }
           });
 
@@ -208,14 +228,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else if (data.type === 'audio_data' && data.audio) {
           const audioBuffer = Buffer.from(data.audio, 'base64');
           
-          // Send to Deepgram WebSocket (may not work with WebM format)
-          if (deepgramWs && deepgramWs.readyState === 1) {
-            deepgramWs.send(audioBuffer);
-            console.log(`Audio sent to Deepgram WebSocket: ${audioBuffer.length} bytes`);
+          // Enhanced debugging for audio processing
+          const audioLevel = Array.from(new Int16Array(audioBuffer.buffer, audioBuffer.byteOffset, audioBuffer.length / 2))
+            .reduce((max, val) => Math.max(max, Math.abs(val)), 0);
+          
+          if (Math.random() < 0.1) { // Log 10% of chunks
+            console.log(`🔊 SERVER AUDIO: ${audioBuffer.length}bytes, level=${audioLevel}, format=PCM`);
           }
           
-          // Send real audio data to Deepgram for processing
-          // The Web Audio API now sends proper PCM data that Deepgram can process
+          // Send PCM audio to Deepgram WebSocket
+          if (deepgramWs && deepgramWs.readyState === 1) {
+            deepgramWs.send(audioBuffer);
+            if (Math.random() < 0.1) {
+              console.log(`📤 TO DEEPGRAM: ${audioBuffer.length}bytes PCM audio sent`);
+            }
+          } else {
+            console.error('📤 ERROR: Deepgram WebSocket not ready, state:', deepgramWs?.readyState);
+          }
         } else if (data.type === 'stop_transcription' && deepgramWs) {
           deepgramWs.close();
           deepgramWs = null;
