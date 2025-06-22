@@ -1,0 +1,145 @@
+# Fix React Transcription Hook - Audio Processing Issue
+
+## Problem Description
+The transcription functionality stopped working after a UI change. The issue is that the current implementation uses MediaRecorder which sends compressed audio (WebM/Opus) to Deepgram, but Deepgram expects raw PCM audio data.
+
+## Required Changes
+
+### 1. Replace MediaRecorder with Web Audio API
+**Current problematic code (around line 20-60 in useTranscription hook):**
+```typescript
+// REMOVE THIS MediaRecorder approach:
+mediaRecorderRef.current = new MediaRecorder(stream, {
+  mimeType: 'audio/webm;codecs=opus'
+});
+
+mediaRecorderRef.current.ondataavailable = (event) => {
+  if (event.data.size > 0) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const arrayBuffer = reader.result as ArrayBuffer;
+      transcriptionServiceRef.current.sendAudio(arrayBuffer); // This sends compressed audio!
+    };
+    reader.readAsArrayBuffer(event.data);
+  }
+};
+```
+
+**Replace with Web Audio API approach:**
+```typescript
+// Use Web Audio API to get raw PCM data instead of compressed audio
+const audioContext = new AudioContext({ sampleRate: 16000 });
+const source = audioContext.createMediaStreamSource(stream);
+const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+processor.onaudioprocess = (event) => {
+  const inputBuffer = event.inputBuffer;
+  const inputData = inputBuffer.getChannelData(0);
+  
+  // Convert float32 to int16 PCM
+  const pcmData = new Int16Array(inputData.length);
+  for (let i = 0; i < inputData.length; i++) {
+    pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
+  }
+  
+  // Send PCM data to transcription service
+  transcriptionServiceRef.current.sendAudio(pcmData.buffer);
+};
+
+source.connect(processor);
+processor.connect(audioContext.destination);
+
+// Store references for cleanup
+mediaRecorderRef.current = { 
+  stop: () => {
+    processor.disconnect();
+    source.disconnect();
+    audioContext.close();
+  }
+} as any;
+```
+
+### 2. Update Audio Stream Configuration
+**Change the getUserMedia configuration from:**
+```typescript
+const stream = await navigator.mediaDevices.getUserMedia({ 
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+  } 
+});
+```
+
+**To:**
+```typescript
+const stream = await navigator.mediaDevices.getUserMedia({ 
+  audio: {
+    echoCancellation: false,
+    noiseSuppression: false,
+    sampleRate: 16000,
+    channelCount: 1,
+  } 
+});
+```
+
+### 3. Fix Transcription State Management
+**Replace the transcription processing logic:**
+```typescript
+// CURRENT - adds duplicates:
+setTranscriptions(prev => {
+  const newTranscriptions = [...prev, entry];
+  return newTranscriptions;
+});
+```
+
+**With proper deduplication:**
+```typescript
+setTranscriptions(prev => {
+  const finalEntries = prev.filter(t => t.isFinal);
+  const newTranscriptions = result.isFinal ? [...finalEntries, entry] : [...finalEntries, entry];
+  return newTranscriptions;
+});
+```
+
+### 4. Remove Broken Cleanup Code
+**Remove these undefined references from cleanup:**
+```typescript
+// REMOVE - these refs don't exist:
+if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+  if (processorRef.current) {
+    processorRef.current.disconnect();
+  }
+  if (sourceRef.current) {
+    sourceRef.current.disconnect();
+  }
+  audioContextRef.current.close();
+}
+```
+
+### 5. Update Console Logging
+**Add this logging in the startTranscription function:**
+```typescript
+console.log('Using Web Audio API for PCM audio capture');
+```
+
+**And update the success message:**
+```typescript
+console.log('Transcription started successfully with Web Audio API');
+```
+
+## Key Technical Points:
+- **Root Cause**: MediaRecorder outputs compressed audio (WebM/Opus), but Deepgram needs raw PCM data
+- **Solution**: Use Web Audio API's ScriptProcessorNode to capture raw audio samples
+- **Audio Format**: Convert Float32 audio samples to Int16 PCM format
+- **Sample Rate**: Use 16kHz which is optimal for speech recognition
+- **Disable Audio Processing**: Turn off echo cancellation and noise suppression for better transcription accuracy
+
+## Expected Result:
+After these changes, the transcription should work again by sending raw PCM audio data that Deepgram can properly process through your WebSocket proxy.
+
+## Files to Modify:
+- `useTranscription.ts` (or similar hook file)
+- Look for the `startTranscription` function specifically
+
+Make these changes and the transcription functionality should be restored.

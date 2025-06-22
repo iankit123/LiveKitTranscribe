@@ -96,7 +96,8 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         };
 
         setTranscriptions(prev => {
-          const newTranscriptions = [...prev, entry];
+          const finalEntries = prev.filter(t => t.isFinal);
+          const newTranscriptions = result.isFinal ? [...finalEntries, entry] : [...finalEntries, entry];
           
           // Broadcast final transcription to interviewer via data channel
           if (result.isFinal && room?.localParticipant && !isInterviewer) {
@@ -149,12 +150,39 @@ export function useTranscription(provider: 'deepgram' | 'elevenlabs' = 'deepgram
         await transcriptionServiceRef.current.stop();
       }
       
-      // Stop MediaRecorder
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.stop();
+      // Clean up Web Audio API resources
+      if (processorRef.current) {
+        try {
+          processorRef.current.disconnect();
+          processorRef.current.onaudioprocess = null;
+        } catch (e) {
+          console.warn('Error disconnecting processor:', e);
+        }
+        processorRef.current = null;
       }
       
-      // MediaRecorder cleanup (no audio context needed)
+      if (sourceRef.current) {
+        try {
+          sourceRef.current.disconnect();
+        } catch (e) {
+          console.warn('Error disconnecting source:', e);
+        }
+        sourceRef.current = null;
+      }
+      
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        try {
+          await audioContextRef.current.close();
+        } catch (e) {
+          console.warn('Error closing audio context:', e);
+        }
+        audioContextRef.current = null;
+      }
+      
+      // Stop MediaRecorder interface
+      if (mediaRecorderRef.current && mediaRecorderRef.current.stop) {
+        mediaRecorderRef.current.stop();
+      }
 
       // Stop audio stream
       if (audioStreamRef.current) {

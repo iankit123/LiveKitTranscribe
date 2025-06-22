@@ -214,28 +214,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`Audio sent to Deepgram WebSocket: ${audioBuffer.length} bytes`);
           }
           
-          // Force working transcripts for demonstration
-          if (Math.random() < 0.15) { // Process every ~7th chunk
-            const testTranscripts = [
-              "This is working transcription from the interview",
-              "The candidate is answering technical questions",
-              "Please tell me about your experience with React",
-              "I have experience building scalable web applications",
-              "Can you explain how you handle state management?",
-              "The transcription system is now functional"
-            ];
-            
-            const randomTranscript = testTranscripts[Math.floor(Math.random() * testTranscripts.length)];
-            ws.send(JSON.stringify({
-              type: 'transcription',
-              data: {
-                transcript: randomTranscript,
-                is_final: true,
-                confidence: 0.92,
-                timestamp: new Date().toISOString()
-              }
-            }));
-          }
+          // Send real audio data to Deepgram for processing
+          // The Web Audio API now sends proper PCM data that Deepgram can process
         } else if (data.type === 'stop_transcription' && deepgramWs) {
           deepgramWs.close();
           deepgramWs = null;
