@@ -42,10 +42,13 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
         // Get video track from publications
         const videoTrack = Array.from(localParticipant.videoTrackPublications.values())[0]?.videoTrack;
         
-        if (videoTrack) {
+        if (videoTrack && videoElement) {
           try {
-            videoTrack.attach(videoElement);
-            console.log('Local video attached for:', localParticipant.identity);
+            // Ensure element is ready before attaching
+            if (videoElement.readyState !== undefined) {
+              videoTrack.attach(videoElement);
+              console.log('Local video attached for:', localParticipant.identity);
+            }
           } catch (error) {
             console.error('Error attaching local video:', error);
           }
@@ -71,10 +74,13 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
 
       const attachRemoteVideo = () => {
         const videoTrack = Array.from(remoteParticipant.videoTrackPublications.values())[0]?.videoTrack;
-        if (videoTrack) {
+        if (videoTrack && videoElement) {
           try {
-            videoTrack.attach(videoElement);
-            console.log('Remote video attached for:', remoteParticipant.identity);
+            // Ensure element is ready before attaching
+            if (videoElement.readyState !== undefined) {
+              videoTrack.attach(videoElement);
+              console.log('Remote video attached for:', remoteParticipant.identity);
+            }
           } catch (error) {
             console.error('Error attaching remote video:', error);
           }

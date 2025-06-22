@@ -320,12 +320,18 @@ export default function Meeting({ params }: MeetingProps) {
         {/* Video Section */}
         {isConnected && room && localParticipant && (
           <div className="mb-6">
-            <VideoGrid 
-              room={room} 
-              localParticipant={localParticipant}
-              participants={participants}
-              userRole={isInterviewer ? 'interviewer' : 'candidate'}
-            />
+            <ErrorBoundary fallback={
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                <p className="text-red-800">Video component failed to load. Please refresh the page.</p>
+              </div>
+            }>
+              <VideoGrid 
+                room={room} 
+                localParticipant={localParticipant}
+                participants={participants}
+                userRole={isInterviewer ? 'interviewer' : 'candidate'}
+              />
+            </ErrorBoundary>
           </div>
         )}
 

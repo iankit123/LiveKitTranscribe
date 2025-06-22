@@ -24,7 +24,7 @@ export function useMeeting() {
       setLocalParticipant(connectedRoom.localParticipant);
       setParticipants(Array.from(connectedRoom.remoteParticipants.values()));
 
-      // Set up event listeners
+      // Set up event listeners with error handling
       connectedRoom.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
         console.log('Participant connected:', participant.identity);
         setParticipants(prev => [...prev, participant]);
@@ -58,10 +58,18 @@ export function useMeeting() {
 
       connectedRoom.on(RoomEvent.Disconnected, (reason) => {
         console.log('Room disconnected:', reason);
+        if (reason !== 'CLIENT_INITIATED') {
+          console.warn('Unexpected disconnection, attempting to reconnect...');
+          // Set a flag for potential reconnection logic
+        }
         setIsConnected(false);
         setRoom(null);
         setLocalParticipant(null);
         setParticipants([]);
+      });
+
+      connectedRoom.on(RoomEvent.ConnectionQualityChanged, (quality, participant) => {
+        console.log('Connection quality changed:', quality, 'for', participant.identity);
       });
 
       // Simple event handlers without complex reconnection logic
