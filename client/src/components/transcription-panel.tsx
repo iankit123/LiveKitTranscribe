@@ -82,6 +82,7 @@ export default function TranscriptionPanel({
 
       <CardContent className="p-4 h-64 overflow-y-auto">
         <div className="space-y-3">
+          {console.log(`UI: Rendering transcription panel - total: ${transcriptions.length}, final: ${finalTranscriptions.length}, current: ${currentTranscription ? 'yes' : 'no'}`)}
           {finalTranscriptions.length === 0 && !currentTranscription && (
             <div className="text-center py-8 text-gray-500">
               <User size={32} className="mx-auto mb-2" />
@@ -91,27 +92,30 @@ export default function TranscriptionPanel({
             </div>
           )}
 
-          {finalTranscriptions.map((entry) => (
-            <div key={entry.id} className="flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-livekit rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-medium">U</span>
+          {finalTranscriptions.map((entry) => {
+            console.log(`UI: Rendering transcript entry:`, entry);
+            return (
+              <div key={entry.id} className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-livekit rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-medium">U</span>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="font-medium text-sm">{entry.speaker}</span>
+                    <span className="text-xs text-gray-500">{formatTime(entry.timestamp)}</span>
+                    {entry.confidence && (
+                      <span className="text-xs text-gray-400">
+                        {Math.round(entry.confidence * 100)}%
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-800">{entry.text}</p>
                 </div>
               </div>
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-1">
-                  <span className="font-medium text-sm">{entry.speaker}</span>
-                  <span className="text-xs text-gray-500">{formatTime(entry.timestamp)}</span>
-                  {entry.confidence && (
-                    <span className="text-xs text-gray-400">
-                      {Math.round(entry.confidence * 100)}%
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-gray-800">{entry.text}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Live transcription indicator */}
           {currentTranscription && (
