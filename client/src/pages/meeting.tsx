@@ -274,6 +274,31 @@ export default function Meeting({ params }: MeetingProps) {
 
   const [customInstruction, setCustomInstruction] = useState("");
   const [interviewPlan, setInterviewPlan] = useState(() => {
+    // First try to get from sessionStorage (from home page)
+    const sessionPlan = sessionStorage.getItem('interviewPlan');
+    if (sessionPlan) {
+      try {
+        // Parse the text format: "Intro - 5\nTechnical - 20\nQ&A - 10"
+        const parsed = sessionPlan.split('\n').map(line => {
+          const match = line.trim().match(/^(.+?)\s*-\s*(\d+)$/);
+          if (match) {
+            return {
+              label: match[1].trim(),
+              minutes: parseInt(match[2], 10)
+            };
+          }
+          return null;
+        }).filter(Boolean);
+        
+        if (parsed.length > 0) {
+          return parsed;
+        }
+      } catch (error) {
+        console.log('Error parsing interview plan from sessionStorage:', error);
+      }
+    }
+    
+    // Fallback to localStorage with room-specific key
     const saved = localStorage.getItem(`interviewPlan-${roomName}`);
     if (saved) {
       try {
@@ -287,6 +312,8 @@ export default function Meeting({ params }: MeetingProps) {
         ];
       }
     }
+    
+    // Default plan if nothing found
     return [
       { label: "Introduction", minutes: 5 },
       { label: "Technical Questions", minutes: 20 },
