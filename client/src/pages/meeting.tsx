@@ -1,20 +1,28 @@
-import { useEffect, useState, useMemo } from "react";
-import { useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { LogOut, Settings, Copy, Share2, Clock, Play, Pause, RotateCcw, MessageSquare, Lightbulb, Users, Video, Mic, MicOff, VideoOff, AlertTriangle } from "lucide-react";
-import { useMeeting } from "@/hooks/use-meeting";
-import { useTranscription } from "@/hooks/use-transcription";
-import { useFollowUpSuggestions } from "@/hooks/use-follow-up-suggestions";
-import { useInterviewTimer } from "@/hooks/use-interview-timer";
-import VideoGrid, { AudioEnabledParticipant } from "@/components/video-grid";
-import ErrorBoundary from "@/components/error-boundary";
-import MeetingControls from "@/components/meeting-controls";
-import { parseInterviewPlan } from "@/utils/interview-plan-parser";
-import { useToast } from "@/hooks/use-toast";
-import { LiveKitRoom } from "@livekit/components-react";
+import { useState, useEffect } from 'react';
+import { useParams } from 'wouter';
+import { useMeeting } from '@/hooks/use-meeting';
+import { useTranscription } from '@/hooks/use-transcription';
+import { useFollowUpSuggestions } from '@/hooks/use-follow-up-suggestions';
+import { useInterviewTimer } from '@/hooks/use-interview-timer';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import VideoGrid from '@/components/video-grid';
+import MeetingControls from '@/components/meeting-controls';
+import { ErrorBoundary } from '@/components/error-boundary';
+import {
+  Video,
+  Mic,
+  Clock,
+  Lightbulb,
+  Copy,
+  Play,
+  Square,
+  User,
+  Share2,
+  ExternalLink
+} from 'lucide-react';
 
 interface MeetingProps {
   params: {
@@ -22,94 +30,49 @@ interface MeetingProps {
   };
 }
 
+// Clean version - will copy back
 export default function Meeting({ params }: MeetingProps) {
   const { roomName } = params;
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  
-  // Check URL parameters for role specification
   const urlParams = new URLSearchParams(window.location.search);
-  const urlRole = urlParams.get('role');
-  const isInterviewer = urlRole === 'interviewer';
-  const isCurrentUserInterviewer = isInterviewer;
-
-  // Get meeting state from localStorage - check multiple possible keys and sessionStorage
-  const jobDescription = localStorage.getItem(`jobDescription_${roomName}`) || 
-                        localStorage.getItem('jobDescription') || 
-                        sessionStorage.getItem('jobDescription') || '';
+  const isInterviewer = urlParams.get('role') === 'interviewer';
   
-  const interviewPlanText = localStorage.getItem(`interviewPlan_${roomName}`) || 
-                           localStorage.getItem('interviewPlan') || 
-                           sessionStorage.getItem('interviewPlan') || '';
-  
-  console.log('📋 Looking for interview plan in localStorage and sessionStorage...');
-  console.log('📋 Room-specific key:', `interviewPlan_${roomName}`);
-  console.log('📋 localStorage general key:', localStorage.getItem('interviewPlan'));
-  console.log('📋 sessionStorage general key:', sessionStorage.getItem('interviewPlan'));
-  console.log('📋 Room-specific key value:', localStorage.getItem(`interviewPlan_${roomName}`));
-  console.log('📋 Final plan text found:', interviewPlanText);
-  
-  // Debug: Check all localStorage keys
-  console.log('📋 All localStorage keys:', Object.keys(localStorage));
-  console.log('📋 All sessionStorage keys:', Object.keys(sessionStorage));
-  
-  const interviewPlan = useMemo(() => {
-    // Re-check all possible storage locations
-    const currentPlanText = localStorage.getItem('interviewPlan') || 
-                           sessionStorage.getItem('interviewPlan') || 
-                           interviewPlanText;
-    
-    console.log('📋 Final plan text for parsing:', currentPlanText);
-    
-    if (!currentPlanText) {
-      console.log('⚠️ No interview plan text found, creating fallback plan');
-      // Create a fallback plan based on your home page example
-      const fallbackPlan = [
-        { label: 'Intro', minutes: 5 },
-        { label: 'Past Projects', minutes: 15 },
-        { label: 'Case Study', minutes: 15 },
-        { label: 'Coding', minutes: 20 },
-        { label: 'Wrap-up', minutes: 5 }
-      ];
-      console.log('📋 Using fallback plan:', fallbackPlan);
-      return fallbackPlan;
+  const [customInstruction, setCustomInstruction] = useState('');
+  const [interviewPlan, setInterviewPlan] = useState(() => {
+    const saved = localStorage.getItem(`interviewPlan-${roomName}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [
+          { label: 'Introduction', minutes: 5 },
+          { label: 'Technical Questions', minutes: 20 },
+          { label: 'Q&A', minutes: 10 },
+          { label: 'Wrap-up', minutes: 5 }
+        ];
+      }
     }
-    
-    console.log('📋 Parsing interview plan text:', currentPlanText);
-    const parsed = parseInterviewPlan(currentPlanText);
-    console.log('📋 Parsed interview plan result:', parsed);
-    
-    if (parsed.length === 0) {
-      console.log('⚠️ Parsing resulted in empty plan, using fallback');
-      return [
-        { label: 'Intro', minutes: 5 },
-        { label: 'Past Projects', minutes: 15 },
-        { label: 'Case Study', minutes: 15 },
-        { label: 'Coding', minutes: 20 },
-        { label: 'Wrap-up', minutes: 5 }
-      ];
-    }
-    
-    return parsed;
-  }, [interviewPlanText]);
+    return [
+      { label: 'Introduction', minutes: 5 },
+      { label: 'Technical Questions', minutes: 20 },
+      { label: 'Q&A', minutes: 10 },
+      { label: 'Wrap-up', minutes: 5 }
+    ];
+  });
 
-  // Meeting hooks
   const {
     room,
     localParticipant,
     participants,
     isConnected,
-    isConnecting,
     error,
-    connectToRoom,
-    disconnectFromRoom,
-    toggleMute,
-    toggleVideo,
+    connect,
+    disconnect,
     isMuted,
-    isVideoDisabled
+    isVideoDisabled,
+    toggleMute,
+    toggleVideo
   } = useMeeting();
 
-  // Transcription hooks
   const {
     transcriptions,
     isTranscribing,
@@ -118,397 +81,281 @@ export default function Meeting({ params }: MeetingProps) {
     clearTranscriptions
   } = useTranscription('deepgram', room, isInterviewer);
 
-  // Follow-up suggestions hooks
   const {
     suggestions,
     isLoading,
     generateSuggestions
   } = useFollowUpSuggestions();
-  
-  console.log('🎯 Component level - suggestions state:', suggestions);
-  console.log('🎯 Component level - isLoading:', isLoading);
 
-  const handleGenerateSuggestions = () => {
-    console.log('🎯 Generate suggestions clicked');
-    console.log('📝 Current transcriptions:', transcriptions);
-    console.log('📝 Transcriptions length:', transcriptions?.length);
-    console.log('📝 Transcriptions type:', typeof transcriptions, Array.isArray(transcriptions));
-    
-    // Ensure transcriptions is an array
-    const safeTranscriptions = Array.isArray(transcriptions) ? transcriptions : [];
-    generateSuggestions(safeTranscriptions, customInstruction);
-  };
-
-  // Timer hooks
-  const timerHookResult = useInterviewTimer(interviewPlan);
   const {
     timerState,
     isRunning: isTimerRunning,
-    startTimer,
-    stopTimer,
-    resetTimer,
-    dismissNudge
-  } = timerHookResult;
-
-  // Debug timer state
-  useEffect(() => {
-    console.log('⏰ Timer state updated:', {
-      timerState,
-      isRunning: isTimerRunning,
-      currentBlock: timerState?.currentBlock,
-      nextBlock: timerState?.nextBlock,
-      interviewPlan: interviewPlan
-    });
-  }, [timerState, isTimerRunning, interviewPlan]);
-
-  // Connect to room on mount
-  useEffect(() => {
-    const participantName = isInterviewer ? 
-      `Interviewer-${Math.random().toString(36).substring(2, 8)}` : 
-      `Candidate-${Math.random().toString(36).substring(2, 8)}`;
-    
-    console.log('Connecting to room with participant name:', participantName, 'Role:', isInterviewer ? 'Interviewer' : 'Candidate');
-    connectToRoom(roomName, participantName);
-
-    return () => {
-      disconnectFromRoom();
-    };
-  }, [roomName, isInterviewer]);
-
-  const handleLeaveRoom = () => {
-    disconnectFromRoom();
-    setLocation('/');
-  };
-
-  const handleShare = () => {
-    const shareUrl = isCurrentUserInterviewer ? 
-      `${window.location.origin}/meeting/${roomName}?role=candidate` :
-      `${window.location.origin}/meeting/${roomName}?role=interviewer`;
-    
-    if (navigator.share) {
-      navigator.share({
-        title: 'Join Interview',
-        url: shareUrl
-      });
-    } else {
-      navigator.clipboard.writeText(shareUrl);
-      toast({
-        title: "Link copied!",
-        description: `${isCurrentUserInterviewer ? 'Candidate' : 'Interviewer'} link copied to clipboard`,
-      });
-    }
-  };
-
-  const handleCopyLink = () => {
-    const shareUrl = isCurrentUserInterviewer ? 
-      `${window.location.origin}/meeting/${roomName}?role=candidate` :
-      `${window.location.origin}/meeting/${roomName}?role=interviewer`;
-    
-    navigator.clipboard.writeText(shareUrl);
-    toast({
-      title: "Link copied!",
-      description: `${isCurrentUserInterviewer ? 'Candidate' : 'Interviewer'} link copied to clipboard`,
-    });
-  };
+    start: startTimer,
+    stop: stopTimer,
+    reset: resetTimer
+  } = useInterviewTimer(interviewPlan);
 
   const formatTime = (minutes: number, seconds: number) => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const [customInstruction, setCustomInstruction] = useState('');
+  useEffect(() => {
+    const participantName = isInterviewer ? `interviewer-${Date.now()}` : `candidate-${Date.now()}`;
+    connect(roomName, participantName, isInterviewer ? 'interviewer' : 'candidate');
 
-  if (error && !isConnecting) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="w-8 h-8 text-red-600" />
-            </div>
-            <h2 className="text-xl font-bold text-red-900 mb-2">Connection Error</h2>
-            <p className="text-red-700 mb-6">{error}</p>
-            <Button onClick={() => setLocation('/')} className="w-full">
-              Back to Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+    return () => {
+      disconnect();
+    };
+  }, [roomName, isInterviewer, connect, disconnect]);
 
-  if (isConnecting || !isConnected || !room) {
+  const shareLink = () => {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const candidateUrl = `${baseUrl}?role=candidate`;
+    const interviewerUrl = `${baseUrl}?role=interviewer`;
+    
+    if (isInterviewer) {
+      navigator.clipboard.writeText(candidateUrl);
+    } else {
+      navigator.clipboard.writeText(interviewerUrl);
+    }
+  };
+
+  if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">
-            {isConnecting ? 'Connecting to room...' : 'Setting up room...'}
-          </p>
+      <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full text-center">
+          <div className="text-red-600 mb-4">
+            <Video className="w-12 h-12 mx-auto" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Connection Error</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Floating Status Bar */}
-      <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-full px-6 py-3 shadow-xl">
-          <div className="flex items-center space-x-6 text-sm">
-            <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${isTranscribing ? 'bg-red-500 animate-pulse' : 'bg-gray-400'}`}></div>
-              <span className="font-medium">{isTranscribing ? 'Transcribing' : 'Not Recording'}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="font-medium">Connected</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Clock className="w-3 h-3" />
-              <span className="font-mono font-medium">
-                {formatTime(timerState.elapsedMinutes, timerState.elapsedSeconds)}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Users className="w-3 h-3" />
-              <span>{(participants?.length || 0) + (localParticipant ? 1 : 0)} participants</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Interview: {roomName}</h1>
-            <p className="text-gray-600">{isInterviewer ? 'Interviewer Dashboard' : 'Candidate View'}</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {/* Header Bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-200">
+        <div className="flex justify-between items-center px-6 py-3">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              {roomName}
+            </h1>
+            <Badge variant={isConnected ? 'default' : 'secondary'} className="text-xs">
+              {isConnected ? 'Connected' : 'Connecting...'}
+            </Badge>
           </div>
           
           <div className="flex items-center space-x-3">
-            <Button 
-              onClick={handleShare}
+            <Button
+              onClick={shareLink}
+              size="sm"
               variant="outline"
-              size="sm"
+              className="text-xs"
             >
-              <Share2 className="mr-2" size={16} />
-              Share {isCurrentUserInterviewer ? 'Candidate' : 'Interviewer'} Link
+              <Share2 className="w-3 h-3 mr-1" />
+              Share Link
             </Button>
-            
-            <Button 
-              onClick={handleCopyLink}
-              variant="outline"
+            <Button
+              onClick={() => window.open(window.location.href, '_blank')}
               size="sm"
+              variant="ghost"
+              className="text-xs"
             >
-              <Copy className="mr-2" size={16} />
-              Copy Link
-            </Button>
-            
-            <Button 
-              onClick={handleLeaveRoom}
-              variant="destructive"
-              size="sm"
-            >
-              <LogOut className="mr-2" size={16} />
-              Leave
+              <ExternalLink className="w-3 h-3" />
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Main Dashboard */}
+      {/* Main Content */}
       <div className="p-6 pt-20">
-        {/* Video Section */}
-        {isConnected && room && localParticipant ? (
-          <div className="mb-6">
-            <ErrorBoundary fallback={
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                <p className="text-red-800">Video component failed to load. Please refresh the page.</p>
-              </div>
-            }>
-              <VideoGrid 
-                room={room} 
-                localParticipant={localParticipant}
-                participants={participants}
-                userRole={isInterviewer ? 'interviewer' : 'candidate'}
-              />
-            </ErrorBoundary>
-          </div>
-        ) : isConnected && room ? (
-          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-            <p className="text-yellow-800">Setting up video connection...</p>
-          </div>
-        ) : null}
-
-        {/* Only show dashboard to interviewer */}
-        {isInterviewer && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* LEFT PANEL - Interview Flow */}
-            <Card className="rounded-xl bg-white/90 backdrop-blur shadow-lg border-0">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center text-xl">
-                  <Clock className="w-5 h-5 mr-2 text-indigo-600" />
-                  Interview Flow
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Timer Section */}
-                <div className="text-center bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-6">
-                  <div className="text-4xl font-mono font-bold text-indigo-600 mb-2">
-                    {formatTime(timerState?.elapsedMinutes || 0, timerState?.elapsedSeconds || 0)}
+        {/* New Meeting Layout for Interviewer */}
+        {isInterviewer && isConnected && room && (
+          <div className="h-[calc(100vh-200px)] flex gap-4">
+            {/* Main Content Area - Candidate Video (70% width) */}
+            <div className="flex-1 relative bg-gray-900 rounded-lg overflow-hidden">
+              {/* Large Candidate Video */}
+              {participants.length > 0 ? (
+                participants.map((participant) => (
+                  <div key={participant.identity} className="w-full h-full relative">
+                    <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                      <User className="w-24 h-24 text-gray-400" />
+                    </div>
+                    <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded text-sm">
+                      {participant.identity.includes('interviewer') ? 'Interviewer' : 'Candidate'}
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600 mb-4">Elapsed Time</div>
-                  
-                  {/* Interview Plan Progress */}
-                  {console.log('🎯 Rendering timer section. Current block:', timerState?.currentBlock, 'Next block:', timerState?.nextBlock)}
-                  {interviewPlan.length > 0 ? (
-                    <div className="mb-4 text-sm">
-                      {timerState?.currentBlock ? (
-                        <>
-                          <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full mb-2">
-                            Current: {timerState.currentBlock.label} ({timerState.currentBlock.minutes}min)
-                          </div>
-                          {console.log('📍 Rendered current block:', timerState.currentBlock.label)}
-                          {timerState.nextBlock && (
-                            <>
-                              <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-                                Next: {timerState.nextBlock.label} ({timerState.nextBlock.minutes}min)
-                              </div>
-                              {console.log('📍 Rendered next block:', timerState.nextBlock.label)}
-                            </>
-                          )}
-                        </>
-                      ) : (
-                        <div className="text-gray-500 text-xs">
-                          {console.log('🔍 No current block, showing plan overview')}
-                          Plan: {interviewPlan.map(block => `${block.label} (${block.minutes}m)`).join(' → ')}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="mb-4 text-sm text-gray-500">
-                      {console.log('❌ No interview plan available')}
-                      No interview plan set
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-center space-x-2">
-                    <Button
-                      onClick={() => {
-                        console.log('🎯 Timer button clicked, isRunning:', isTimerRunning);
-                        if (isTimerRunning) {
-                          console.log('⏸️ Stopping timer');
-                          stopTimer();
-                        } else {
-                          console.log('▶️ Starting timer');
-                          startTimer();
-                        }
-                      }}
-                      size="sm"
-                      className="bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      {isTimerRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        console.log('🔄 Reset timer clicked');
-                        resetTimer();
-                      }}
-                      size="sm"
-                      variant="outline"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                    </Button>
+                ))
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center text-white">
+                    <User className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg">Waiting for candidate to join...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Bottom Row - Small Interviewer Video + Interview Plan */}
+              <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+                {/* Small Interviewer Video */}
+                <div className="w-48 h-32 bg-gray-800 rounded-lg overflow-hidden border-2 border-white shadow-lg relative">
+                  <div className="flex items-center justify-center h-full text-white">
+                    <Video className="w-8 h-8" />
+                  </div>
+                  <div className="absolute bottom-1 left-1 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                    You (Interviewer)
                   </div>
                 </div>
 
-                {/* Current Segment */}
-                {timerState.currentBlock && (
-                  <div className="space-y-3">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-green-800">Current Section</span>
-                        <Badge className="bg-green-100 text-green-800">
-                          {timerState.currentBlock.label}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-green-700">
-                        Target: {timerState.currentBlock.minutes} minutes
-                      </p>
-                    </div>
-
-                    {timerState.nextBlock && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-blue-800">Next Section</span>
-                          <Badge variant="outline" className="text-blue-800 border-blue-300">
-                            {timerState.nextBlock.label}
-                          </Badge>
+                {/* Interview Plan Mini Panel */}
+                <div className="w-48 h-32 bg-white/90 backdrop-blur rounded-lg shadow-lg p-3 overflow-y-auto">
+                  <h3 className="font-semibold text-sm mb-2 text-gray-800">Interview Plan</h3>
+                  {!timerState?.currentBlock ? (
+                    <div className="space-y-1">
+                      {interviewPlan.slice(0, 4).map((block, index) => (
+                        <div key={index} className="flex justify-between text-xs">
+                          <span className="text-gray-600">{block.label}</span>
+                          <span className="text-gray-500">{block.minutes}m</span>
                         </div>
-                        <p className="text-sm text-blue-700">
-                          Duration: {timerState.nextBlock.minutes} minutes
-                        </p>
+                      ))}
+                      <Button
+                        onClick={startTimer}
+                        size="sm"
+                        className="w-full mt-2 h-6 text-xs bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Play className="w-3 h-3 mr-1" />
+                        Start
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-xs">
+                      <div className="text-green-600 font-medium">
+                        Current: {timerState.currentBlock.label}
                       </div>
+                      <div className="text-gray-600">
+                        {timerState.elapsedMinutes}:{timerState.elapsedSeconds.toString().padStart(2, '0')}
+                      </div>
+                      {timerState.nextBlock && (
+                        <div className="text-blue-600 mt-1">
+                          Next: {timerState.nextBlock.label}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Sidebar (30% width) */}
+            <div className="w-[30%] flex flex-col space-y-4">
+              {/* Follow-Up Suggestions (Top 50%) */}
+              <Card className="flex-1 rounded-xl bg-white/90 backdrop-blur shadow-lg border-0">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-lg">
+                    <Lightbulb className="w-4 h-4 mr-2 text-amber-600" />
+                    Follow-Up Suggestions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 flex-1 overflow-hidden">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Custom Instructions
+                    </label>
+                    <Textarea
+                      placeholder="e.g., Ask more technical questions..."
+                      value={customInstruction}
+                      onChange={(e) => setCustomInstruction(e.target.value)}
+                      className="min-h-[50px] text-xs"
+                    />
+                  </div>
+
+                  <Button 
+                    onClick={() => {
+                      const safeTranscriptions = Array.isArray(transcriptions) ? transcriptions : [];
+                      generateSuggestions(safeTranscriptions, customInstruction);
+                    }}
+                    disabled={isLoading}
+                    className="w-full bg-amber-600 hover:bg-amber-700 h-8 text-xs"
+                  >
+                    <Lightbulb className="w-3 h-3 mr-2" />
+                    {isLoading ? 'Generating...' : 'Get Questions'}
+                  </Button>
+
+                  <div className="flex-1 overflow-y-auto space-y-2">
+                    {!suggestions || !Array.isArray(suggestions) || suggestions.length === 0 ? (
+                      <div className="text-center py-4">
+                        <Lightbulb className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500 text-xs">Generate follow-up questions</p>
+                      </div>
+                    ) : (
+                      suggestions.slice(0, 3).map((suggestion, index) => (
+                        <div key={index} className="bg-amber-50 border border-amber-200 rounded p-2">
+                          <p className="text-xs text-gray-800 font-medium mb-1">
+                            {suggestion.question}
+                          </p>
+                          <Button
+                            onClick={() => navigator.clipboard.writeText(suggestion.question)}
+                            size="sm"
+                            variant="ghost"
+                            className="h-5 px-1 text-xs"
+                          >
+                            <Copy className="w-2 h-2 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
+                      ))
                     )}
                   </div>
-                )}
+                </CardContent>
+              </Card>
 
-                {/* Soft Nudge */}
-                {timerState.shouldShowNudge && timerState.nextBlock && (
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-orange-800 mb-2">Time Reminder</p>
-                        <p className="text-sm text-orange-700 mb-3">
-                          You planned to start "{timerState.nextBlock.label}" now. Continue with current section or move on?
-                        </p>
-                        <Button
-                          onClick={dismissNudge}
-                          size="sm"
-                          variant="outline"
-                          className="border-orange-300 text-orange-700 hover:bg-orange-100"
-                        >
-                          Got it
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* RIGHT PANEL - Input & Suggestions */}
-            <div className="space-y-6">
-              {/* Live Transcription */}
-              <Card className="rounded-xl bg-white/90 backdrop-blur shadow-lg border-0">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center text-xl">
-                      <MessageSquare className="w-5 h-5 mr-2 text-cyan-600" />
+              {/* Live Transcription (Bottom 50%) */}
+              <Card className="flex-1 rounded-xl bg-white/90 backdrop-blur shadow-lg border-0">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center justify-between text-lg">
+                    <div className="flex items-center">
+                      <Mic className="w-4 h-4 mr-2 text-green-600" />
                       Live Transcription
-                    </CardTitle>
+                    </div>
                     <Button
                       onClick={isTranscribing ? stopTranscription : startTranscription}
+                      variant={isTranscribing ? "destructive" : "default"}
                       size="sm"
-                      className={isTranscribing ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
+                      className="h-6 px-2 text-xs"
                     >
-                      {isTranscribing ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                      {isTranscribing ? (
+                        <>
+                          <Square className="w-3 h-3 mr-1" />
+                          Stop
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="w-3 h-3 mr-1" />
+                          Start
+                        </>
+                      )}
                     </Button>
-                  </div>
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="max-h-64 overflow-y-auto space-y-3">
-                    {(transcriptions?.length || 0) === 0 ? (
-                      <div className="text-center py-8">
-                        <MessageSquare className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500 text-sm">Start transcription to see live conversation</p>
+                <CardContent className="flex-1 overflow-hidden">
+                  <div className="h-full overflow-y-auto space-y-2">
+                    {!transcriptions || transcriptions.length === 0 ? (
+                      <div className="text-center py-6">
+                        <Mic className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500 text-xs">No transcriptions yet</p>
+                        <p className="text-xs text-gray-400">Start transcription to see live speech-to-text</p>
                       </div>
                     ) : (
                       (transcriptions || []).slice(-10).map((transcription) => (
-                        <div key={transcription.id} className="border-l-2 border-gray-200 pl-3 py-2">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <Badge variant={transcription.speaker === 'TestBadge' ? 'default' : 'secondary'}>
+                        <div key={transcription.id} className="border-l-2 border-gray-200 pl-2 py-1">
+                          <div className="flex items-center space-x-1 mb-1">
+                            <Badge variant={transcription.speaker === 'TestBadge' ? 'default' : 'secondary'} className="text-xs px-1 py-0">
                               {transcription.speaker}
                             </Badge>
                             <span className="text-xs text-gray-500">
@@ -518,80 +365,7 @@ export default function Meeting({ params }: MeetingProps) {
                               {Math.round(transcription.confidence * 100)}%
                             </span>
                           </div>
-                          <p className="text-sm text-gray-700">{transcription.text}</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Follow-Up Suggestions */}
-              <Card className="rounded-xl bg-white/90 backdrop-blur shadow-lg border-0">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center text-xl">
-                    <Lightbulb className="w-5 h-5 mr-2 text-amber-600" />
-                    Follow-Up Suggestions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Custom Instruction Input */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Custom Instructions
-                    </label>
-                    <Textarea
-                      placeholder="e.g., Ask more technical questions about their last project..."
-                      value={customInstruction}
-                      onChange={(e) => setCustomInstruction(e.target.value)}
-                      className="min-h-[60px] text-sm"
-                    />
-                  </div>
-
-                  <Button 
-                    onClick={() => {
-                      console.log('🎯 Button clicked, clearing suggestions first');
-                      // Force clear suggestions and regenerate
-                      const safeTranscriptions = Array.isArray(transcriptions) ? transcriptions : [];
-                      console.log('🔄 Force regenerating with:', safeTranscriptions.length, 'transcriptions');
-                      generateSuggestions(safeTranscriptions, customInstruction);
-                    }}
-                    disabled={isLoading}
-                    className="w-full bg-amber-600 hover:bg-amber-700"
-                  >
-                    <Lightbulb className="w-4 h-4 mr-2" />
-                    {isLoading ? 'Generating...' : 'Get Follow-Up Questions'}
-                  </Button>
-
-                  {/* Suggestions List */}
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {console.log('🎯 Rendering suggestions - raw:', suggestions)}
-                    {console.log('🎯 Rendering suggestions - type:', typeof suggestions, 'isArray:', Array.isArray(suggestions))}
-                    {!suggestions || !Array.isArray(suggestions) || suggestions.length === 0 ? (
-                      <div className="text-center py-6">
-                        <Lightbulb className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500 text-sm">Generate follow-up questions based on the conversation</p>
-                      </div>
-                    ) : (
-                      suggestions.slice(0, 5).map((suggestion, index) => (
-                        <div key={index} className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                          <p className="text-sm text-gray-800 font-medium mb-2">
-                            {suggestion.question}
-                          </p>
-                          {suggestion.reasoning && (
-                            <p className="text-xs text-amber-700">
-                              {suggestion.reasoning}
-                            </p>
-                          )}
-                          <Button
-                            onClick={() => navigator.clipboard.writeText(suggestion.question)}
-                            size="sm"
-                            variant="ghost"
-                            className="mt-2 h-6 px-2 text-xs"
-                          >
-                            <Copy className="w-3 h-3 mr-1" />
-                            Copy
-                          </Button>
+                          <p className="text-xs text-gray-700">{transcription.text}</p>
                         </div>
                       ))
                     )}
@@ -602,12 +376,37 @@ export default function Meeting({ params }: MeetingProps) {
           </div>
         )}
 
+        {/* Fallback for when not connected */}
+        {!isConnected || !room ? (
+          <div className="text-center py-12">
+            <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">Setting up video connection...</p>
+          </div>
+        ) : null}
+
         {/* Candidate View */}
-        {!isInterviewer && (
+        {!isInterviewer && isConnected && room && (
+          <div className="h-[calc(100vh-200px)]">
+            <ErrorBoundary fallback={
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                <p className="text-red-800">Video component failed to load. Please refresh the page.</p>
+              </div>
+            }>
+              <VideoGrid 
+                room={room} 
+                localParticipant={localParticipant}
+                participants={participants}
+                userRole="candidate"
+              />
+            </ErrorBoundary>
+          </div>
+        )}
+        
+        {!isInterviewer && (!isConnected || !room) && (
           <div className="text-center py-12">
             <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Candidate View</h2>
-            <p className="text-gray-600">Focus on the interview - your responses are being recorded</p>
+            <p className="text-gray-600">Setting up your interview connection...</p>
           </div>
         )}
       </div>
