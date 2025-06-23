@@ -247,6 +247,12 @@ Changelog:
   * Simplified plan panel to show only timer and plan list (removed redundant text labels)
   * Changed all text to black color for better visibility against white background
   * Timer displays prominently in large monospace font with current section highlighted in green
+- June 23, 2025. Fixed audio communication and role-based UI controls
+  * Resolved candidate-to-interviewer audio communication by adding automatic audio element creation and attachment
+  * Implemented role-based meeting controls - interview tracking features only visible to interviewers
+  * Enhanced remote participant audio track handling with proper DOM element management
+  * Candidates now see standard meeting controls without interview management features
+  * ✅ CHECKPOINT: Fully functional interview application with working video, audio, transcription, AI suggestions, and role-based features
 ```
 
 ## User Preferences
