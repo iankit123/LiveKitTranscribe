@@ -484,6 +484,27 @@ export default function Meeting({ params }: MeetingProps) {
                       <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded text-sm">
                         Candidate
                       </div>
+                      
+                      {/* 5-Second Countdown Overlay */}
+                      {timerState?.countdownSecondsLeft && timerState.countdownSecondsLeft > 0 && (
+                        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+                          <div className="bg-black/70 backdrop-blur-sm text-white px-6 py-4 rounded-xl shadow-2xl border border-white/20">
+                            <div className="text-center">
+                              <div className="text-lg font-semibold mb-1">
+                                Reminder - Time for next part starts in
+                              </div>
+                              <div className="text-3xl font-bold text-yellow-400">
+                                {Math.ceil(timerState.countdownSecondsLeft)} sec
+                              </div>
+                              {timerState.nextBlock && (
+                                <div className="text-sm text-gray-300 mt-1">
+                                  Next: {timerState.nextBlock.label}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))
               ) : (

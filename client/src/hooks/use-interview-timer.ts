@@ -12,6 +12,7 @@ export interface TimerState {
   nextBlock: InterviewBlock | null;
   shouldShowNudge: boolean;
   currentBlockIndex: number;
+  countdownSecondsLeft: number | null;
 }
 
 export function useInterviewTimer(interviewPlan: InterviewBlock[]) {
@@ -22,6 +23,7 @@ export function useInterviewTimer(interviewPlan: InterviewBlock[]) {
     nextBlock: null,
     shouldShowNudge: false,
     currentBlockIndex: -1,
+    countdownSecondsLeft: null,
   });
   
   const [isRunning, setIsRunning] = useState(false);
@@ -39,12 +41,14 @@ export function useInterviewTimer(interviewPlan: InterviewBlock[]) {
   }, [interviewPlan]);
 
   // Determine current and next blocks based on elapsed time
-  const updateBlockState = useCallback((elapsedMinutes: number) => {
+  const updateBlockState = useCallback((elapsedMinutes: number, elapsedSeconds: number) => {
     if (!interviewPlan.length) return;
 
     const cumulativeTimes = getCumulativeTimes();
+    const totalElapsedSeconds = elapsedMinutes * 60 + elapsedSeconds;
     let currentBlockIndex = -1;
     let shouldShowNudge = false;
+    let countdownSecondsLeft = null;
 
     // Find which block we should be in
     for (let i = 0; i < cumulativeTimes.length; i++) {
@@ -68,6 +72,16 @@ export function useInterviewTimer(interviewPlan: InterviewBlock[]) {
       }
     }
 
+    // Check for 5-second countdown before next block
+    if (currentBlockIndex < interviewPlan.length - 1) {
+      const nextBlockStartSeconds = cumulativeTimes[currentBlockIndex] * 60;
+      const secondsUntilNextBlock = nextBlockStartSeconds - totalElapsedSeconds;
+      
+      if (secondsUntilNextBlock <= 5 && secondsUntilNextBlock > 0) {
+        countdownSecondsLeft = secondsUntilNextBlock;
+      }
+    }
+
     const currentBlock = interviewPlan[currentBlockIndex] || null;
     const nextBlock = currentBlockIndex < interviewPlan.length - 1 
       ? interviewPlan[currentBlockIndex + 1] 
@@ -79,6 +93,7 @@ export function useInterviewTimer(interviewPlan: InterviewBlock[]) {
       nextBlock,
       shouldShowNudge,
       currentBlockIndex,
+      countdownSecondsLeft,
     }));
   }, [interviewPlan, getCumulativeTimes]);
 
@@ -107,7 +122,7 @@ export function useInterviewTimer(interviewPlan: InterviewBlock[]) {
         elapsedSeconds,
       }));
       
-      updateBlockState(elapsedMinutes);
+      updateBlockState(elapsedMinutes, elapsedSeconds);
     }, 1000);
     
     console.log('✅ Timer started successfully, isRunning should now be true');
@@ -134,6 +149,7 @@ export function useInterviewTimer(interviewPlan: InterviewBlock[]) {
       nextBlock: null,
       shouldShowNudge: false,
       currentBlockIndex: -1,
+      countdownSecondsLeft: null,
     });
   }, [stopTimer]);
 
