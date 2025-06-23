@@ -65,8 +65,8 @@ export default function Meeting({ params }: MeetingProps) {
     participants,
     isConnected,
     error,
-    connect,
-    disconnect,
+    connectToRoom,
+    disconnectFromRoom,
     isMuted,
     isVideoDisabled,
     toggleMute,
@@ -101,12 +101,12 @@ export default function Meeting({ params }: MeetingProps) {
 
   useEffect(() => {
     const participantName = isInterviewer ? `interviewer-${Date.now()}` : `candidate-${Date.now()}`;
-    connect(roomName, participantName, isInterviewer ? 'interviewer' : 'candidate');
+    connectToRoom(roomName, participantName);
 
     return () => {
-      disconnect();
+      disconnectFromRoom();
     };
-  }, [roomName, isInterviewer, connect, disconnect]);
+  }, [roomName, isInterviewer, connectToRoom, disconnectFromRoom]);
 
   const shareLink = () => {
     const baseUrl = window.location.origin + window.location.pathname;
