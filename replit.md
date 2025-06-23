@@ -235,6 +235,12 @@ Changelog:
   * Added comprehensive service configuration validation (LiveKit, Deepgram, Gemini)
   * Enhanced server startup logging with clear build and deployment status indicators
   * Implemented detailed service health reporting for production monitoring
+- June 22, 2025. Redesigned meeting layout for better interviewer experience
+  * Moved candidate video to main area (70% width) for better focus
+  * Created compact right sidebar (30% width) with Follow-Up Suggestions (top 50%) and Live Transcription (bottom 50%)
+  * Added small interviewer video overlay (10% screen) in bottom-left corner
+  * Integrated mini interview plan panel (10% screen) in bottom-right corner
+  * Maintained all existing functionality while improving visual hierarchy
 ```
 
 ## User Preferences

@@ -317,3 +317,6 @@ export default function VideoGrid({ room, localParticipant, participants, userRo
     </div>
   );
 }
+
+// Export AudioEnabledParticipant for use in meeting layout
+export { AudioEnabledParticipant };

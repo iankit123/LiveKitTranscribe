@@ -9,7 +9,7 @@ import { useMeeting } from "@/hooks/use-meeting";
 import { useTranscription } from "@/hooks/use-transcription";
 import { useFollowUpSuggestions } from "@/hooks/use-follow-up-suggestions";
 import { useInterviewTimer } from "@/hooks/use-interview-timer";
-import VideoGrid from "@/components/video-grid";
+import VideoGrid, { AudioEnabledParticipant } from "@/components/video-grid";
 import ErrorBoundary from "@/components/error-boundary";
 import MeetingControls from "@/components/meeting-controls";
 import { parseInterviewPlan } from "@/utils/interview-plan-parser";
