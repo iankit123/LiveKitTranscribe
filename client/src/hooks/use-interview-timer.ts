@@ -74,20 +74,12 @@ export function useInterviewTimer(interviewPlan: InterviewBlock[]) {
 
     // Check for 5-second countdown before next block
     if (currentBlockIndex < interviewPlan.length - 1) {
+      // The next block starts at the cumulative time of the current block
       const nextBlockStartSeconds = cumulativeTimes[currentBlockIndex] * 60;
       const secondsUntilNextBlock = nextBlockStartSeconds - totalElapsedSeconds;
       
-      console.log('Countdown debug:', {
-        currentBlockIndex,
-        nextBlockStartSeconds,
-        totalElapsedSeconds,
-        secondsUntilNextBlock,
-        cumulativeTimes
-      });
-      
       if (secondsUntilNextBlock <= 5 && secondsUntilNextBlock > 0) {
         countdownSecondsLeft = secondsUntilNextBlock;
-        console.log('🎯 COUNTDOWN ACTIVE:', countdownSecondsLeft);
       }
     }
 
