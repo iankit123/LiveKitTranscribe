@@ -84,8 +84,14 @@ export function useInterviewTimer(interviewPlan: InterviewBlock[]) {
 
   // Start the timer
   const startTimer = useCallback(() => {
-    if (isRunning) return;
+    console.log('🎯 Timer start function called, current isRunning:', isRunning);
     
+    if (isRunning) {
+      console.log('⚠️ Timer already running');
+      return;
+    }
+    
+    console.log('Starting timer...');
     startTimeRef.current = Date.now();
     setIsRunning(true);
     
@@ -103,6 +109,8 @@ export function useInterviewTimer(interviewPlan: InterviewBlock[]) {
       
       updateBlockState(elapsedMinutes);
     }, 1000);
+    
+    console.log('✅ Timer started successfully, isRunning should now be true');
   }, [isRunning, updateBlockState]);
 
   // Stop the timer

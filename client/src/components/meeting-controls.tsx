@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Video, VideoOff, Monitor, Settings } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, Monitor, Settings, Play } from "lucide-react";
 
 interface MeetingControlsProps {
   isMuted: boolean;
@@ -22,62 +22,101 @@ export default function MeetingControls({
   onToggleMute,
   onToggleVideo,
   onToggleScreenShare,
-  onOpenSettings
+  onOpenSettings,
+  isTimerRunning,
+  onStartTimer,
+  onStopTimer,
+  timerState,
 }: MeetingControlsProps) {
   return (
-    <div className="bg-gray-800 px-4 py-4">
-      <div className="flex items-center justify-center space-x-4">
-        {/* Mute Button */}
-        <Button
-          onClick={onToggleMute}
-          className={`w-12 h-12 rounded-full transition-colors ${
-            isMuted 
-              ? 'bg-red-600 hover:bg-red-700' 
-              : 'bg-gray-700 hover:bg-gray-600'
-          }`}
-          size="sm"
-        >
-          {isMuted ? (
-            <MicOff className="text-white" size={20} />
+    <div className="fixed bottom-0 left-0 right-0 bg-gray-900 p-4">
+      <div className="flex justify-between items-center">
+        {/* Left side - Interview tracking */}
+        <div className="flex items-center space-x-3">
+          {!timerState?.currentBlock ? (
+            <Button
+              onClick={() => {
+                console.log('Start timer button clicked, onStartTimer:', typeof onStartTimer);
+                onStartTimer?.();
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2"
+            >
+              <Play className="w-4 h-4 mr-2" />
+              Start Tracking Interview Plan
+            </Button>
           ) : (
-            <Mic className="text-white" size={20} />
+            <div className="flex items-center space-x-3">
+              <div className="bg-white/10 text-white px-3 py-2 rounded-lg text-sm">
+                <span className="text-green-400 font-medium">{timerState.currentBlock.label}</span>
+                <span className="ml-2 text-gray-300">
+                  {timerState.elapsedMinutes}:{timerState.elapsedSeconds.toString().padStart(2, '0')}
+                </span>
+              </div>
+              <Button
+                onClick={onStopTimer}
+                variant="outline"
+                size="sm"
+                className="text-white border-white/20"
+              >
+                Stop Tracking
+              </Button>
+            </div>
           )}
-        </Button>
+        </div>
 
-        {/* Video Button */}
-        <Button
-          onClick={onToggleVideo}
-          className={`w-12 h-12 rounded-full transition-colors ${
-            isVideoDisabled 
-              ? 'bg-red-600 hover:bg-red-700' 
-              : 'bg-gray-700 hover:bg-gray-600'
-          }`}
-          size="sm"
-        >
-          {isVideoDisabled ? (
-            <VideoOff className="text-white" size={20} />
-          ) : (
-            <Video className="text-white" size={20} />
-          )}
-        </Button>
+        {/* Center - Meeting controls */}
+        <div className="flex justify-center items-center space-x-4">
+          <Button
+            onClick={onToggleMute}
+            className={`w-12 h-12 rounded-full transition-colors ${
+              isMuted 
+                ? 'bg-red-600 hover:bg-red-700' 
+                : 'bg-gray-700 hover:bg-gray-600'
+            }`}
+            size="sm"
+          >
+            {isMuted ? (
+              <MicOff className="text-white" size={20} />
+            ) : (
+              <Mic className="text-white" size={20} />
+            )}
+          </Button>
 
-        {/* Screen Share Button */}
-        <Button
-          onClick={onToggleScreenShare}
-          className="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors"
-          size="sm"
-        >
-          <Monitor className="text-white" size={20} />
-        </Button>
+          <Button
+            onClick={onToggleVideo}
+            className={`w-12 h-12 rounded-full transition-colors ${
+              isVideoDisabled 
+                ? 'bg-red-600 hover:bg-red-700' 
+                : 'bg-gray-700 hover:bg-gray-600'
+            }`}
+            size="sm"
+          >
+            {isVideoDisabled ? (
+              <VideoOff className="text-white" size={20} />
+            ) : (
+              <Video className="text-white" size={20} />
+            )}
+          </Button>
 
-        {/* Settings Button */}
-        <Button
-          onClick={onOpenSettings}
-          className="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors"
-          size="sm"
-        >
-          <Settings className="text-white" size={20} />
-        </Button>
+          <Button
+            onClick={onToggleScreenShare}
+            className="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors"
+            size="sm"
+          >
+            <Monitor className="text-white" size={20} />
+          </Button>
+
+          <Button
+            onClick={onOpenSettings}
+            className="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors"
+            size="sm"
+          >
+            <Settings className="text-white" size={20} />
+          </Button>
+        </div>
+
+        {/* Right side - Empty for balance */}
+        <div className="w-48"></div>
       </div>
     </div>
   );

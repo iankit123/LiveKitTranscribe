@@ -136,8 +136,9 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
         playsInline
         muted={isLocal}
         className="w-full h-full object-cover"
+        style={{ display: 'block' }}
       />
-      {/* Fallback when no video */}
+      {/* Fallback when no video - only show if video element has no source */}
       <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
         <User className="w-12 h-12 text-gray-400" />
       </div>
