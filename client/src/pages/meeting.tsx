@@ -54,12 +54,15 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
             if (videoElement.readyState !== undefined) {
               videoTrack.attach(videoElement);
               console.log('✅ Local video attached successfully for:', localParticipant.identity);
+              setHasVideo(true);
             }
           } catch (error) {
             console.error('❌ Error attaching local video:', error);
+            setHasVideo(false);
           }
         } else {
           console.log('⚠️ Missing requirements for video attachment:', { videoTrack: !!videoTrack, videoElement: !!videoElement });
+          setHasVideo(false);
         }
       };
 
@@ -67,7 +70,10 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
 
       const handleTrackPublished = () => {
         console.log('Local track published, attempting to attach video');
-        setTimeout(attachLocalVideo, 100);
+        setTimeout(() => {
+          attachLocalVideo();
+          setHasVideo(true);
+        }, 100);
       };
 
       localParticipant.on('trackPublished', handleTrackPublished);
@@ -97,12 +103,15 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
             if (videoElement.readyState !== undefined) {
               videoTrack.attach(videoElement);
               console.log('✅ Remote video attached successfully for:', remoteParticipant.identity);
+              setHasVideo(true);
             }
           } catch (error) {
             console.error('❌ Error attaching remote video:', error);
+            setHasVideo(false);
           }
         } else {
           console.log('⚠️ Missing requirements for remote video attachment:', { videoTrack: !!videoTrack, videoElement: !!videoElement });
+          setHasVideo(false);
         }
       };
 
@@ -111,7 +120,10 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
       const handleTrackSubscribed = (track: any) => {
         if (track.kind === 'video') {
           console.log('Remote video track subscribed for:', remoteParticipant.identity);
-          setTimeout(attachRemoteVideo, 100);
+          setTimeout(() => {
+            attachRemoteVideo();
+            setHasVideo(true);
+          }, 100);
         }
       };
 
@@ -128,6 +140,31 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
     }
   }, [participant, isLocal]);
 
+  const [hasVideo, setHasVideo] = useState(false);
+
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      const handleLoadedData = () => {
+        console.log('Video loaded successfully');
+        setHasVideo(true);
+      };
+      
+      const handleError = (error: any) => {
+        console.error('Video error:', error);
+        setHasVideo(false);
+      };
+
+      videoElement.addEventListener('loadeddata', handleLoadedData);
+      videoElement.addEventListener('error', handleError);
+
+      return () => {
+        videoElement.removeEventListener('loadeddata', handleLoadedData);
+        videoElement.removeEventListener('error', handleError);
+      };
+    }
+  }, []);
+
   return (
     <div className="relative w-full h-full bg-gray-900 flex items-center justify-center">
       <video
@@ -136,12 +173,17 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
         playsInline
         muted={isLocal}
         className="w-full h-full object-cover"
-        style={{ display: 'block' }}
+        style={{ 
+          display: 'block',
+          visibility: hasVideo ? 'visible' : 'hidden'
+        }}
       />
-      {/* Fallback when no video - only show if video element has no source */}
-      <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-        <User className="w-12 h-12 text-gray-400" />
-      </div>
+      {/* Fallback when no video */}
+      {!hasVideo && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+          <User className="w-12 h-12 text-gray-400" />
+        </div>
+      )}
     </div>
   );
 }
@@ -209,14 +251,16 @@ export default function Meeting({ params }: MeetingProps) {
     generateSuggestions
   } = useFollowUpSuggestions();
 
+  const timerHook = useInterviewTimer(interviewPlan);
   const {
     timerState,
     isRunning: isTimerRunning,
     start: startTimer,
     stop: stopTimer,
     reset: resetTimer
-  } = useInterviewTimer(interviewPlan);
+  } = timerHook;
 
+  console.log('Timer hook result:', timerHook);
   console.log('Timer state:', { timerState, isTimerRunning, startTimer: typeof startTimer });
 
   const formatTime = (minutes: number, seconds: number) => {
@@ -589,8 +633,12 @@ export default function Meeting({ params }: MeetingProps) {
         onOpenSettings={() => {/* TODO: Implement settings */}}
         isTimerRunning={isTimerRunning}
         onStartTimer={() => {
-          console.log('Start timer called from meeting controls');
-          startTimer();
+          console.log('Start timer called from meeting controls, startTimer type:', typeof startTimer);
+          if (typeof startTimer === 'function') {
+            startTimer();
+          } else {
+            console.error('startTimer is not a function:', startTimer);
+          }
         }}
         onStopTimer={stopTimer}
         timerState={timerState}
