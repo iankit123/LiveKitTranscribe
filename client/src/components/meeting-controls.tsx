@@ -31,26 +31,28 @@ export default function MeetingControls({
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-gray-900 p-4">
       <div className="flex justify-between items-center">
-        {/* Left side - Interview tracking */}
+        {/* Left side - Interview tracking (Only for interviewers) */}
         <div className="flex items-center space-x-3">
-          {!timerState?.currentBlock ? (
-            <Button
-              onClick={() => {
-                console.log('Start timer button clicked, onStartTimer:', typeof onStartTimer);
-                onStartTimer?.();
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2"
-            >
-              <Play className="w-4 h-4 mr-2" />
-              Start Tracking Interview Plan
-            </Button>
-          ) : (
-            <div className="bg-white/10 text-white px-3 py-2 rounded-lg text-sm">
-              <span className="text-green-400 font-medium">{timerState.currentBlock.label}</span>
-              <span className="ml-2 text-gray-300">
-                {timerState.elapsedMinutes}:{timerState.elapsedSeconds.toString().padStart(2, '0')}
-              </span>
-            </div>
+          {isTimerRunning !== undefined && ( // Only show if timer props are provided (interviewer)
+            !timerState?.currentBlock ? (
+              <Button
+                onClick={() => {
+                  console.log('Start timer button clicked, onStartTimer:', typeof onStartTimer);
+                  onStartTimer?.();
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Start Tracking Interview Plan
+              </Button>
+            ) : (
+              <div className="bg-white/10 text-white px-3 py-2 rounded-lg text-sm">
+                <span className="text-green-400 font-medium">{timerState.currentBlock.label}</span>
+                <span className="ml-2 text-gray-300">
+                  {timerState.elapsedMinutes}:{timerState.elapsedSeconds.toString().padStart(2, '0')}
+                </span>
+              </div>
+            )
           )}
         </div>
 

@@ -117,9 +117,24 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
       setTimeout(attachRemoteVideo, 100);
 
       const handleTrackSubscribed = (track: any) => {
+        console.log('Remote track subscribed:', track.kind, 'for:', remoteParticipant.identity);
         if (track.kind === 'video') {
           console.log('Remote video track subscribed for:', remoteParticipant.identity);
           setTimeout(attachRemoteVideo, 200);
+        } else if (track.kind === 'audio') {
+          console.log('Remote audio track subscribed for:', remoteParticipant.identity);
+          // Create audio element for remote participant
+          const audioElement = document.createElement('audio');
+          audioElement.autoplay = true;
+          audioElement.style.display = 'none';
+          document.body.appendChild(audioElement);
+          
+          try {
+            track.attach(audioElement);
+            console.log('✅ Remote audio attached successfully for:', remoteParticipant.identity);
+          } catch (error) {
+            console.error('❌ Error attaching remote audio:', error);
+          }
         }
       };
 
@@ -625,19 +640,22 @@ export default function Meeting({ params }: MeetingProps) {
         onToggleVideo={toggleVideo}
         onToggleScreenShare={() => {/* TODO: Implement screen share */}}
         onOpenSettings={() => {/* TODO: Implement settings */}}
-        isTimerRunning={isTimerRunning}
-        onStartTimer={() => {
-          console.log('Start timer called from meeting controls, startTimer type:', typeof startTimer);
-          if (typeof startTimer === 'function') {
-            startTimer();
-          } else {
-            console.error('startTimer is not a function:', startTimer);
-          }
-        }}
-        onStopTimer={() => {
-          // Auto-continue tracking throughout interview
-        }}
-        timerState={timerState}
+        // Only pass timer props for interviewers
+        {...(isInterviewer && {
+          isTimerRunning,
+          onStartTimer: () => {
+            console.log('Start timer called from meeting controls, startTimer type:', typeof startTimer);
+            if (typeof startTimer === 'function') {
+              startTimer();
+            } else {
+              console.error('startTimer is not a function:', startTimer);
+            }
+          },
+          onStopTimer: () => {
+            // Auto-continue tracking throughout interview
+          },
+          timerState
+        })}
       />
     </div>
   );
