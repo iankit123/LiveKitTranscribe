@@ -241,6 +241,12 @@ Changelog:
   * Added small interviewer video overlay (10% screen) in bottom-left corner
   * Integrated mini interview plan panel (10% screen) in bottom-right corner
   * Maintained all existing functionality while improving visual hierarchy
+- June 23, 2025. Enhanced interview tracking and plan panel UI
+  * Removed stop tracking button - timer now auto-continues throughout interview
+  * Moved interview plan panel from top-right to bottom-right of candidate video area
+  * Simplified plan panel to show only timer and plan list (removed redundant text labels)
+  * Changed all text to black color for better visibility against white background
+  * Timer displays prominently in large monospace font with current section highlighted in green
 ```
 
 ## User Preferences

@@ -390,23 +390,15 @@ export default function Meeting({ params }: MeetingProps) {
                 </div>
               )}
 
-              {/* Interview Plan Panel - Inside candidate video area, right side */}
+              {/* Interview Plan Panel - Bottom right corner */}
               {timerState?.currentBlock && (
-                <div className="absolute top-4 right-4 w-56 z-20">
+                <div className="absolute bottom-4 right-4 w-56 z-20">
                   <div className="bg-white/95 backdrop-blur rounded-lg p-3 shadow-lg">
+                    {/* Timer Display */}
                     <div className="text-center mb-3">
-                      <div className="text-xs text-black mb-1">Current Section</div>
-                      <div className="font-semibold text-sm text-green-600 mb-1">
-                        {timerState.currentBlock.label}
+                      <div className="text-lg font-mono text-black">
+                        {timerState.elapsedMinutes}:{timerState.elapsedSeconds.toString().padStart(2, '0')}
                       </div>
-                      <div className="text-xs text-black">
-                        {timerState.elapsedMinutes}:{timerState.elapsedSeconds.toString().padStart(2, '0')} elapsed
-                      </div>
-                      {timerState.nextBlock && (
-                        <div className="text-xs text-blue-600 mt-1">
-                          Next: {timerState.nextBlock.label}
-                        </div>
-                      )}
                     </div>
                     
                     {/* Interview Plan Progress */}
