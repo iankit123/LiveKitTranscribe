@@ -154,12 +154,21 @@ export function useInterviewTimer(interviewPlan: InterviewBlock[]) {
     };
   }, []);
 
-  return {
+  const result = {
     timerState,
     isRunning,
-    startTimer,
-    stopTimer,
-    resetTimer,
+    start: startTimer,
+    stop: stopTimer,
+    reset: resetTimer,
     dismissNudge,
   };
+  
+  console.log('useInterviewTimer returning:', { 
+    timerState, 
+    isRunning, 
+    startTimerType: typeof startTimer,
+    stopTimerType: typeof stopTimer 
+  });
+  
+  return result;
 }

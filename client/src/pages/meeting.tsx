@@ -66,14 +66,12 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
         }
       };
 
-      attachLocalVideo();
+      // Initial attachment attempt
+      setTimeout(attachLocalVideo, 100);
 
       const handleTrackPublished = () => {
         console.log('Local track published, attempting to attach video');
-        setTimeout(() => {
-          attachLocalVideo();
-          setHasVideo(true);
-        }, 100);
+        setTimeout(attachLocalVideo, 200);
       };
 
       localParticipant.on('trackPublished', handleTrackPublished);
@@ -115,15 +113,13 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
         }
       };
 
-      attachRemoteVideo();
+      // Initial attachment attempt
+      setTimeout(attachRemoteVideo, 100);
 
       const handleTrackSubscribed = (track: any) => {
         if (track.kind === 'video') {
           console.log('Remote video track subscribed for:', remoteParticipant.identity);
-          setTimeout(() => {
-            attachRemoteVideo();
-            setHasVideo(true);
-          }, 100);
+          setTimeout(attachRemoteVideo, 200);
         }
       };
 
@@ -181,7 +177,12 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
       {/* Fallback when no video */}
       {!hasVideo && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-          <User className="w-12 h-12 text-gray-400" />
+          <div className="text-center text-white">
+            <User className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+            <p className="text-sm text-gray-400">
+              {isLocal ? 'Your camera' : 'Participant camera'}
+            </p>
+          </div>
         </div>
       )}
     </div>
