@@ -261,8 +261,7 @@ export default function Meeting({ params }: MeetingProps) {
     reset: resetTimer
   } = timerHook;
 
-  console.log('Timer hook result:', timerHook);
-  console.log('Timer state:', { timerState, isTimerRunning, startTimer: typeof startTimer });
+  // Timer debugging disabled for production
 
   const formatTime = (minutes: number, seconds: number) => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
@@ -391,6 +390,47 @@ export default function Meeting({ params }: MeetingProps) {
                 </div>
               )}
 
+              {/* Interview Plan Panel - Inside candidate video area, right side */}
+              {timerState?.currentBlock && (
+                <div className="absolute top-4 right-4 w-56 z-20">
+                  <div className="bg-white/95 backdrop-blur rounded-lg p-3 shadow-lg">
+                    <div className="text-center mb-3">
+                      <div className="text-xs text-black mb-1">Current Section</div>
+                      <div className="font-semibold text-sm text-green-600 mb-1">
+                        {timerState.currentBlock.label}
+                      </div>
+                      <div className="text-xs text-black">
+                        {timerState.elapsedMinutes}:{timerState.elapsedSeconds.toString().padStart(2, '0')} elapsed
+                      </div>
+                      {timerState.nextBlock && (
+                        <div className="text-xs text-blue-600 mt-1">
+                          Next: {timerState.nextBlock.label}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Interview Plan Progress */}
+                    <div className="space-y-1">
+                      {interviewPlan.map((block, index) => (
+                        <div 
+                          key={index} 
+                          className={`flex justify-between text-xs p-1 rounded ${
+                            timerState.currentBlockIndex === index 
+                              ? 'bg-green-100 text-green-800 font-medium' 
+                              : index < timerState.currentBlockIndex 
+                                ? 'bg-gray-100 text-gray-600 line-through' 
+                                : 'text-black'
+                          }`}
+                        >
+                          <span>{block.label}</span>
+                          <span>{block.minutes}m</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Bottom Left - Small Interviewer Video */}
               <div className="absolute bottom-4 left-4">
                 <div className="w-48 h-32 bg-gray-800 rounded-lg overflow-hidden border-2 border-white shadow-lg relative">
@@ -410,46 +450,7 @@ export default function Meeting({ params }: MeetingProps) {
                   </div>
                 </div>
 
-                {/* Interview Plan Status below interviewer video */}
-                {timerState?.currentBlock && (
-                  <div className="mt-2 w-48">
-                    <div className="bg-white/90 backdrop-blur rounded-lg p-3">
-                      <div className="text-center mb-3">
-                        <div className="text-xs text-gray-600 mb-1">Current Section</div>
-                        <div className="font-semibold text-sm text-green-600 mb-1">
-                          {timerState.currentBlock.label}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {timerState.elapsedMinutes}:{timerState.elapsedSeconds.toString().padStart(2, '0')} elapsed
-                        </div>
-                        {timerState.nextBlock && (
-                          <div className="text-xs text-blue-600 mt-1">
-                            Next: {timerState.nextBlock.label}
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Interview Plan Progress */}
-                      <div className="space-y-1">
-                        {interviewPlan.map((block, index) => (
-                          <div 
-                            key={index} 
-                            className={`flex justify-between text-xs p-1 rounded ${
-                              timerState.currentBlockIndex === index 
-                                ? 'bg-green-100 text-green-800 font-medium' 
-                                : index < timerState.currentBlockIndex 
-                                  ? 'bg-gray-100 text-gray-600 line-through' 
-                                  : 'text-gray-500'
-                            }`}
-                          >
-                            <span>{block.label}</span>
-                            <span>{block.minutes}m</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
+
               </div>
 
               {/* Exit Interview Button - Top Right */}
@@ -641,7 +642,9 @@ export default function Meeting({ params }: MeetingProps) {
             console.error('startTimer is not a function:', startTimer);
           }
         }}
-        onStopTimer={stopTimer}
+        onStopTimer={() => {
+          // Auto-continue tracking throughout interview
+        }}
         timerState={timerState}
       />
     </div>

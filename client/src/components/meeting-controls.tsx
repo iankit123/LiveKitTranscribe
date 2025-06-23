@@ -45,21 +45,11 @@ export default function MeetingControls({
               Start Tracking Interview Plan
             </Button>
           ) : (
-            <div className="flex items-center space-x-3">
-              <div className="bg-white/10 text-white px-3 py-2 rounded-lg text-sm">
-                <span className="text-green-400 font-medium">{timerState.currentBlock.label}</span>
-                <span className="ml-2 text-gray-300">
-                  {timerState.elapsedMinutes}:{timerState.elapsedSeconds.toString().padStart(2, '0')}
-                </span>
-              </div>
-              <Button
-                onClick={onStopTimer}
-                variant="outline"
-                size="sm"
-                className="text-white border-white/20"
-              >
-                Stop Tracking
-              </Button>
+            <div className="bg-white/10 text-white px-3 py-2 rounded-lg text-sm">
+              <span className="text-green-400 font-medium">{timerState.currentBlock.label}</span>
+              <span className="ml-2 text-gray-300">
+                {timerState.elapsedMinutes}:{timerState.elapsedSeconds.toString().padStart(2, '0')}
+              </span>
             </div>
           )}
         </div>
