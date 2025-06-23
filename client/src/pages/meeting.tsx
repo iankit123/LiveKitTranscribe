@@ -42,17 +42,24 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
       const localParticipant = participant;
       
       const attachLocalVideo = () => {
+        console.log('Attempting to attach local video for:', localParticipant.identity);
+        console.log('Available video publications:', Array.from(localParticipant.videoTrackPublications.keys()));
+        
         const videoTrack = Array.from(localParticipant.videoTrackPublications.values())[0]?.videoTrack;
+        
+        console.log('Found video track:', !!videoTrack, 'Video element:', !!videoElement);
         
         if (videoTrack && videoElement) {
           try {
             if (videoElement.readyState !== undefined) {
               videoTrack.attach(videoElement);
-              console.log('Local video attached for:', localParticipant.identity);
+              console.log('✅ Local video attached successfully for:', localParticipant.identity);
             }
           } catch (error) {
-            console.error('Error attaching local video:', error);
+            console.error('❌ Error attaching local video:', error);
           }
+        } else {
+          console.log('⚠️ Missing requirements for video attachment:', { videoTrack: !!videoTrack, videoElement: !!videoElement });
         }
       };
 
@@ -78,17 +85,24 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
       const remoteParticipant = participant;
       
       const attachRemoteVideo = () => {
+        console.log('Attempting to attach remote video for:', remoteParticipant.identity);
+        console.log('Available remote video publications:', Array.from(remoteParticipant.videoTrackPublications.keys()));
+        
         const videoTrack = Array.from(remoteParticipant.videoTrackPublications.values())[0]?.videoTrack;
+        
+        console.log('Found remote video track:', !!videoTrack, 'Video element:', !!videoElement);
         
         if (videoTrack && videoElement) {
           try {
             if (videoElement.readyState !== undefined) {
               videoTrack.attach(videoElement);
-              console.log('Remote video attached for:', remoteParticipant.identity);
+              console.log('✅ Remote video attached successfully for:', remoteParticipant.identity);
             }
           } catch (error) {
-            console.error('Error attaching remote video:', error);
+            console.error('❌ Error attaching remote video:', error);
           }
+        } else {
+          console.log('⚠️ Missing requirements for remote video attachment:', { videoTrack: !!videoTrack, videoElement: !!videoElement });
         }
       };
 
@@ -201,6 +215,8 @@ export default function Meeting({ params }: MeetingProps) {
     stop: stopTimer,
     reset: resetTimer
   } = useInterviewTimer(interviewPlan);
+
+  console.log('Timer state:', { timerState, isTimerRunning, startTimer: typeof startTimer });
 
   const formatTime = (minutes: number, seconds: number) => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
@@ -348,17 +364,9 @@ export default function Meeting({ params }: MeetingProps) {
                   </div>
                 </div>
 
-                {/* Interview Plan CTA below interviewer video */}
-                <div className="mt-2 w-48">
-                  {!timerState?.currentBlock ? (
-                    <Button
-                      onClick={startTimer}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2"
-                    >
-                      <Play className="w-4 h-4 mr-2" />
-                      Start Tracking Interview Plan
-                    </Button>
-                  ) : (
+                {/* Interview Plan Status below interviewer video */}
+                {timerState?.currentBlock && (
+                  <div className="mt-2 w-48">
                     <div className="bg-white/90 backdrop-blur rounded-lg p-3">
                       <div className="text-center mb-3">
                         <div className="text-xs text-gray-600 mb-1">Current Section</div>
@@ -393,18 +401,9 @@ export default function Meeting({ params }: MeetingProps) {
                           </div>
                         ))}
                       </div>
-                      
-                      <Button
-                        onClick={stopTimer}
-                        variant="outline"
-                        size="sm"
-                        className="w-full mt-2 text-xs"
-                      >
-                        Stop Tracking
-                      </Button>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Exit Interview Button - Top Right */}
@@ -587,6 +586,13 @@ export default function Meeting({ params }: MeetingProps) {
         onToggleVideo={toggleVideo}
         onToggleScreenShare={() => {/* TODO: Implement screen share */}}
         onOpenSettings={() => {/* TODO: Implement settings */}}
+        isTimerRunning={isTimerRunning}
+        onStartTimer={() => {
+          console.log('Start timer called from meeting controls');
+          startTimer();
+        }}
+        onStopTimer={stopTimer}
+        timerState={timerState}
       />
     </div>
   );

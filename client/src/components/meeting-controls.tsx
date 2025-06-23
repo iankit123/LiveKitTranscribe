@@ -8,6 +8,12 @@ interface MeetingControlsProps {
   onToggleVideo: () => void;
   onToggleScreenShare: () => void;
   onOpenSettings: () => void;
+  
+  // Interview tracking props
+  isTimerRunning?: boolean;
+  onStartTimer?: () => void;
+  onStopTimer?: () => void;
+  timerState?: any;
 }
 
 export default function MeetingControls({
