@@ -77,8 +77,17 @@ export function useInterviewTimer(interviewPlan: InterviewBlock[]) {
       const nextBlockStartSeconds = cumulativeTimes[currentBlockIndex] * 60;
       const secondsUntilNextBlock = nextBlockStartSeconds - totalElapsedSeconds;
       
+      console.log('Countdown debug:', {
+        currentBlockIndex,
+        nextBlockStartSeconds,
+        totalElapsedSeconds,
+        secondsUntilNextBlock,
+        cumulativeTimes
+      });
+      
       if (secondsUntilNextBlock <= 5 && secondsUntilNextBlock > 0) {
         countdownSecondsLeft = secondsUntilNextBlock;
+        console.log('🎯 COUNTDOWN ACTIVE:', countdownSecondsLeft);
       }
     }
 
