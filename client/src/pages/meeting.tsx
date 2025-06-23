@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'wouter';
 import { useMeeting } from '@/hooks/use-meeting';
 import { useTranscription } from '@/hooks/use-transcription';
@@ -23,6 +23,113 @@ import {
   Share2,
   ExternalLink
 } from 'lucide-react';
+
+// Import ParticipantVideo directly from video-grid
+function ParticipantVideo({ participant, isLocal = false, userRole }: { 
+  participant: any, 
+  isLocal?: boolean,
+  userRole?: string 
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+
+    const videoElement = videoRef.current;
+
+    if (isLocal) {
+      // Handle local participant
+      const localParticipant = participant;
+      
+      const attachLocalVideo = () => {
+        const videoTrack = Array.from(localParticipant.videoTrackPublications.values())[0]?.videoTrack;
+        
+        if (videoTrack && videoElement) {
+          try {
+            if (videoElement.readyState !== undefined) {
+              videoTrack.attach(videoElement);
+              console.log('Local video attached for:', localParticipant.identity);
+            }
+          } catch (error) {
+            console.error('Error attaching local video:', error);
+          }
+        }
+      };
+
+      attachLocalVideo();
+
+      const handleTrackPublished = () => {
+        console.log('Local track published, attempting to attach video');
+        setTimeout(attachLocalVideo, 100);
+      };
+
+      localParticipant.on('trackPublished', handleTrackPublished);
+
+      return () => {
+        localParticipant.off('trackPublished', handleTrackPublished);
+        if (videoElement && videoElement.srcObject) {
+          const tracks = (videoElement.srcObject as MediaStream)?.getTracks();
+          tracks?.forEach(track => track.stop());
+          videoElement.srcObject = null;
+        }
+      };
+    } else {
+      // Handle remote participant
+      const remoteParticipant = participant;
+      
+      const attachRemoteVideo = () => {
+        const videoTrack = Array.from(remoteParticipant.videoTrackPublications.values())[0]?.videoTrack;
+        
+        if (videoTrack && videoElement) {
+          try {
+            if (videoElement.readyState !== undefined) {
+              videoTrack.attach(videoElement);
+              console.log('Remote video attached for:', remoteParticipant.identity);
+            }
+          } catch (error) {
+            console.error('Error attaching remote video:', error);
+          }
+        }
+      };
+
+      attachRemoteVideo();
+
+      const handleTrackSubscribed = (track: any) => {
+        if (track.kind === 'video') {
+          console.log('Remote video track subscribed for:', remoteParticipant.identity);
+          setTimeout(attachRemoteVideo, 100);
+        }
+      };
+
+      remoteParticipant.on('trackSubscribed', handleTrackSubscribed);
+
+      return () => {
+        remoteParticipant.off('trackSubscribed', handleTrackSubscribed);
+        if (videoElement && videoElement.srcObject) {
+          const tracks = (videoElement.srcObject as MediaStream)?.getTracks();
+          tracks?.forEach(track => track.stop());
+          videoElement.srcObject = null;
+        }
+      };
+    }
+  }, [participant, isLocal]);
+
+  return (
+    <div className="relative w-full h-full bg-gray-900 flex items-center justify-center">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted={isLocal}
+        className="w-full h-full object-cover"
+      />
+      {/* Fallback when no video */}
+      <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+        <User className="w-12 h-12 text-gray-400" />
+      </div>
+    </div>
+  );
+}
 
 interface MeetingProps {
   params: {
@@ -149,6 +256,11 @@ export default function Meeting({ params }: MeetingProps) {
             <Badge variant={isConnected ? 'default' : 'secondary'} className="text-xs">
               {isConnected ? 'Connected' : 'Connecting...'}
             </Badge>
+            {participants.length > 0 && (
+              <Badge variant="outline" className="text-xs">
+                {participants.length + 1} participants
+              </Badge>
+            )}
           </div>
           
           <div className="flex items-center space-x-3">
@@ -161,14 +273,19 @@ export default function Meeting({ params }: MeetingProps) {
               <Share2 className="w-3 h-3 mr-1" />
               Share Link
             </Button>
-            <Button
-              onClick={() => window.open(window.location.href, '_blank')}
-              size="sm"
-              variant="ghost"
-              className="text-xs"
-            >
-              <ExternalLink className="w-3 h-3" />
-            </Button>
+            {isInterviewer && (
+              <Button
+                onClick={() => {
+                  disconnectFromRoom();
+                  window.location.href = '/';
+                }}
+                size="sm"
+                variant="destructive"
+                className="text-xs"
+              >
+                End Interview
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -180,15 +297,26 @@ export default function Meeting({ params }: MeetingProps) {
           <div className="h-[calc(100vh-200px)] flex gap-4">
             {/* Main Content Area - Candidate Video (70% width) */}
             <div className="flex-1 relative bg-gray-900 rounded-lg overflow-hidden">
+              {/* Timer Nudge - Only visible to interviewer */}
+              {timerState?.shouldShowNudge && timerState?.nextBlock && (
+                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 bg-yellow-500 text-black px-4 py-2 rounded-lg shadow-lg animate-pulse">
+                  <p className="text-sm font-medium">
+                    Start "{timerState.nextBlock.label}" in 5 seconds
+                  </p>
+                </div>
+              )}
+
               {/* Large Candidate Video */}
               {participants.length > 0 ? (
-                participants.map((participant) => (
+                participants.filter(p => !p.identity.includes('interviewer')).map((participant) => (
                   <div key={participant.identity} className="w-full h-full relative">
-                    <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-                      <User className="w-24 h-24 text-gray-400" />
-                    </div>
+                    <ParticipantVideo 
+                      participant={participant}
+                      isLocal={false}
+                      userRole="interviewer"
+                    />
                     <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded text-sm">
-                      {participant.identity.includes('interviewer') ? 'Interviewer' : 'Candidate'}
+                      Candidate
                     </div>
                   </div>
                 ))
@@ -201,54 +329,94 @@ export default function Meeting({ params }: MeetingProps) {
                 </div>
               )}
 
-              {/* Bottom Row - Small Interviewer Video + Interview Plan */}
-              <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
-                {/* Small Interviewer Video */}
+              {/* Bottom Left - Small Interviewer Video */}
+              <div className="absolute bottom-4 left-4">
                 <div className="w-48 h-32 bg-gray-800 rounded-lg overflow-hidden border-2 border-white shadow-lg relative">
-                  <div className="flex items-center justify-center h-full text-white">
-                    <Video className="w-8 h-8" />
-                  </div>
+                  {localParticipant ? (
+                    <ParticipantVideo 
+                      participant={localParticipant}
+                      isLocal={true}
+                      userRole="interviewer"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-white">
+                      <Video className="w-8 h-8" />
+                    </div>
+                  )}
                   <div className="absolute bottom-1 left-1 bg-black/70 text-white px-2 py-1 rounded text-xs">
                     You (Interviewer)
                   </div>
                 </div>
 
-                {/* Interview Plan Mini Panel */}
-                <div className="w-48 h-32 bg-white/90 backdrop-blur rounded-lg shadow-lg p-3 overflow-y-auto">
-                  <h3 className="font-semibold text-sm mb-2 text-gray-800">Interview Plan</h3>
+                {/* Interview Plan CTA below interviewer video */}
+                <div className="mt-2 w-48">
                   {!timerState?.currentBlock ? (
-                    <div className="space-y-1">
-                      {interviewPlan.slice(0, 4).map((block, index) => (
-                        <div key={index} className="flex justify-between text-xs">
-                          <span className="text-gray-600">{block.label}</span>
-                          <span className="text-gray-500">{block.minutes}m</span>
-                        </div>
-                      ))}
-                      <Button
-                        onClick={startTimer}
-                        size="sm"
-                        className="w-full mt-2 h-6 text-xs bg-blue-600 hover:bg-blue-700"
-                      >
-                        <Play className="w-3 h-3 mr-1" />
-                        Start
-                      </Button>
-                    </div>
+                    <Button
+                      onClick={startTimer}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Start Tracking Interview Plan
+                    </Button>
                   ) : (
-                    <div className="text-xs">
-                      <div className="text-green-600 font-medium">
-                        Current: {timerState.currentBlock.label}
-                      </div>
-                      <div className="text-gray-600">
-                        {timerState.elapsedMinutes}:{timerState.elapsedSeconds.toString().padStart(2, '0')}
-                      </div>
-                      {timerState.nextBlock && (
-                        <div className="text-blue-600 mt-1">
-                          Next: {timerState.nextBlock.label}
+                    <div className="bg-white/90 backdrop-blur rounded-lg p-3">
+                      <div className="text-center mb-3">
+                        <div className="text-xs text-gray-600 mb-1">Current Section</div>
+                        <div className="font-semibold text-sm text-green-600 mb-1">
+                          {timerState.currentBlock.label}
                         </div>
-                      )}
+                        <div className="text-xs text-gray-500">
+                          {timerState.elapsedMinutes}:{timerState.elapsedSeconds.toString().padStart(2, '0')} elapsed
+                        </div>
+                        {timerState.nextBlock && (
+                          <div className="text-xs text-blue-600 mt-1">
+                            Next: {timerState.nextBlock.label}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Interview Plan Progress */}
+                      <div className="space-y-1">
+                        {interviewPlan.map((block, index) => (
+                          <div 
+                            key={index} 
+                            className={`flex justify-between text-xs p-1 rounded ${
+                              timerState.currentBlockIndex === index 
+                                ? 'bg-green-100 text-green-800 font-medium' 
+                                : index < timerState.currentBlockIndex 
+                                  ? 'bg-gray-100 text-gray-600 line-through' 
+                                  : 'text-gray-500'
+                            }`}
+                          >
+                            <span>{block.label}</span>
+                            <span>{block.minutes}m</span>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <Button
+                        onClick={stopTimer}
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2 text-xs"
+                      >
+                        Stop Tracking
+                      </Button>
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Exit Interview Button - Top Right */}
+              <div className="absolute top-4 right-4">
+                <Button
+                  onClick={disconnectFromRoom}
+                  variant="destructive"
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Exit Interview
+                </Button>
               </div>
             </div>
 
