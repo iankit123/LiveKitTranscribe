@@ -1,73 +1,32 @@
-// deepgram-service.ts
 import { TranscriptionService, TranscriptionResult } from './transcription-service';
-
-let mediaStreamForDeepgram: MediaStream | null = new MediaStream();
-
-export function addTrackToDeepgramStream(track: MediaStreamTrack) {
-  if (!mediaStreamForDeepgram) {
-    mediaStreamForDeepgram = new MediaStream();
-  }
-
-  const exists = mediaStreamForDeepgram.getTracks().some(t => t.id === track.id);
-  if (!exists) {
-    mediaStreamForDeepgram.addTrack(track);
-    console.log(`🎤 Track added to Deepgram stream: ${track.label}`);
-  }
-}
-
-export function getDeepgramMediaStream(): MediaStream | null {
-  return mediaStreamForDeepgram;
-}
 
 export class DeepgramService extends TranscriptionService {
   private ws: WebSocket | null = null;
   private onTranscriptionCallback?: (result: TranscriptionResult) => void;
   private onErrorCallback?: (error: string) => void;
-  private mediaRecorder?: MediaRecorder;
-  private streamStarted = false;
 
   async start(): Promise<void> {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
-
+    
     this.ws = new WebSocket(wsUrl);
 
-    this.ws.onopen = async () => {
+    this.ws.onopen = () => {
       console.log('Connected to Deepgram via WebSocket proxy');
-
       if (this.ws) {
-        this.ws.send(JSON.stringify({ type: 'start_transcription' }));
+        this.ws.send(JSON.stringify({
+          type: 'start_transcription'
+        }));
       }
-
-      const stream = getDeepgramMediaStream();
-      if (!stream || stream.getTracks().length === 0) {
-        console.warn("⚠️ No audio tracks found for Deepgram!");
-        return;
-      }
-
-      this.mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm'
-      });
-
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
-          event.data.arrayBuffer().then(buffer => {
-            this.sendAudio(buffer);
-          });
-        }
-      };
-
-      this.mediaRecorder.start(250); // every 250ms
-      this.streamStarted = true;
-      console.log("🎙️ MediaRecorder started for Deepgram stream");
     };
 
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         console.log(`🎧 CLIENT RECEIVED: type=${data.type}`, data);
-
+        
         if (data.type === 'transcription' && this.onTranscriptionCallback) {
+          console.log(`🎯 PROCESSING TRANSCRIPT: "${data.data.transcript}"`);
           this.onTranscriptionCallback({
             transcript: data.data.transcript,
             isFinal: data.data.is_final,
@@ -104,27 +63,25 @@ export class DeepgramService extends TranscriptionService {
 
   async stop(): Promise<void> {
     if (this.ws) {
-      this.ws.send(JSON.stringify({ type: 'stop_transcription' }));
+      this.ws.send(JSON.stringify({
+        type: 'stop_transcription'
+      }));
       this.ws.close();
       this.ws = null;
-    }
-
-    if (this.mediaRecorder && this.streamStarted) {
-      this.mediaRecorder.stop();
-      this.streamStarted = false;
-      console.log("🛑 MediaRecorder stopped");
     }
   }
 
   sendAudio(audioData: ArrayBuffer): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      // Convert ArrayBuffer to base64
       const uint8Array = new Uint8Array(audioData);
       const base64Audio = btoa(String.fromCharCode(...uint8Array));
-
-      if (Math.random() < 0.01) {
+      
+      // Log audio data being sent (occasionally to avoid spam)
+      if (Math.random() < 0.01) { // Log ~1% of chunks
         console.log(`🎤 Sending audio: size=${audioData.byteLength}bytes, ws_state=${this.ws.readyState}`);
       }
-
+      
       this.ws.send(JSON.stringify({
         type: 'audio_data',
         audio: base64Audio
