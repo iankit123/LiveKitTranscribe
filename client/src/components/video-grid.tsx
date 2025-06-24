@@ -1,3 +1,5 @@
+// client/src/components/video-grid.tsx
+
 import { Room, LocalParticipant, RemoteParticipant, Track, RoomEvent, ParticipantEvent } from "livekit-client";
 import { User, Mic, MicOff, Video as VideoIcon, VideoOff } from "lucide-react";
 import { useEffect, useRef } from "react";
@@ -37,11 +39,11 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
     if (isLocal) {
       // Handle local participant
       const localParticipant = participant as LocalParticipant;
-      
+
       const attachLocalVideo = () => {
         // Get video track from publications
         const videoTrack = Array.from(localParticipant.videoTrackPublications.values())[0]?.videoTrack;
-        
+
         if (videoTrack && videoElement) {
           try {
             // Ensure element is ready before attaching
@@ -134,7 +136,7 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
         muted={isLocal}
         className="w-full h-full object-cover"
       />
-      
+
       {!hasVideo && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
           <div className="text-center text-gray-300">
@@ -144,7 +146,7 @@ function ParticipantVideo({ participant, isLocal = false, userRole }: {
           </div>
         </div>
       )}
-      
+
       {/* Participant Info Overlay */}
       <div className="absolute bottom-3 left-3 flex items-center space-x-2">
         <div className="bg-black bg-opacity-70 rounded px-2 py-1 flex items-center space-x-1">
@@ -199,7 +201,7 @@ function AudioEnabledParticipant({ participant, isLocal, userRole }: {
 
     const handleTrackSubscribed = (track: Track) => {
       console.log(`🎵 Track subscribed: ${track.kind} from ${participant.identity}`);
-      
+
       if (track.kind === Track.Kind.Video && videoRef.current) {
         track.attach(videoRef.current);
         console.log(`✅ Video attached for ${participant.identity}`);
@@ -208,7 +210,7 @@ function AudioEnabledParticipant({ participant, isLocal, userRole }: {
         audioRef.current.volume = 1.0;
         audioRef.current.muted = false;
         console.log(`✅ Audio attached for ${participant.identity} - Volume: ${audioRef.current.volume}`);
-        
+
         // Force audio play to overcome autoplay restrictions
         audioRef.current.play().catch(e => console.log('Audio autoplay prevented:', e));
       }
@@ -216,7 +218,7 @@ function AudioEnabledParticipant({ participant, isLocal, userRole }: {
 
     const handleTrackUnsubscribed = (track: Track) => {
       console.log(`❌ Track unsubscribed: ${track.kind} from ${participant.identity}`);
-      
+
       if (track.kind === Track.Kind.Video && videoRef.current) {
         track.detach(videoRef.current);
       } else if (track.kind === Track.Kind.Audio && audioRef.current) {
@@ -228,7 +230,7 @@ function AudioEnabledParticipant({ participant, isLocal, userRole }: {
     participant.audioTrackPublications.forEach((pub) => {
       if (pub.track) handleTrackSubscribed(pub.track);
     });
-    
+
     participant.videoTrackPublications.forEach((pub) => {
       if (pub.track) handleTrackSubscribed(pub.track);
     });
@@ -262,7 +264,7 @@ function AudioEnabledParticipant({ participant, isLocal, userRole }: {
         playsInline
         muted={isLocal}
       />
-      
+
       {/* CRITICAL: Audio element for remote participants */}
       {!isLocal && (
         <audio
@@ -272,7 +274,7 @@ function AudioEnabledParticipant({ participant, isLocal, userRole }: {
           style={{ display: 'none' }}
         />
       )}
-      
+
       <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
         {getDisplayName()}
       </div>
@@ -294,7 +296,7 @@ export default function VideoGrid({ room, localParticipant, participants, userRo
           userRole={userRole}
         />
       )}
-      
+
       {/* Remote participants with audio support */}
       {participants.map((participant) => (
         <AudioEnabledParticipant
@@ -304,7 +306,7 @@ export default function VideoGrid({ room, localParticipant, participants, userRo
           userRole={userRole}
         />
       ))}
-      
+
       {/* Placeholder when no remote participants */}
       {participants.length === 0 && localParticipant && (
         <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center border-2 border-dashed border-gray-300">

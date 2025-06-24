@@ -1,3 +1,5 @@
+//client/src/pages/meeting.tsx
+
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "wouter";
 import { useMeeting } from "@/hooks/use-meeting";
@@ -11,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import VideoGrid from "@/components/video-grid";
 import MeetingControls from "@/components/meeting-controls";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { useEnhancedTranscription } from "@/hooks/use-enhanced-transcription";
+
 import {
   Video,
   Mic,
@@ -275,29 +279,32 @@ export default function Meeting({ params }: MeetingProps) {
   const [customInstruction, setCustomInstruction] = useState("");
   const [interviewPlan, setInterviewPlan] = useState(() => {
     // First try to get from sessionStorage (from home page)
-    const sessionPlan = sessionStorage.getItem('interviewPlan');
+    const sessionPlan = sessionStorage.getItem("interviewPlan");
     if (sessionPlan) {
       try {
         // Parse the text format: "Intro - 5\nTechnical - 20\nQ&A - 10"
-        const parsed = sessionPlan.split('\n').map(line => {
-          const match = line.trim().match(/^(.+?)\s*-\s*(\d+)$/);
-          if (match) {
-            return {
-              label: match[1].trim(),
-              minutes: parseInt(match[2], 10)
-            };
-          }
-          return null;
-        }).filter(Boolean);
-        
+        const parsed = sessionPlan
+          .split("\n")
+          .map((line) => {
+            const match = line.trim().match(/^(.+?)\s*-\s*(\d+)$/);
+            if (match) {
+              return {
+                label: match[1].trim(),
+                minutes: parseInt(match[2], 10),
+              };
+            }
+            return null;
+          })
+          .filter(Boolean);
+
         if (parsed.length > 0) {
           return parsed;
         }
       } catch (error) {
-        console.log('Error parsing interview plan from sessionStorage:', error);
+        console.log("Error parsing interview plan from sessionStorage:", error);
       }
     }
-    
+
     // Fallback to localStorage with room-specific key
     const saved = localStorage.getItem(`interviewPlan-${roomName}`);
     if (saved) {
@@ -312,7 +319,7 @@ export default function Meeting({ params }: MeetingProps) {
         ];
       }
     }
-    
+
     // Default plan if nothing found
     return [
       { label: "Introduction", minutes: 5 },
@@ -337,12 +344,22 @@ export default function Meeting({ params }: MeetingProps) {
   } = useMeeting();
 
   const {
-    transcriptions,
+    transcriptions: rawTranscriptions,
     isTranscribing,
     startTranscription,
     stopTranscription,
     clearTranscriptions,
-  } = useTranscription("deepgram", room, isInterviewer);
+    error: transcriptionError,
+  } = useEnhancedTranscription(room);
+
+  const transcriptions = rawTranscriptions.map((t, index) => ({
+    id: `${t.timestamp}-${index}`,
+    speaker: t.speaker || "Mixed Audio",
+    text: t.transcript,
+    timestamp: t.timestamp,
+    isFinal: t.isFinal,
+    confidence: t.confidence,
+  }));
 
   const { suggestions, isLoading, generateSuggestions } =
     useFollowUpSuggestions();
@@ -484,27 +501,29 @@ export default function Meeting({ params }: MeetingProps) {
                       <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded text-sm">
                         Candidate
                       </div>
-                      
+
                       {/* 5-Second Countdown Overlay */}
-                      {timerState?.countdownSecondsLeft && timerState.countdownSecondsLeft > 0 && (
-                        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-                          <div className="bg-black/70 backdrop-blur-sm text-white px-6 py-4 rounded-xl shadow-2xl border border-white/20">
-                            <div className="text-center">
-                              <div className="text-lg font-semibold mb-1">
-                                Reminder - Time for next part starts in
-                              </div>
-                              <div className="text-3xl font-bold text-yellow-400">
-                                {Math.ceil(timerState.countdownSecondsLeft)} sec
-                              </div>
-                              {timerState.nextBlock && (
-                                <div className="text-sm text-gray-300 mt-1">
-                                  Next: {timerState.nextBlock.label}
+                      {timerState?.countdownSecondsLeft &&
+                        timerState.countdownSecondsLeft > 0 && (
+                          <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+                            <div className="bg-black/70 backdrop-blur-sm text-white px-6 py-4 rounded-xl shadow-2xl border border-white/20">
+                              <div className="text-center">
+                                <div className="text-lg font-semibold mb-1">
+                                  Reminder - Time for next part starts in
                                 </div>
-                              )}
+                                <div className="text-3xl font-bold text-yellow-400">
+                                  {Math.ceil(timerState.countdownSecondsLeft)}{" "}
+                                  sec
+                                </div>
+                                {timerState.nextBlock && (
+                                  <div className="text-sm text-gray-300 mt-1">
+                                    Next: {timerState.nextBlock.label}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                   ))
               ) : (
@@ -513,27 +532,28 @@ export default function Meeting({ params }: MeetingProps) {
                     <User className="w-16 h-16 mx-auto mb-4 opacity-50" />
                     <p className="text-lg">Waiting for candidate to join...</p>
                   </div>
-                  
+
                   {/* 5-Second Countdown Overlay (when no candidate) */}
-                  {timerState?.countdownSecondsLeft && timerState.countdownSecondsLeft > 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-                      <div className="bg-black/70 backdrop-blur-sm text-white px-6 py-4 rounded-xl shadow-2xl border border-white/20">
-                        <div className="text-center">
-                          <div className="text-lg font-semibold mb-1">
-                            Reminder - Time for next part starts in
-                          </div>
-                          <div className="text-3xl font-bold text-yellow-400">
-                            {Math.ceil(timerState.countdownSecondsLeft)} sec
-                          </div>
-                          {timerState.nextBlock && (
-                            <div className="text-sm text-gray-300 mt-1">
-                              Next: {timerState.nextBlock.label}
+                  {timerState?.countdownSecondsLeft &&
+                    timerState.countdownSecondsLeft > 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+                        <div className="bg-black/70 backdrop-blur-sm text-white px-6 py-4 rounded-xl shadow-2xl border border-white/20">
+                          <div className="text-center">
+                            <div className="text-lg font-semibold mb-1">
+                              Reminder - Time for next part starts in
                             </div>
-                          )}
+                            <div className="text-3xl font-bold text-yellow-400">
+                              {Math.ceil(timerState.countdownSecondsLeft)} sec
+                            </div>
+                            {timerState.nextBlock && (
+                              <div className="text-sm text-gray-300 mt-1">
+                                Next: {timerState.nextBlock.label}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               )}
 
@@ -732,9 +752,11 @@ export default function Meeting({ params }: MeetingProps) {
                           <div className="flex items-center space-x-1 mb-1">
                             <Badge
                               variant={
-                                transcription.speaker === "TestBadge"
+                                transcription.speaker === "Interviewer"
                                   ? "default"
-                                  : "secondary"
+                                  : transcription.speaker === "Candidate"
+                                    ? "secondary"
+                                    : "outline" // For "unknown" speakers
                               }
                               className="text-xs px-1 py-0"
                             >

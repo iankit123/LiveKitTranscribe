@@ -1,3 +1,4 @@
+//client/src/components/transcription-panel.tsx
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Pause, Play, Trash2, User } from "lucide-react";
@@ -9,6 +10,7 @@ export interface TranscriptionEntry {
   timestamp: string;
   isFinal: boolean;
   confidence: number;
+  source?: 'local' | 'remote' | 'mixed'; // Added to track audio source
 }
 
 interface TranscriptionPanelProps {

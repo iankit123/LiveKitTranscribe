@@ -1,4 +1,7 @@
+//client/src/services/deepgram-service.ts
+
 import { TranscriptionService, TranscriptionResult } from './transcription-service';
+
 
 export class DeepgramService extends TranscriptionService {
   private ws: WebSocket | null = null;
@@ -8,7 +11,7 @@ export class DeepgramService extends TranscriptionService {
   async start(): Promise<void> {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
-    
+
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
@@ -24,7 +27,7 @@ export class DeepgramService extends TranscriptionService {
       try {
         const data = JSON.parse(event.data);
         console.log(`🎧 CLIENT RECEIVED: type=${data.type}`, data);
-        
+
         if (data.type === 'transcription' && this.onTranscriptionCallback) {
           console.log(`🎯 PROCESSING TRANSCRIPT: "${data.data.transcript}"`);
           this.onTranscriptionCallback({
@@ -76,12 +79,12 @@ export class DeepgramService extends TranscriptionService {
       // Convert ArrayBuffer to base64
       const uint8Array = new Uint8Array(audioData);
       const base64Audio = btoa(String.fromCharCode(...uint8Array));
-      
+
       // Log audio data being sent (occasionally to avoid spam)
       if (Math.random() < 0.01) { // Log ~1% of chunks
         console.log(`🎤 Sending audio: size=${audioData.byteLength}bytes, ws_state=${this.ws.readyState}`);
       }
-      
+
       this.ws.send(JSON.stringify({
         type: 'audio_data',
         audio: base64Audio

@@ -1,3 +1,4 @@
+//client/src/services/livekit-service.ts
 import { Room, RemoteParticipant, LocalParticipant, RoomEvent, RemoteTrackPublication } from "livekit-client";
 
 export interface LiveKitTokenResponse {
@@ -8,7 +9,7 @@ export interface LiveKitTokenResponse {
 }
 
 export class LiveKitService {
-  private room: Room | null = null;
+  private room: Room | null = null;A
 
   async getAccessToken(roomName: string, participantName: string): Promise<LiveKitTokenResponse> {
     const response = await fetch('/api/livekit/token', {
