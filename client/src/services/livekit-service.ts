@@ -9,7 +9,7 @@ export interface LiveKitTokenResponse {
 }
 
 export class LiveKitService {
-  private room: Room | null = null;A
+  private room: Room | null = null;
 
   async getAccessToken(roomName: string, participantName: string): Promise<LiveKitTokenResponse> {
     const response = await fetch('/api/livekit/token', {
