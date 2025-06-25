@@ -1,4 +1,5 @@
-// Complete enhanced-deepgram-service.ts - Copy and paste this entire file
+// Enhanced Deepgram Service with Audio Source Tagging
+// Replace your enhanced-deepgram-service.ts with this
 
 import { Room } from "livekit-client";
 import {
@@ -14,11 +15,9 @@ export class EnhancedDeepgramService extends TranscriptionService {
   private audioCaptureService: AudioCaptureService | null = null;
   private room: Room | null = null;
 
-  // Track audio activity to determine speaker
-  private lastLocalActivity: number = 0;
-  private lastRemoteActivity: number = 0;
-  private localAudioLevel: number = 0;
-  private remoteAudioLevel: number = 0;
+  // Track pending audio chunks with their source
+  private pendingAudioSources: Map<string, string> = new Map();
+  private audioChunkCounter: number = 0;
 
   constructor() {
     super();
@@ -34,124 +33,113 @@ export class EnhancedDeepgramService extends TranscriptionService {
     if (this.audioCaptureService) {
       await this.audioCaptureService.initialize(room);
 
-      // Track local audio activity
+      console.log('🔧 SETTING UP SEPARATE AUDIO CALLBACKS...');
+
+      // Set up separate callbacks for local and remote audio
       this.audioCaptureService.onLocalAudio((audioData: ArrayBuffer) => {
-        this.trackLocalActivity(audioData);
-        this.sendAudio(audioData);
+        console.log("🎤 SENDING LOCAL AUDIO to Deepgram");
+        this.sendAudioWithSource(audioData, "local");
       });
 
-      // Track remote audio activity
       this.audioCaptureService.onRemoteAudio((audioData: ArrayBuffer) => {
-        this.trackRemoteActivity(audioData);
-        this.sendAudio(audioData);
+        console.log("🎤 SENDING REMOTE AUDIO to Deepgram");
+        this.sendAudioWithSource(audioData, "remote");
       });
+
+      console.log('✅ SEPARATE AUDIO CALLBACKS CONFIGURED');
     }
   }
 
-  private trackLocalActivity(audioData: ArrayBuffer): void {
-    const now = Date.now();
-    // The audioData is Int16Array buffer, not Float32Array
-    const audioArray = new Int16Array(audioData);
-    // Convert Int16 to Float32 for level calculation
-    const level = Math.max(
-      ...Array.from(audioArray).map((sample) => Math.abs(sample / 32768)),
-    );
+  private sendAudioWithSource(
+    audioData: ArrayBuffer,
+    source: "local" | "remote",
+  ): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      // Create unique ID for this audio chunk
+      const chunkId = `${Date.now()}-${this.audioChunkCounter++}`;
 
-    if (level > 0.01) {
-      this.lastLocalActivity = now;
-      this.localAudioLevel = level;
+      // Store the source for this chunk
+      this.pendingAudioSources.set(chunkId, source);
 
-      if (Math.random() < 0.1) {
-        // 10% logging
+      // Convert audio data
+      const uint8Array = new Uint8Array(audioData);
+      const base64Audio = btoa(String.fromCharCode(...uint8Array));
+
+      // Send audio with source metadata
+      this.ws.send(
+        JSON.stringify({
+          type: "audio_data",
+          audio: base64Audio,
+          source: source, // Tag the audio with its source
+          chunkId: chunkId, // Unique identifier
+          timestamp: Date.now(),
+        }),
+      );
+
+      if (Math.random() < 0.01) {
+        // 1% logging
         console.log(
-          `🎤 LOCAL ACTIVITY: level=${level.toFixed(4)}, time=${now}`,
+          `🎤 Sent ${source.toUpperCase()} audio: chunk=${chunkId}, size=${audioData.byteLength}`,
         );
+      }
+
+      // Clean up old entries (keep only recent ones)
+      if (this.pendingAudioSources.size > 100) {
+        const entries = Array.from(this.pendingAudioSources.entries());
+        // Keep only the most recent 50 entries
+        this.pendingAudioSources.clear();
+        entries.slice(-50).forEach(([key, value]) => {
+          this.pendingAudioSources.set(key, value);
+        });
       }
     }
   }
 
-  private trackRemoteActivity(audioData: ArrayBuffer): void {
+  private determineSpeakerFromRecentActivity(): string {
+    // Look at recent audio activity to determine most likely speaker
     const now = Date.now();
-    // The audioData is Int16Array buffer, not Float32Array
-    const audioArray = new Int16Array(audioData);
-    // Convert Int16 to Float32 for level calculation
-    const level = Math.max(
-      ...Array.from(audioArray).map((sample) => Math.abs(sample / 32768)),
-    );
+    const recentThreshold = 3000; // 3 seconds
 
-    if (level > 0.01) {
-      this.lastRemoteActivity = now;
-      this.remoteAudioLevel = level;
+    let recentLocalActivity = false;
+    let recentRemoteActivity = false;
 
-      if (Math.random() < 0.1) {
-        // 10% logging
-        console.log(
-          `🎤 REMOTE ACTIVITY: level=${level.toFixed(4)}, time=${now}`,
-        );
+    // Check recent audio sources
+    for (const [chunkId, source] of this.pendingAudioSources.entries()) {
+      const timestamp = parseInt(chunkId.split("-")[0]);
+      if (now - timestamp < recentThreshold) {
+        if (source === "local") {
+          recentLocalActivity = true;
+        } else if (source === "remote") {
+          recentRemoteActivity = true;
+        }
       }
     }
-  }
 
-  private determineSpeaker(): string {
-    const now = Date.now();
-    const recentThreshold = 2000; // Increased to 2 seconds for better detection
-
-    const timeSinceLocal = now - this.lastLocalActivity;
-    const timeSinceRemote = now - this.lastRemoteActivity;
-    const recentLocalActivity = timeSinceLocal < recentThreshold;
-    const recentRemoteActivity = timeSinceRemote < recentThreshold;
-
-    console.log("🎯 SPEAKER ANALYSIS:", {
-      localLevel: this.localAudioLevel.toFixed(4),
-      remoteLevel: this.remoteAudioLevel.toFixed(4),
+    console.log("🎯 ACTIVITY ANALYSIS:", {
       recentLocal: recentLocalActivity,
       recentRemote: recentRemoteActivity,
-      timeSinceLocal: timeSinceLocal,
-      timeSinceRemote: timeSinceRemote,
-      lastLocalActivity: this.lastLocalActivity,
-      lastRemoteActivity: this.lastRemoteActivity,
+      pendingChunks: this.pendingAudioSources.size,
     });
 
-    // Priority 1: Recent activity (within 2 seconds)
+    // Determine speaker based on recent activity
     if (recentLocalActivity && !recentRemoteActivity) {
       console.log("👤 DETECTED: Interviewer (recent local activity)");
       return "Interviewer";
-    }
-
-    if (recentRemoteActivity && !recentLocalActivity) {
+    } else if (recentRemoteActivity && !recentLocalActivity) {
       console.log("👤 DETECTED: Candidate (recent remote activity)");
       return "Candidate";
+    } else if (recentLocalActivity && recentRemoteActivity) {
+      console.log("👤 DETECTED: Mixed Audio (both active)");
+      return "Candidate"; 
+    --Mixed Audio (Both)
+    } else {
+      // Fallback to URL role
+      const urlParams = new URLSearchParams(window.location.search);
+      const role = urlParams.get("role");
+      const speaker = role === "interviewer" ? "Interviewer" : "Candidate";
+      console.log(`👤 FALLBACK: ${speaker} (based on role)`);
+      return speaker;
     }
-
-    // Priority 2: Compare audio levels if both have recent activity
-    if (recentLocalActivity && recentRemoteActivity) {
-      if (this.localAudioLevel > this.remoteAudioLevel * 1.5) {
-        console.log("👤 DETECTED: Interviewer (higher local level)");
-        return "Interviewer";
-      } else if (this.remoteAudioLevel > this.localAudioLevel * 1.5) {
-        console.log("👤 DETECTED: Candidate (higher remote level)");
-        return "Candidate";
-      }
-    }
-
-    // Priority 3: Most recent activity
-    if (
-      this.lastLocalActivity > this.lastRemoteActivity &&
-      this.lastLocalActivity > 0
-    ) {
-      console.log("👤 DETECTED: Interviewer (most recent local)");
-      return "Interviewer";
-    } else if (
-      this.lastRemoteActivity > this.lastLocalActivity &&
-      this.lastRemoteActivity > 0
-    ) {
-      console.log("👤 DETECTED: Candidate (most recent remote)");
-      return "Candidate";
-    }
-
-    // Default fallback
-    console.log("👤 FALLBACK: Mixed Audio (Both)");
-    return "Mixed Audio (Both)";
   }
 
   async start(): Promise<void> {
@@ -159,7 +147,7 @@ export class EnhancedDeepgramService extends TranscriptionService {
       throw new Error("Room not initialized. Call initialize() first.");
     }
 
-    // Start single WebSocket connection (your existing approach)
+    // Start WebSocket connection
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
 
@@ -171,13 +159,11 @@ export class EnhancedDeepgramService extends TranscriptionService {
         this.ws.send(JSON.stringify({ type: "start_transcription" }));
       }
 
-      // Start audio capture
+      // Start audio capture with source tagging
       if (this.audioCaptureService) {
         try {
           await this.audioCaptureService.startCapture();
-          console.log(
-            "🎤 Enhanced audio capture started with speaker detection",
-          );
+          console.log("🎤 Audio capture started with SOURCE TAGGING");
         } catch (error) {
           console.error("❌ Failed to start audio capture:", error);
           if (this.onErrorCallback) {
@@ -195,8 +181,8 @@ export class EnhancedDeepgramService extends TranscriptionService {
         if (data.type === "transcription" && this.onTranscriptionCallback) {
           console.log(`🎯 PROCESSING TRANSCRIPT: "${data.data.transcript}"`);
 
-          // Determine speaker based on recent audio activity
-          const speaker = this.determineSpeaker();
+          // Determine speaker based on recent audio source activity
+          const speaker = this.determineSpeakerFromRecentActivity();
 
           const result: TranscriptionResult = {
             transcript: data.data.transcript,
@@ -206,6 +192,9 @@ export class EnhancedDeepgramService extends TranscriptionService {
             speaker: speaker,
           };
 
+          console.log(
+            `📝 TRANSCRIPTION RESULT: speaker=${speaker}, text="${data.data.transcript}"`,
+          );
           this.onTranscriptionCallback(result);
         } else if (data.type === "transcription_started") {
           console.log(`✅ TRANSCRIPTION SERVICE STARTED`);
@@ -236,24 +225,10 @@ export class EnhancedDeepgramService extends TranscriptionService {
     };
   }
 
+  // Required abstract method (not used in this implementation)
   sendAudio(audioData: ArrayBuffer): void {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      const uint8Array = new Uint8Array(audioData);
-      const base64Audio = btoa(String.fromCharCode(...uint8Array));
-
-      if (Math.random() < 0.005) {
-        console.log(
-          `🎤 Sending enhanced audio: size=${audioData.byteLength}bytes`,
-        );
-      }
-
-      this.ws.send(
-        JSON.stringify({
-          type: "audio_data",
-          audio: base64Audio,
-        }),
-      );
-    }
+    // This method is required by the abstract class but not used
+    // since we're using sendAudioWithSource instead
   }
 
   async stop(): Promise<void> {
@@ -266,6 +241,9 @@ export class EnhancedDeepgramService extends TranscriptionService {
       this.ws.close();
       this.ws = null;
     }
+
+    // Clear pending audio sources
+    this.pendingAudioSources.clear();
 
     console.log("🛑 Enhanced Deepgram service stopped");
   }
