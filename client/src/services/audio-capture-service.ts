@@ -86,7 +86,7 @@ export class AudioCaptureService {
 
         const inputBuffer = event.inputBuffer;
         const inputData = inputBuffer.getChannelData(0);
-        const audioLevel = Math.max(...inputData.map(Math.abs));
+        const audioLevel = Math.max.apply(Math, Array.from(inputData).map(Math.abs));
 
         if (audioLevel > 0.01) { // Only meaningful audio
           const int16Array = new Int16Array(inputData.length);
@@ -133,7 +133,8 @@ export class AudioCaptureService {
   private attachRemoteParticipantAudio(participant: any): void {
     if (!this.audioContext) return;
 
-    const audioTrack = Array.from(participant.audioTrackPublications.values())[0]?.track;
+    const audioTrackPublication = Array.from(participant.audioTrackPublications.values())[0];
+    const audioTrack = (audioTrackPublication as any)?.track;
     if (!audioTrack) {
       console.log("⚠️ No audio track found for participant:", participant.identity);
       return;
@@ -149,7 +150,7 @@ export class AudioCaptureService {
 
         const inputBuffer = event.inputBuffer;
         const inputData = inputBuffer.getChannelData(0);
-        const audioLevel = Math.max(...inputData.map(Math.abs));
+        const audioLevel = Math.max.apply(Math, Array.from(inputData).map(Math.abs));
 
         if (audioLevel > 0.01) { // Only meaningful audio
           const int16Array = new Int16Array(inputData.length);
