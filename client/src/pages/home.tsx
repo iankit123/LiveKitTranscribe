@@ -6,39 +6,52 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Video, Play, Settings2, Users, Briefcase, Calendar, Mic, Sparkles, Clock, MessageSquare } from "lucide-react";
+import {
+  Video,
+  Play,
+  Settings2,
+  Users,
+  Briefcase,
+  Calendar,
+  Mic,
+  Sparkles,
+  Clock,
+  MessageSquare,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const [isConnecting, setIsConnecting] = useState(false);
-  const [transcriptionProvider, setTranscriptionProvider] = useState<'deepgram' | 'elevenlabs'>('deepgram');
-  const [joinRoomName, setJoinRoomName] = useState('');
-  const [jobDescription, setJobDescription] = useState('');
-  const [interviewPlan, setInterviewPlan] = useState('');
+  const [transcriptionProvider, setTranscriptionProvider] = useState<
+    "deepgram" | "elevenlabs"
+  >("deepgram");
+  const [joinRoomName, setJoinRoomName] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  const [interviewPlan, setInterviewPlan] = useState("");
   const { toast } = useToast();
 
   const handleStartMeeting = async () => {
     try {
       setIsConnecting(true);
-      
+
       // Store job description in sessionStorage if provided
       if (jobDescription.trim()) {
-        sessionStorage.setItem('jobDescription', jobDescription.trim());
+        sessionStorage.setItem("jobDescription", jobDescription.trim());
       }
-      
+
       // Store interview plan in sessionStorage if provided
       if (interviewPlan.trim()) {
-        sessionStorage.setItem('interviewPlan', interviewPlan.trim());
+        sessionStorage.setItem("interviewPlan", interviewPlan.trim());
       }
-      
+
       // Generate a random room name for demo purposes
       const roomName = `room-${Math.random().toString(36).substring(2, 8)}`;
-      
+
       // Navigate to meeting room as interviewer
       setLocation(`/meeting/${roomName}?role=interviewer`);
     } catch (error) {
-      console.error('Error starting meeting:', error);
+      console.error("Error starting meeting:", error);
       toast({
         title: "Connection Error",
         description: "Unable to start the meeting. Please try again.",
@@ -61,21 +74,21 @@ export default function Home() {
 
     try {
       setIsConnecting(true);
-      
+
       // Store job description in sessionStorage if provided
       if (jobDescription.trim()) {
-        sessionStorage.setItem('jobDescription', jobDescription.trim());
+        sessionStorage.setItem("jobDescription", jobDescription.trim());
       }
-      
+
       // Store interview plan in sessionStorage if provided
       if (interviewPlan.trim()) {
-        sessionStorage.setItem('interviewPlan', interviewPlan.trim());
+        sessionStorage.setItem("interviewPlan", interviewPlan.trim());
       }
-      
+
       // Navigate to the meeting room as candidate
       setLocation(`/meeting/${joinRoomName.trim()}?role=candidate`);
     } catch (error) {
-      console.error('Error joining meeting:', error);
+      console.error("Error joining meeting:", error);
       toast({
         title: "Connection Error",
         description: "Unable to join the meeting. Please try again.",
@@ -112,20 +125,30 @@ export default function Home() {
               Interviewer Assistant
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              Smart, time-managed interviews with real-time transcription and AI-powered suggestions
+              Smart, time-managed interviews with real-time transcription and
+              AI-powered suggestions
             </p>
-            
+
             {/* Feature Pills */}
             <div className="flex flex-wrap justify-center gap-3 mt-6">
-              <Badge variant="secondary" className="bg-white/80 backdrop-blur-sm text-indigo-700 border border-indigo-200">
+              <Badge
+                variant="secondary"
+                className="bg-white/80 backdrop-blur-sm text-indigo-700 border border-indigo-200"
+              >
                 <MessageSquare className="w-3 h-3 mr-1" />
-                Live Transcription
+                Live Transcriptions
               </Badge>
-              <Badge variant="secondary" className="bg-white/80 backdrop-blur-sm text-cyan-700 border border-cyan-200">
+              <Badge
+                variant="secondary"
+                className="bg-white/80 backdrop-blur-sm text-cyan-700 border border-cyan-200"
+              >
                 <Clock className="w-3 h-3 mr-1" />
                 Time Management
               </Badge>
-              <Badge variant="secondary" className="bg-white/80 backdrop-blur-sm text-purple-700 border border-purple-200">
+              <Badge
+                variant="secondary"
+                className="bg-white/80 backdrop-blur-sm text-purple-700 border border-purple-200"
+              >
                 <Sparkles className="w-3 h-3 mr-1" />
                 AI Suggestions
               </Badge>
@@ -137,7 +160,9 @@ export default function Home() {
               <CardContent className="p-8 text-center">
                 <div className="flex items-center justify-center space-x-3 text-indigo-600 py-4">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
-                  <span className="text-lg font-medium">Connecting to room...</span>
+                  <span className="text-lg font-medium">
+                    Connecting to room...
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -156,12 +181,17 @@ export default function Home() {
                     {/* Step 1 */}
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-semibold text-indigo-600">1</span>
+                        <span className="text-xs font-semibold text-indigo-600">
+                          1
+                        </span>
                       </div>
                       <div>
-                        <h4 className="text-sm font-medium text-gray-800 mb-1">Plan your interview</h4>
+                        <h4 className="text-sm font-medium text-gray-800 mb-1">
+                          Plan your interview
+                        </h4>
                         <p className="text-sm text-gray-600">
-                          Define your job role and structure the interview timeline with section-wise durations.
+                          Define your job role and structure the interview
+                          timeline with section-wise durations.
                         </p>
                       </div>
                     </div>
@@ -169,12 +199,17 @@ export default function Home() {
                     {/* Step 2 */}
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-cyan-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-semibold text-cyan-600">2</span>
+                        <span className="text-xs font-semibold text-cyan-600">
+                          2
+                        </span>
                       </div>
                       <div>
-                        <h4 className="text-sm font-medium text-gray-800 mb-1">Start the call & invite candidate</h4>
+                        <h4 className="text-sm font-medium text-gray-800 mb-1">
+                          Start the call & invite candidate
+                        </h4>
                         <p className="text-sm text-gray-600">
-                          Launch your session and share a single smart link — no downloads needed.
+                          Launch your session and share a single smart link — no
+                          downloads needed.
                         </p>
                       </div>
                     </div>
@@ -182,17 +217,21 @@ export default function Home() {
                     {/* Step 3 */}
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-semibold text-purple-600">3</span>
+                        <span className="text-xs font-semibold text-purple-600">
+                          3
+                        </span>
                       </div>
                       <div>
-                        <h4 className="text-sm font-medium text-gray-800 mb-1">Let AI assist you</h4>
+                        <h4 className="text-sm font-medium text-gray-800 mb-1">
+                          Let AI assist you
+                        </h4>
                         <p className="text-sm text-gray-600">
-                          Get live transcription, section time alerts, and smart follow-up suggestions powered by your job description.
+                          Get live transcription, section time alerts, and smart
+                          follow-up suggestions powered by your job description.
                         </p>
                       </div>
                     </div>
                   </CardContent>
-
                 </Card>
 
                 <Card className="backdrop-blur-sm bg-white/90 border-0 shadow-xl">
@@ -205,9 +244,13 @@ export default function Home() {
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">Real-time speech-to-text</p>
+                        <p className="font-medium text-gray-900">
+                          Real-time speech-to-text
+                        </p>
                       </div>
-                      <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>
+                      <Badge className="bg-green-100 text-green-800 border-green-200">
+                        Active
+                      </Badge>
                     </div>
                   </CardContent>
                 </Card>
@@ -216,13 +259,20 @@ export default function Home() {
               {/* Right Column - Setup Form */}
               <Card className="backdrop-blur-sm bg-white/90 border-0 shadow-2xl">
                 <CardHeader className="flex flex-col space-y-1.5 p-6 bg-[#e2e8fe]">
-                  <CardTitle className="text-2xl font-bold text-gray-900">Setup Your First Interview</CardTitle>
-                  <p className="text-gray-600">Configure your interview session</p>
+                  <CardTitle className="text-2xl font-bold text-gray-900">
+                    Setup Your First Interview
+                  </CardTitle>
+                  <p className="text-gray-600">
+                    Configure your interview session
+                  </p>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Job Description */}
                   <div>
-                    <label htmlFor="jobDescription" className="text-sm font-semibold flex items-center text-gray-900 mt-[21px] mb-[21px]">
+                    <label
+                      htmlFor="jobDescription"
+                      className="text-sm font-semibold flex items-center text-gray-900 mt-[21px] mb-[21px]"
+                    >
                       <Briefcase className="w-4 h-4 mr-2 text-indigo-600" />
                       Job Description for the Role
                     </label>
@@ -234,13 +284,17 @@ export default function Home() {
                       className="min-h-[100px] resize-none border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p className="text-xs text-gray-500 mt-2">
-                      This helps AI generate more relevant follow-up questions during the interview
+                      This helps AI generate more relevant follow-up questions
+                      during the interview
                     </p>
                   </div>
 
                   {/* Interview Plan */}
                   <div>
-                    <label htmlFor="interviewPlan" className="block text-sm font-semibold mb-3 flex items-center text-gray-900">
+                    <label
+                      htmlFor="interviewPlan"
+                      className="block text-sm font-semibold mb-3 flex items-center text-gray-900"
+                    >
                       <Calendar className="w-4 h-4 mr-2 text-cyan-600" />
                       Interview Structure
                     </label>
@@ -252,13 +306,14 @@ export default function Home() {
                       className="min-h-[120px] resize-none font-mono text-sm border-gray-200 focus:border-cyan-500 focus:ring-cyan-500"
                     />
                     <p className="text-xs text-gray-500 mt-2">
-                      Enter each section with time in minutes. You'll get smart nudges when time blocks run over.
+                      Enter each section with time in minutes. You'll get smart
+                      nudges when time blocks run over.
                     </p>
                   </div>
 
                   {/* Action Buttons */}
                   <div className="space-y-4 pt-4">
-                    <Button 
+                    <Button
                       onClick={handleStartMeeting}
                       className="w-full bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white font-semibold py-4 px-6 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                       size="lg"
@@ -272,7 +327,9 @@ export default function Home() {
                         <span className="w-full border-t border-gray-200" />
                       </div>
                       <div className="relative flex justify-center text-sm">
-                        <span className="px-4 bg-white text-gray-500 font-medium">or join existing</span>
+                        <span className="px-4 bg-white text-gray-500 font-medium">
+                          or join existing
+                        </span>
                       </div>
                     </div>
 
@@ -281,10 +338,12 @@ export default function Home() {
                         placeholder="Enter room name to join..."
                         value={joinRoomName}
                         onChange={(e) => setJoinRoomName(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleJoinMeeting()}
+                        onKeyPress={(e) =>
+                          e.key === "Enter" && handleJoinMeeting()
+                        }
                         className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                       />
-                      <Button 
+                      <Button
                         onClick={handleJoinMeeting}
                         className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
                         size="lg"

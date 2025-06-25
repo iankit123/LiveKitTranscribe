@@ -731,8 +731,8 @@ export default function Meeting({ params }: MeetingProps) {
                     </Button>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="flex-1 overflow-hidden">
-                  <div className="h-full overflow-y-auto space-y-2">
+                <CardContent className=" flex-1 overflow-hidden">
+                  <div className="h-full h-[180px] overflow-y-scroll overflow-y-auto space-y-2">
                     {!transcriptions || transcriptions.length === 0 ? (
                       <div className="text-center py-6">
                         <Mic className="w-8 h-8 text-gray-400 mx-auto mb-2" />

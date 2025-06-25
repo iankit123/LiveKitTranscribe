@@ -123,15 +123,15 @@ export default function TranscriptionPanel({
 
       <CardContent
         ref={scrollRef}
-        className="p-4 flex-1 overflow-y-auto overflow-x-hidden"
+        className="p-4 flex-1 overflow-y-auto overflow-x-hidden "
         style={{
           maxHeight: "calc(100vh - 200px)", // Limit height to viewport minus some margin
           minHeight: "300px", // Minimum height
         }}
       >
-        <div className="space-y-3">
+        <div className="space-y-3 bg-red">
           {finalTranscriptions.length === 0 && !currentTranscription && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-800">
               <User size={32} className="mx-auto mb-2" />
               <p className="text-sm">
                 {isTranscribing
@@ -146,13 +146,13 @@ export default function TranscriptionPanel({
               <div className="flex-shrink-0">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    entry.speaker === "Interviewer"
+                    entry.speaker === "Interviewers"
                       ? "bg-blue-500"
                       : "bg-green-500"
                   }`}
                 >
                   <span className="text-white text-xs font-medium">
-                    {entry.speaker === "Interviewer" ? "I" : "C"}
+                    {entry.speaker === "Interviewers" ? "I" : "C"}
                   </span>
                 </div>
               </div>
@@ -181,13 +181,15 @@ export default function TranscriptionPanel({
               <div className="flex-shrink-0">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    currentTranscription.speaker === "Interviewer"
+                    currentTranscription.speaker === "Interviewers"
                       ? "bg-blue-500"
                       : "bg-green-500"
                   }`}
                 >
                   <span className="text-white text-xs font-medium">
-                    {currentTranscription.speaker === "Interviewer" ? "I" : "C"}
+                    {currentTranscription.speaker === "Interviewers"
+                      ? "I"
+                      : "C"}
                   </span>
                 </div>
               </div>
