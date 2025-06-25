@@ -124,7 +124,7 @@ class DeepgramService extends TranscriptionService {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       // Convert ArrayBuffer to base64
       const uint8Array = new Uint8Array(audioData);
-      const base64Audio = btoa(String.fromCharCode(...uint8Array));
+      const base64Audio = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)));
 
       this.ws.send(JSON.stringify({
         type: 'audio_data',

@@ -63,7 +63,7 @@ export class EnhancedDeepgramService extends TranscriptionService {
 
       // Convert audio data
       const uint8Array = new Uint8Array(audioData);
-      const base64Audio = btoa(String.fromCharCode(...uint8Array));
+      const base64Audio = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)));
 
       // Send audio with source metadata
       this.ws.send(
@@ -104,7 +104,8 @@ export class EnhancedDeepgramService extends TranscriptionService {
     let recentRemoteActivity = false;
 
     // Check recent audio sources
-    for (const [chunkId, source] of this.pendingAudioSources.entries()) {
+    const entries = Array.from(this.pendingAudioSources.entries());
+    for (const [chunkId, source] of entries) {
       const timestamp = parseInt(chunkId.split("-")[0]);
       if (now - timestamp < recentThreshold) {
         if (source === "local") {
@@ -131,7 +132,6 @@ export class EnhancedDeepgramService extends TranscriptionService {
     } else if (recentLocalActivity && recentRemoteActivity) {
       console.log("👤 DETECTED: Mixed Audio (both active)");
       return "Candidate"; 
-    --Mixed Audio (Both)
     } else {
       // Fallback to URL role
       const urlParams = new URLSearchParams(window.location.search);
