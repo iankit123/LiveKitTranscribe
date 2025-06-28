@@ -469,10 +469,10 @@ export default function Meeting({ params }: MeetingProps) {
       </div>
 
       {/* Main Content */}
-      <div className="p-6 pt-20">
+      <div className="p-6 pt-20 pb-24">
         {/* New Meeting Layout for Interviewer */}
         {isInterviewer && isConnected && room && (
-          <div className="h-[calc(100vh-200px)] flex gap-4">
+          <div className="h-[calc(100vh-240px)] flex gap-4">
             {/* Main Content Area - Candidate Video (70% width) */}
             <div className="flex-1 relative bg-gray-900 rounded-lg overflow-hidden">
               {/* Timer Nudge - Only visible to interviewer */}
@@ -625,16 +625,16 @@ export default function Meeting({ params }: MeetingProps) {
             </div>
 
             {/* Right Sidebar (30% width) */}
-            <div className="w-[30%] flex flex-col space-y-4">
+            <div className="w-[30%] flex flex-col space-y-4 h-full">
               {/* Follow-Up Suggestions (Top 50%) */}
-              <Card className="flex-1 rounded-xl bg-white/90 backdrop-blur shadow-lg border-0">
+              <Card className="h-1/2 rounded-xl bg-white/90 backdrop-blur shadow-lg border-0 flex flex-col">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center text-lg">
                     <Lightbulb className="w-4 h-4 mr-2 text-amber-600" />
                     Follow-Up Suggestions
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3 flex-1 overflow-hidden">
+                <CardContent className="space-y-3 flex-1 overflow-hidden flex flex-col">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Custom Instructions
@@ -702,7 +702,7 @@ export default function Meeting({ params }: MeetingProps) {
               </Card>
 
               {/* Live Transcription (Bottom 50%) */}
-              <Card className="flex-1 rounded-xl bg-white/90 backdrop-blur shadow-lg border-0">
+              <Card className="h-1/2 rounded-xl bg-white/90 backdrop-blur shadow-lg border-0 flex flex-col">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center justify-between text-lg">
                     <div className="flex items-center">
@@ -731,8 +731,8 @@ export default function Meeting({ params }: MeetingProps) {
                     </Button>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className=" flex-1 overflow-hidden">
-                  <div className="h-full h-[180px] overflow-y-scroll overflow-y-auto space-y-2">
+                <CardContent className="flex-1 overflow-hidden flex flex-col">
+                  <div className="flex-1 overflow-y-auto space-y-2">
                     {!transcriptions || transcriptions.length === 0 ? (
                       <div className="text-center py-6">
                         <Mic className="w-8 h-8 text-gray-400 mx-auto mb-2" />
