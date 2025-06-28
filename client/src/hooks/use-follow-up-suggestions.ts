@@ -8,9 +8,6 @@ export interface FollowUpHistoryEntry {
   pinnedQuestions: string[];
 }
 
-// Simple cache for responses (in-memory for session)
-const responseCache = new Map<string, FollowUpSuggestion[]>();
-
 export function useFollowUpSuggestions() {
   const [suggestions, setSuggestions] = useState<FollowUpSuggestion[] | null>(null);
   const [followUpHistory, setFollowUpHistory] = useState<FollowUpHistoryEntry[]>([]);
@@ -20,6 +17,7 @@ export function useFollowUpSuggestions() {
 
   const generateSuggestions = useCallback(async (transcriptions: TranscriptionEntry[], customInstruction?: string) => {
     try {
+      
       console.log('🔍 Starting follow-up question generation...');
       console.log('📝 Received transcriptions:', transcriptions);
       console.log('📝 Transcriptions type:', typeof transcriptions, Array.isArray(transcriptions));
@@ -127,9 +125,8 @@ export function useFollowUpSuggestions() {
           const suggestionsArray = response.suggestions;
           setSuggestions(suggestionsArray);
           
-          // Cache the response for future use
-          responseCache.set(cacheKey, suggestionsArray);
-          console.log('✅ Suggestions set as array and cached:', suggestionsArray);
+
+          console.log('✅ Suggestions set successfully:', suggestionsArray);
           
           // Add to history
           if (response.suggestions.length > 0) {
