@@ -8,6 +8,9 @@ export interface FollowUpHistoryEntry {
   pinnedQuestions: string[];
 }
 
+// Simple cache for responses (in-memory for session)
+const responseCache = new Map<string, FollowUpSuggestion[]>();
+
 export function useFollowUpSuggestions() {
   const [suggestions, setSuggestions] = useState<FollowUpSuggestion[] | null>(null);
   const [followUpHistory, setFollowUpHistory] = useState<FollowUpHistoryEntry[]>([]);
@@ -123,7 +126,10 @@ export function useFollowUpSuggestions() {
           // Set suggestions directly as the array for simpler UI handling
           const suggestionsArray = response.suggestions;
           setSuggestions(suggestionsArray);
-          console.log('✅ Suggestions set as array:', suggestionsArray);
+          
+          // Cache the response for future use
+          responseCache.set(cacheKey, suggestionsArray);
+          console.log('✅ Suggestions set as array and cached:', suggestionsArray);
           
           // Add to history
           if (response.suggestions.length > 0) {
