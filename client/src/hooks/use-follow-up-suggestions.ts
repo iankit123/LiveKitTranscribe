@@ -16,16 +16,21 @@ export function useFollowUpSuggestions() {
   const [error, setError] = useState<string | null>(null);
 
   const generateSuggestions = useCallback(async (transcriptions: TranscriptionEntry[], customInstruction?: string) => {
+    const startTime = performance.now();
     try {
-      console.log('🔍 Starting follow-up question generation...');
+      console.log('⏱️ [TIMING] Starting follow-up question generation...', `Start: ${startTime.toFixed(2)}ms`);
       console.log('📝 Received transcriptions:', transcriptions);
       console.log('📝 Transcriptions type:', typeof transcriptions, Array.isArray(transcriptions));
       
+      const setupStartTime = performance.now();
       setIsLoading(true);
       setError(null);
+      console.log('⏱️ [TIMING] Setup completed', `Duration: ${(performance.now() - setupStartTime).toFixed(2)}ms`);
       
       // Ensure transcriptions is an array
+      const transcriptionProcessStartTime = performance.now();
       const safeTranscriptions = Array.isArray(transcriptions) ? transcriptions : [];
+      console.log('⏱️ [TIMING] Transcription array processing', `Duration: ${(performance.now() - transcriptionProcessStartTime).toFixed(2)}ms`);
       
       if (safeTranscriptions.length === 0) {
         console.log('⚠️ No transcriptions provided, checking for stored data...');
@@ -42,7 +47,10 @@ export function useFollowUpSuggestions() {
         const baseText = jobDescription || "General technical interview discussion";
         
         try {
+          const jobBasedStartTime = performance.now();
+          console.log('⏱️ [TIMING] Starting job-based suggestions API call');
           const response = await geminiService.getFollowUpSuggestions(baseText, jobDescription, customInstruction);
+          console.log('⏱️ [TIMING] Job-based suggestions API completed', `Duration: ${(performance.now() - jobBasedStartTime).toFixed(2)}ms`);
           console.log('✅ Job-based suggestions generated:', response);
           setSuggestions(response.suggestions);
         } catch (error) {
@@ -53,9 +61,11 @@ export function useFollowUpSuggestions() {
       }
       
       // Get recent candidate responses (last 8 messages from candidates)
+      const candidateFilterStartTime = performance.now();
       const candidateResponses = safeTranscriptions
         .filter(t => t.isFinal && t.speaker === 'Candidate')
         .slice(-8);
+      console.log('⏱️ [TIMING] Candidate response filtering', `Duration: ${(performance.now() - candidateFilterStartTime).toFixed(2)}ms`);
 
       console.log('📝 Found candidate responses:', candidateResponses.length);
       console.log('📝 All transcriptions:', safeTranscriptions.map(t => ({ speaker: t.speaker, text: t.text, isFinal: t.isFinal })));
@@ -103,15 +113,22 @@ export function useFollowUpSuggestions() {
       console.log('🚀 Sending request to Gemini API...');
 
       // Get job description from session storage
+      const jobDescriptionStartTime = performance.now();
       const jobDescription = sessionStorage.getItem('jobDescription');
+      console.log('⏱️ [TIMING] Job description retrieval', `Duration: ${(performance.now() - jobDescriptionStartTime).toFixed(2)}ms`);
 
       try {
         // Clean the inputs to prevent circular references
+        const cleaningStartTime = performance.now();
         const cleanTranscriptText = String(transcriptText || '');
         const cleanJobDescription = jobDescription ? String(jobDescription) : null;
         const cleanCustomInstruction = customInstruction ? String(customInstruction) : undefined;
+        console.log('⏱️ [TIMING] Input cleaning', `Duration: ${(performance.now() - cleaningStartTime).toFixed(2)}ms`);
         
+        const apiCallStartTime = performance.now();
+        console.log('⏱️ [TIMING] Starting main API call to Gemini');
         const response = await geminiService.getFollowUpSuggestions(cleanTranscriptText, cleanJobDescription, cleanCustomInstruction);
+        console.log('⏱️ [TIMING] Main API call completed', `Duration: ${(performance.now() - apiCallStartTime).toFixed(2)}ms`);
         
         console.log('✅ Received response from Gemini:', JSON.stringify(response, null, 2));
         
