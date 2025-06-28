@@ -17,7 +17,6 @@ export function useFollowUpSuggestions() {
 
   const generateSuggestions = useCallback(async (transcriptions: TranscriptionEntry[], customInstruction?: string) => {
     try {
-      
       console.log('🔍 Starting follow-up question generation...');
       console.log('📝 Received transcriptions:', transcriptions);
       console.log('📝 Transcriptions type:', typeof transcriptions, Array.isArray(transcriptions));
@@ -124,9 +123,7 @@ export function useFollowUpSuggestions() {
           // Set suggestions directly as the array for simpler UI handling
           const suggestionsArray = response.suggestions;
           setSuggestions(suggestionsArray);
-          
-
-          console.log('✅ Suggestions set successfully:', suggestionsArray);
+          console.log('✅ Suggestions set as array:', suggestionsArray);
           
           // Add to history
           if (response.suggestions.length > 0) {

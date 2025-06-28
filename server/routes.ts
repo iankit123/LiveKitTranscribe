@@ -326,25 +326,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: 'Failed to initialize AI service' });
       }
 
-      // Optimized concise prompt for faster response
-      const jobContext = jobDescription ? `Role: ${jobDescription}` : '';
-      const customContext = customInstruction ? ` | ${customInstruction}` : '';
+      let prompt = `You are an expert interviewer.`;
       
-      const prompt = `${jobContext}${customContext}
+      // Add job description context if provided
+      if (jobDescription) {
+        prompt += ` This interview is for the role of: ${jobDescription}. Use this context to suggest follow-up questions tailored to the job.`;
+      }
+      
+      prompt += ` Based on the following transcript of a candidate's responses, suggest 1-2 intelligent follow-up questions that would help assess their technical skills, problem-solving approach, or experience in more depth.
 
-Conversation: ${transcriptText}
+Transcript:
+${transcriptText}`;
 
-Generate 2 follow-up questions as JSON:
-{"suggestions":[{"question":"...","reasoning":"..."}]}`;
+      // Add custom instruction if provided
+      if (customInstruction) {
+        prompt += `
+
+Additional instruction: ${customInstruction}`;
+      }
+
+      prompt += `
+
+Generate 1-2 insightful follow-up questions that:
+1. Build on what the candidate has said
+2. Probe deeper into their technical knowledge
+3. Assess problem-solving skills
+4. Explore real-world experience
+5. Are specific and actionable
+
+Return in this exact JSON format:
+{
+  "suggestions": [
+    {
+      "question": "Your follow-up question here",
+      "reasoning": "Brief explanation of why this question is valuable"
+    }
+  ]
+}`;
 
       console.log('🧠 Sending request to Gemini AI...');
       
       const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-2.5-flash",
         config: {
           responseMimeType: "application/json",
-          temperature: 0.7,
-          maxOutputTokens: 500
+          responseSchema: {
+            type: "object",
+            properties: {
+              suggestions: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    question: { type: "string" },
+                    reasoning: { type: "string" }
+                  },
+                  required: ["question"]
+                }
+              }
+            },
+            required: ["suggestions"]
+          }
         },
         contents: [{ role: "user", parts: [{ text: prompt }] }],
       });
