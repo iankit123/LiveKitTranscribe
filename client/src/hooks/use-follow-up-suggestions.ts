@@ -8,6 +8,10 @@ export interface FollowUpHistoryEntry {
   pinnedQuestions: string[];
 }
 
+// Simple cache for recent suggestions
+const suggestionCache = new Map<string, { suggestions: FollowUpSuggestion[], timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export function useFollowUpSuggestions() {
   const [suggestions, setSuggestions] = useState<FollowUpSuggestion[] | null>(null);
   const [followUpHistory, setFollowUpHistory] = useState<FollowUpHistoryEntry[]>([]);
@@ -125,10 +129,27 @@ export function useFollowUpSuggestions() {
         const cleanCustomInstruction = customInstruction ? String(customInstruction) : undefined;
         console.log('⏱️ [TIMING] Input cleaning', `Duration: ${(performance.now() - cleaningStartTime).toFixed(2)}ms`);
         
+        // Check cache first
+        const cacheKey = `${cleanTranscriptText}-${cleanJobDescription}-${cleanCustomInstruction}`;
+        const cachedResult = suggestionCache.get(cacheKey);
+        
+        if (cachedResult && (Date.now() - cachedResult.timestamp) < CACHE_DURATION) {
+          console.log('⚡ [CACHE] Using cached suggestions - instant response!');
+          setSuggestions(cachedResult.suggestions);
+          return;
+        }
+        
         const apiCallStartTime = performance.now();
         console.log('⏱️ [TIMING] Starting main API call to Gemini');
         const response = await geminiService.getFollowUpSuggestions(cleanTranscriptText, cleanJobDescription, cleanCustomInstruction);
         console.log('⏱️ [TIMING] Main API call completed', `Duration: ${(performance.now() - apiCallStartTime).toFixed(2)}ms`);
+        
+        // Cache the response
+        suggestionCache.set(cacheKey, {
+          suggestions: response.suggestions,
+          timestamp: Date.now()
+        });
+        console.log('💾 [CACHE] Suggestions cached for future use');
         
         console.log('✅ Received response from Gemini:', JSON.stringify(response, null, 2));
         
@@ -162,7 +183,10 @@ export function useFollowUpSuggestions() {
       console.error('❌ Error generating suggestions:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate suggestions');
     } finally {
+      const finalizeStartTime = performance.now();
       setIsLoading(false);
+      console.log('⏱️ [TIMING] Finalization', `Duration: ${(performance.now() - finalizeStartTime).toFixed(2)}ms`);
+      console.log('⏱️ [TIMING] TOTAL GENERATION TIME', `Duration: ${(performance.now() - startTime).toFixed(2)}ms`);
       console.log('🏁 Follow-up generation completed');
     }
   }, []);
