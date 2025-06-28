@@ -1,0 +1,43 @@
+📝 All transcriptions: 
+Array [{…}]
+⚠️ No candidate responses found, using all transcriptions for analysis
+📝 Using test transcript: Test conversation for follow-up generation
+📋 Formatted transcript for LLM: 
+🚀 Sending request to Gemini API...
+🌐 Making API request to /api/gemini/follow-up-suggestions
+📤 Request payload: 
+Object {transcriptText: "", jobDescription: null, customInstruction: "SQL question to check acqusition data understanding and row number sql logioc↵"}
+useInterviewTimer returning: 
+Object {timerState: {…}, isRunning: false, startTimerType: "function", stopTimerType: "function"}
+📡 API response status: 400
+❌ API error response: {"error":"Transcript text is required"}
+at t.value (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+❌ Error in getFollowUpSuggestions: 
+Error {}
+
+at t.value (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+❌ API call failed: 
+Error {}
+message: "HTTP error! status: 400 - {"error":"Transcript text is required"}"
+stack: "Error: HTTP error! status: 400 - {"error":"Transcript text is required"}↵ at GeminiService.getFollowUpSuggestions (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/src/services/gemini-service.ts:30:15)↵ at async https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/src/hooks/use-follow-up-suggestions.ts:55:26"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+❌ Error generating suggestions: 
+Error {}
+message: "HTTP error! status: 400 - {"error":"Transcript text is required"}"
+stack: "Error: HTTP error! status: 400 - {"error":"Transcript text is required"}↵ at GeminiService.getFollowUpSuggestions (https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/src/services/gemini-service.ts:30:15)↵ at async https://164efed6-645b-46ba-ae1a-0bd0c4cdcc31-00-3h3rot1puohx4.janeway.replit.dev/src/hooks/use-follow-up-suggestions.ts:55:26"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+🏁 Follow-up generation completed
+useInterviewTimer returning: 
+Object {timerState: {…}, isRunning: false, startTimerType: "function", stopTimerType: "function"}

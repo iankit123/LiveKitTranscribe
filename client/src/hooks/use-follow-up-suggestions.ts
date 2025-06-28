@@ -64,20 +64,42 @@ export function useFollowUpSuggestions() {
         console.log('⚠️ No candidate responses found, using all transcriptions for analysis');
         // Fallback: use all final transcriptions if no specific candidate responses
         const allFinalResponses = safeTranscriptions.filter(t => t.isFinal).slice(-5);
-        if (allFinalResponses.length === 0) {
-          // Use test data for now to test the API
-          const testTranscript = "Test conversation for follow-up generation";
-          console.log('📝 Using test transcript:', testTranscript);
-        }
         candidateResponses.push(...allFinalResponses);
       }
 
       // Format transcript for analysis
-      const transcriptText = candidateResponses
+      let transcriptText = candidateResponses
         .map(t => `[${t.speaker}]: ${t.text}`)
         .join('\n');
 
+      // If still no transcript text, use available transcriptions (including non-final)
+      if (!transcriptText.trim()) {
+        const allAvailableTranscriptions = safeTranscriptions.slice(-5);
+        transcriptText = allAvailableTranscriptions
+          .map(t => `[${t.speaker}]: ${t.text}`)
+          .join('\n');
+        console.log('📝 Using all available transcriptions for analysis');
+      }
+
       console.log('📋 Formatted transcript for LLM:', transcriptText);
+
+      // Ensure we have meaningful transcript text
+      if (!transcriptText.trim() || transcriptText.trim().length < 10) {
+        console.log('⚠️ Transcript too short, using fallback approach');
+        const jobDescription = sessionStorage.getItem('jobDescription');
+        if (customInstruction?.trim()) {
+          // Use custom instruction as the base for generating questions
+          transcriptText = `Interview context: ${customInstruction.trim()}`;
+        } else if (jobDescription?.trim()) {
+          // Use job description as context
+          transcriptText = `Job role: ${jobDescription.trim()}`;
+        } else {
+          // Use generic technical interview context
+          transcriptText = "Technical interview in progress. Generate relevant follow-up questions.";
+        }
+        console.log('📋 Updated transcript text:', transcriptText);
+      }
+
       console.log('🚀 Sending request to Gemini API...');
 
       // Get job description from session storage
